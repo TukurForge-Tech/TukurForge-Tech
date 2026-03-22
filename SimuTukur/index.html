@@ -51,7 +51,6 @@
     </div>
 
     <script>
-        // Credenciales vinculadas al proyecto pcuopq...
         const SUPABASE_URL = 'https://pcuopqvmucmhtcdeswxh.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjdW9wcXZtdWNtaHRjZGVzd3hoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTk0NTgsImV4cCI6MjA4OTQzNTQ1OH0.g1xfdTtbz4aNW_QF_JcwoM7DCmgRLDxF2Ik48I7fq2M';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -65,35 +64,38 @@
             togglePassword.innerText = type === 'password' ? '👁️' : '🔒';
         });
 
+        // --- AQUÍ PEGAMOS EL SCRIPT REFORZADO ---
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const emailValue = document.getElementById('email').value.trim();
             const passValue = document.getElementById('pass').value.trim();
             const msg = document.getElementById('msg');
 
-            msg.innerText = "Conectando con TukurForge...";
+            msg.innerText = "Validando credenciales...";
             msg.style.color = "#22d3ee";
 
             try {
-                // Consulta a la tabla usuarios_membresias usando el campo email
-                const { data, error } = await _supabase
+                // PASO 1: Login directo sin joins para evitar errores de RLS/FK
+                const { data: usuarioData, error: userError } = await _supabase
                     .from('usuarios_membresias')
-                    .select('*, config_examenes(*)')
+                    .select('*')
                     .eq('email', emailValue);
 
-                if (error) {
-                    console.error(error);
-                    msg.innerText = "Error: Asegúrate de desactivar RLS en Supabase.";
-                    return;
-                }
+                if (userError) throw userError;
 
-                if (data && data.length > 0) {
-                    // Validar contraseña contra password_hijo o password_padre
-                    const match = data.find(u => u.password_hijo === passValue || u.password_padre === passValue);
+                if (usuarioData && usuarioData.length > 0) {
+                    // Validamos la contraseña contra cualquiera de los registros encontrados
+                    const match = usuarioData.find(u => u.password_hijo === passValue || u.password_padre === passValue);
 
                     if (match) {
+                        // PASO 2: Intentamos traer los detalles de los exámenes vinculados
+                        const { data: cursosDetalle } = await _supabase
+                            .from('usuarios_membresias')
+                            .select('*, config_examenes(*)')
+                            .eq('email', emailValue);
+
                         localStorage.setItem('session_email', emailValue);
-                        localStorage.setItem('mis_cursos', JSON.stringify(data));
+                        localStorage.setItem('mis_cursos', JSON.stringify(cursosDetalle || usuarioData));
                         
                         document.getElementById('login-box').classList.add('hidden');
                         const splash = document.getElementById('splash-screen');
@@ -111,8 +113,9 @@
                     msg.style.color = "#ef4444";
                 }
             } catch (err) {
-                console.error(err);
-                msg.innerText = "Error técnico de conexión.";
+                console.error("Detalle del error:", err);
+                msg.innerText = "Error de conexión. Verifica el SQL Editor.";
+                msg.style.color = "#f59e0b";
             }
         });
     </script>
