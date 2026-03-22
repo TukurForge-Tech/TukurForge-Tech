@@ -51,7 +51,7 @@
     </div>
 
     <script>
-        // Credenciales actualizadas del proyecto pcuopq...
+        // Credenciales vinculadas al proyecto pcuopq...
         const SUPABASE_URL = 'https://pcuopqvmucmhtcdeswxh.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjdW9wcXZtdWNtaHRjZGVzd3hoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTk0NTgsImV4cCI6MjA4OTQzNTQ1OH0.g1xfdTtbz4aNW_QF_JcwoM7DCmgRLDxF2Ik48I7fq2M';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -71,18 +71,18 @@
             const passValue = document.getElementById('pass').value.trim();
             const msg = document.getElementById('msg');
 
-            msg.innerText = "Conectando con la base de datos...";
+            msg.innerText = "Conectando con TukurForge...";
             msg.style.color = "#22d3ee";
 
             try {
-                // Consulta a la tabla usuarios_membresias
+                // Consulta a la tabla usuarios_membresias usando el campo email
                 const { data, error } = await _supabase
                     .from('usuarios_membresias')
                     .select('*, config_examenes(*)')
                     .eq('email', emailValue);
 
                 if (error) {
-                    console.error("Error de Supabase:", error);
+                    console.error(error);
                     msg.innerText = "Error: Asegúrate de desactivar RLS en Supabase.";
                     return;
                 }
@@ -111,7 +111,7 @@
                     msg.style.color = "#ef4444";
                 }
             } catch (err) {
-                console.error("Error atrapado:", err);
+                console.error(err);
                 msg.innerText = "Error técnico de conexión.";
             }
         });
