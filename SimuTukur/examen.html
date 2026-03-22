@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Examen en Curso | SimuTukur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex flex-col md:flex-row">
+    <div id="loader" class="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
+        <p class="animate-pulse text-yellow-500 font-mono">CARGANDO REACTIVOS...</p>
+    </div>
+
+    <main class="flex-1 p-8">
+        <div id="quiz-container" class="max-w-3xl mx-auto">
+            <div id="quiz-card" class="bg-slate-900 p-10 rounded-3xl border border-slate-800 shadow-2xl">
+                </div>
+        </div>
+    </main>
+
+    <script>
+        const _supabase = supabase.createClient('https://pcuopqvmucmhtcdeswxh.supabase.co', 'TU_ANON_KEY');
+        
+        // 1. OBTENER TOKEN DE LA URL
+        const params = new URLSearchParams(window.location.search);
+        const tokenURL = params.get('v');
+        const cursosGuardados = JSON.parse(localStorage.getItem('mis_cursos'));
+
+        async function validarYEntrar() {
+            // Verificamos si el token de la URL está en los cursos que el usuario tiene permitidos
+            const tienePermiso = cursosGuardados.some(c => c.token_hex === tokenURL);
+
+            if (!tienePermiso) {
+                alert("Socio, no tienes permiso para este examen específico.");
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            // Si tiene permiso, buscamos la configuración del examen
+            const { data: config } = await _supabase
+                .from('config_examenes')
+                .select('*')
+                .eq('token_hex', tokenURL)
+                .single();
+
+            // Cargar preguntas filtrando por la institucion y area de ese token
+            const { data: preguntas } = await _supabase
+                .from('reactivos')
+                .select('*')
+                .eq('institucion', config.institucion)
+                .eq('tipo_examen', config.area)
+                .limit(120);
+
+            // Aquí ejecutas la lógica de renderQuestion() que ya tenemos
+            console.log("Examen cargado:", config.descripcion);
+            document.getElementById('loader').classList.add('hidden');
+        }
+
+        validarYEntrar();
+    </script>
+</body>
+</html>
