@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso SimuTukur | TukurForge Tech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        #splash-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        .hidden { display: none !important; }
+        .login-card { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex items-center justify-center p-6">
+
+    <div id="splash-screen" class="hidden">
+        <video id="splash-video" class="w-full max-w-2xl" muted playsinline>
+            <source src="TU_URL_MP4_AQUI" type="video/mp4">
+        </video>
+    </div>
+
+    <div class="max-w-md w-full login-card p-10 rounded-3xl border border-slate-800 shadow-2xl text-center" id="login-box">
+        <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur.jpeg" class="w-24 mx-auto mb-6 rounded-xl">
+        <h1 class="text-3xl font-bold text-yellow-500 mb-2">SimuTukur ⚜️</h1>
+        <p class="text-slate-500 text-[10px] uppercase tracking-[0.2em] mb-8 font-bold">Portal del Aspirante</p>
+
+        <form id="login-form" class="space-y-4">
+            <input type="email" id="email" placeholder="Correo Electrónico" required class="w-full bg-black border border-slate-700 p-4 rounded-xl text-center outline-none focus:border-yellow-500">
+            <input type="password" id="pass" placeholder="Contraseña" required class="w-full bg-black border border-slate-700 p-4 rounded-xl text-center outline-none focus:border-yellow-500">
+            <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-black py-4 rounded-xl transition-all">INICIAR SESIÓN</button>
+        </form>
+        <p id="msg" class="text-red-500 text-xs mt-4"></p>
+    </div>
+
+    <script>
+        const _supabase = supabase.createClient('https://pcuopqvmucmhtcdeswxh.supabase.co', 'TU_ANON_KEY');
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const pass = document.getElementById('pass').value;
+
+            // Buscamos TODOS los registros de ese email que coincidan con la clave
+            const { data, error } = await _supabase
+                .from('usuarios_membresias')
+                .select('*, config_examenes(*)')
+                .eq('email', email)
+                .eq('password_hijo', pass);
+
+            if (data && data.length > 0) {
+                localStorage.setItem('session_email', email);
+                localStorage.setItem('mis_cursos', JSON.stringify(data));
+                
+                document.getElementById('login-box').classList.add('hidden');
+                const splash = document.getElementById('splash-screen');
+                const video = document.getElementById('splash-video');
+                splash.classList.remove('hidden');
+                video.play();
+                
+                video.onended = () => { window.location.href = 'dashboard.html'; };
+            } else {
+                document.getElementById('msg').innerText = "Credenciales incorrectas socio.";
+            }
+        });
+    </script>
+</body>
+</html>
