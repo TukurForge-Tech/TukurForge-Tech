@@ -43,26 +43,25 @@
         <a href="#" class="block text-xs text-slate-600 mt-6 hover:text-cyan-500">¿Olvidaste tu contraseña?</a>
         <p id="msg" class="text-red-500 text-xs mt-4 font-bold"></p>
 
-        <div class="mt-12 pt-6 border-t border-slate-800 text-center">
-            <p class="text-[9px] text-slate-700">Desarrollado por <strong>TukurForge Tech</strong></p>
-            <p class="text-[9px] text-slate-700">División Tecnológica de <strong>H Levare Group</strong></p>
-            <p class="text-[9px] text-slate-800 mt-2">© 2026. Todos los derechos reservados.</p>
-            <p class="text-[9px] text-slate-800 italic">(Solicitud de Marca en Trámite ante IMPI)</p>
+        <div class="mt-12 pt-6 border-t border-slate-800 text-center text-[9px] text-slate-700">
+            <p>Desarrollado por <strong>TukurForge Tech</strong></p>
+            <p>División Tecnológica de <strong>H Levare Group</strong></p>
+            <p class="mt-2 text-slate-800 italic">© 2026. Derechos en trámite (IMPI)</p>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURACIÓN CORRECTA (PROYECTO ECHYPLR...) ---
-        const SUPABASE_URL = 'https://pcuopqvmucmhtcdeswxh.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjaHlwbHJib3htY2t4bGp0a2dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwODQxNTcsImV4cCI6MjA4ODY2MDE1N30.sS3yWvLoG3jcOj-eOWb4K9nIlUuAqBEIbSF9rECQ9dQ';
+        // Credenciales actualizadas del proyecto pcuopq...
+        const SUPABASE_URL = 'https://pcuopqvmucmhtcdeswxh.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjdW9wcXZtdWNtaHRjZGVzd3hoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTk0NTgsImV4cCI6MjA4OTQzNTQ1OH0.g1xfdTtbz4aNW_QF_JcwoM7DCmgRLDxF2Ik48I7fq2M';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const togglePassword = document.getElementById('togglePassword');
         const passwordInput = document.getElementById('pass');
 
         togglePassword.addEventListener('click', () => {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
             togglePassword.innerText = type === 'password' ? '👁️' : '🔒';
         });
 
@@ -72,20 +71,24 @@
             const passValue = document.getElementById('pass').value.trim();
             const msg = document.getElementById('msg');
 
-            msg.innerText = "Conectando con TukurForge...";
+            msg.innerText = "Conectando con la base de datos...";
             msg.style.color = "#22d3ee";
 
             try {
-                // Buscamos por el campo 'email' que SI existe en tu tabla usuarios_membresias
+                // Consulta a la tabla usuarios_membresias
                 const { data, error } = await _supabase
                     .from('usuarios_membresias')
                     .select('*, config_examenes(*)')
                     .eq('email', emailValue);
 
-                if (error) throw error;
+                if (error) {
+                    console.error("Error de Supabase:", error);
+                    msg.innerText = "Error: Asegúrate de desactivar RLS en Supabase.";
+                    return;
+                }
 
                 if (data && data.length > 0) {
-                    // Validamos si la contraseña coincide con HIJO o PADRE
+                    // Validar contraseña contra password_hijo o password_padre
                     const match = data.find(u => u.password_hijo === passValue || u.password_padre === passValue);
 
                     if (match) {
@@ -100,17 +103,16 @@
                         
                         video.onended = () => { window.location.href = 'dashboard.html'; };
                     } else {
-                        msg.innerText = "Contraseña Incorrecta socio.";
+                        msg.innerText = "Contraseña incorrecta socio.";
                         msg.style.color = "#ef4444";
                     }
                 } else {
-                    msg.innerText = "Usuario no registrado en el sistema.";
+                    msg.innerText = "Usuario no encontrado.";
                     msg.style.color = "#ef4444";
                 }
             } catch (err) {
-                console.error(err);
-                msg.innerText = "Error técnico. Revisa la consola.";
-                msg.style.color = "#f59e0b";
+                console.error("Error atrapado:", err);
+                msg.innerText = "Error técnico de conexión.";
             }
         });
     </script>
