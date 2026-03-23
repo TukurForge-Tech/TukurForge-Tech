@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control | SimuTukur</title>
+    <title>Mis Entrenamientos | SimuTukur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .card-glow:hover {
-            box-shadow: 0 0 20px rgba(34, 211, 238, 0.2);
-            border-color: #22d3ee;
-        }
+        .card-glow:hover { box-shadow: 0 0 20px rgba(34, 211, 238, 0.15); border-color: #22d3ee; }
         body { background-color: #050914; }
     </style>
 </head>
-<body class="text-white min-h-screen font-sans">
+<body class="text-white min-h-screen">
 
     <nav class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
@@ -21,48 +18,38 @@
                 <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur.jpeg" class="w-10 rounded-lg" alt="Logo">
                 <span class="font-black text-xl tracking-tighter text-cyan-500">SimuTukur</span>
             </div>
-            <div class="flex items-center gap-6">
-                <span id="user-display" class="hidden md:block text-xs font-mono text-slate-400"></span>
-                <button onclick="logout()" class="text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-widest transition-colors">
-                    Cerrar Sesión
-                </button>
-            </div>
+            <button onclick="logout()" class="text-[10px] font-bold text-red-500 hover:text-red-400 uppercase tracking-widest transition-colors">Cerrar Sesión</button>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto px-6 py-12">
         <header class="mb-12">
-            <h1 class="text-4xl font-black mb-2">¡Hola, Socio! 👋</h1>
-            <p class="text-slate-500">Selecciona el entrenamiento que deseas iniciar hoy.</p>
+            <h1 id="saludo" class="text-4xl font-black mb-2">¡Hola! 👋</h1>
+            <p id="user-mail" class="text-slate-500 font-mono text-xs"></p>
         </header>
 
-        <div id="grid-cursos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            </div>
-
-        <footer class="mt-20 pt-8 border-t border-slate-900 text-center">
-            <p class="text-[10px] text-slate-700 uppercase tracking-widest">
-                Desarrollado por TukurForge Tech | División de H Levare Group
-            </p>
-        </footer>
+        <div id="grid-cursos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
     </main>
 
     <script>
-        // 1. Verificar sesión
         const sessionEmail = localStorage.getItem('session_email');
         const misCursos = JSON.parse(localStorage.getItem('mis_cursos'));
 
-        if (!sessionEmail || !misCursos) {
-            window.location.href = 'index.html';
+        if (!sessionEmail || !misCursos) { window.location.href = 'index.html'; }
+
+        document.getElementById('user-mail').innerText = sessionEmail;
+
+        // Lógica de Saludo Dinámico
+        const nombreAlumno = misCursos[0].nombre_alumno;
+        if (nombreAlumno) {
+            const todosIguales = misCursos.every(c => c.nombre_alumno === nombreAlumno);
+            document.getElementById('saludo').innerText = todosIguales ? `¡Hola, ${nombreAlumno}! 👋` : "¡Hola! 👋";
         }
 
-        document.getElementById('user-display').innerText = sessionEmail;
-
-        // 2. Renderizar Tarjetas de Exámenes
+        // Renderizado de Tarjetas
         const grid = document.getElementById('grid-cursos');
-
         misCursos.forEach(item => {
             const info = item.config_examenes;
-            // Si el join falló o no hay info, usamos datos por defecto
             const inst = info ? info.institucion : "Examen";
             const area = info ? info.area : "General";
             const plan = info ? info.plan : "Básico";
@@ -71,39 +58,28 @@
 
             const card = document.createElement('div');
             card.className = "bg-slate-900/40 border border-slate-800 p-8 rounded-3xl card-glow transition-all flex flex-col justify-between";
-            
             card.innerHTML = `
                 <div>
                     <div class="flex justify-between items-start mb-6">
-                        <span class="px-3 py-1 bg-cyan-500/10 text-cyan-500 text-[10px] font-black rounded-full uppercase">
-                            Plan ${plan}
-                        </span>
+                        <span class="px-3 py-1 bg-cyan-500/10 text-cyan-500 text-[10px] font-black rounded-full uppercase">Plan ${plan}</span>
                         <span class="text-[10px] text-slate-600 font-mono">#${item.token_hex}</span>
                     </div>
                     <h2 class="text-2xl font-bold mb-1">${inst}</h2>
                     <p class="text-cyan-500 text-xs font-bold uppercase tracking-widest mb-4">${area}</p>
                     <p class="text-slate-400 text-sm leading-relaxed mb-6">${desc}</p>
                 </div>
-                
                 <div class="mt-4 pt-6 border-t border-slate-800/50">
                     <div class="flex justify-between items-center mb-6">
                         <span class="text-xs text-slate-500 italic">Intentos restantes:</span>
                         <span class="text-lg font-black ${intentos > 10 ? 'text-green-500' : 'text-yellow-500'}">${intentos}</span>
                     </div>
-                    <a href="examen.html?v=${item.token_hex}" class="block w-full bg-cyan-600 hover:bg-cyan-500 text-white text-center py-4 rounded-xl font-bold transition-all shadow-lg shadow-cyan-900/20">
-                        INGRESAR AL EXAMEN
-                    </a>
+                    <a href="examen.html?v=${item.token_hex}" class="block w-full bg-cyan-600 hover:bg-cyan-500 text-white text-center py-4 rounded-xl font-bold transition-all shadow-lg shadow-cyan-900/20">INGRESAR</a>
                 </div>
             `;
             grid.appendChild(card);
         });
 
-        function logout() {
-            if(confirm("¿Cerrar sesión, socio?")) {
-                localStorage.clear();
-                window.location.href = 'index.html';
-            }
-        }
+        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
     </script>
 </body>
 </html>
