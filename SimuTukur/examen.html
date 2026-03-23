@@ -2,152 +2,152 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entrenamiento en Curso | SimuTukur</title>
+    <title>Simulador Oficial | TukurForge</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        .proctoring-active { border: 2px solid #ef4444; position: relative; }
-        .proctoring-active::after { content: "• GRABANDO"; position: absolute; top: 4px; right: 8px; color: #ef4444; font-size: 7px; font-weight: 900; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-        body { background-color: #050914; color: #f1f5f9; }
+        body { background-color: #050914; color: white; overflow: hidden; height: 100vh; }
+        .grid-layout { display: grid; grid-template-columns: 320px 1fr; height: 100vh; }
+        .uam-hide { display: none !important; }
+        .audio-bar-container { background: #1e293b; height: 6px; border-radius: 10px; overflow: hidden; }
+        #audio-fill { background: #22d3ee; height: 100%; width: 0%; transition: width 0.1s; }
+        .proctoring-box { border: 2px solid #ef4444; position: relative; }
     </style>
 </head>
-<body class="min-h-screen">
+<body>
 
-    <header class="max-w-6xl mx-auto p-6 flex justify-between items-center bg-[#050914]/90 sticky top-0 z-50 backdrop-blur-md border-b border-slate-800/50">
-        <div class="flex items-center gap-6">
-            <video id="webcam" autoplay muted playsinline class="w-24 h-24 rounded-2xl bg-black object-cover proctoring-active shadow-2xl shadow-red-900/20"></video>
-            <div>
-                <h2 id="timer" class="text-3xl font-black text-cyan-500 font-mono">00:00:00</h2>
-                <p id="info-hijo" class="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Iniciando sesión segura...</p>
+    <div id="master-container" class="grid-layout">
+        
+        <aside class="bg-slate-900/50 border-r border-slate-800 p-6 flex flex-col gap-8">
+            <div id="timer-box">
+                <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Tiempo Restante</p>
+                <h2 id="timer" class="text-4xl font-mono text-cyan-400 font-bold">03:00:00</h2>
             </div>
-        </div>
-        <div class="text-right">
-            <p id="num-pregunta" class="text-xs font-bold text-slate-400">Preparando examen...</p>
-            <div class="w-48 h-1.5 bg-slate-800 rounded-full mt-2 overflow-hidden"><div id="progreso" class="h-full bg-cyan-500 transition-all duration-700" style="width: 0%"></div></div>
-        </div>
-    </header>
 
-    <main class="max-w-4xl mx-auto px-6 py-12" id="main-ui">
-        <div id="loading-box" class="text-center py-24">
-            <div class="animate-spin w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full mx-auto mb-6"></div>
-            <p class="text-slate-500 uppercase text-[10px] tracking-widest font-bold">Sincronizando con la red TukurForge...</p>
-        </div>
-
-        <div id="quiz-ui" class="hidden">
-            <div class="bg-slate-900/40 border border-slate-800/60 p-10 rounded-[2.5rem] shadow-2xl">
-                <div class="flex justify-between items-center mb-10">
-                    <span id="materia" class="px-4 py-1.5 bg-cyan-500/10 text-cyan-500 text-[10px] font-black rounded-full uppercase tracking-widest border border-cyan-500/30">MATERIA</span>
-                    <span id="nivel-tag" class="text-[9px] text-slate-600 font-bold uppercase tracking-widest italic">Nivel 1: Principiante</span>
+            <div id="camera-section" class="flex flex-col gap-4">
+                <div class="proctoring-box rounded-2xl overflow-hidden shadow-2xl">
+                    <video id="webcam" autoplay muted playsinline class="w-full aspect-video object-cover bg-black"></video>
                 </div>
                 
-                <h3 id="texto-pregunta" class="text-2xl font-medium leading-relaxed text-slate-200 mb-12">¿Cargando reactivo?</h3>
-                
-                <div id="grid-opciones" class="grid grid-cols-1 gap-4">
+                <div>
+                    <p class="text-[9px] text-slate-500 uppercase font-bold mb-2">Monitor de Audio</p>
+                    <div class="audio-bar-container">
+                        <div id="audio-fill"></div>
                     </div>
+                </div>
             </div>
 
-            <button id="btn-validar" onclick="validarRespuesta()" disabled class="w-full mt-8 bg-slate-800 text-slate-500 py-5 rounded-2xl font-black uppercase tracking-widest transition-all cursor-not-allowed border border-slate-700/30">
-                Confirmar e Ir a la Siguiente
-            </button>
-        </div>
-    </main>
+            <div class="mt-auto pt-6 border-t border-slate-800">
+                <p id="hijo-nombre" class="text-xs font-bold text-slate-400 italic">Sesión Segura</p>
+                <p class="text-[9px] text-slate-600 uppercase mt-1">ID: TUKUR-PRO-2026</p>
+            </div>
+        </aside>
+
+        <main class="relative overflow-y-auto p-12">
+            <div id="loading" class="absolute inset-0 flex flex-col items-center justify-center bg-[#050914] z-50">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-cyan-500 mb-4"></div>
+                <p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Iniciando Red TukurForge...</p>
+            </div>
+
+            <div id="quiz-content" class="max-w-3xl mx-auto hidden">
+                <header class="mb-12">
+                    <span id="label-materia" class="px-3 py-1 bg-cyan-500/10 text-cyan-500 text-[10px] font-black rounded-full uppercase border border-cyan-500/20">MATERIA</span>
+                    <h1 id="txt-pregunta" class="text-2xl font-medium mt-6 leading-relaxed text-slate-100">Cargando...</h1>
+                </header>
+
+                <div id="opciones-grid" class="space-y-4">
+                    </div>
+
+                <footer class="mt-16 pt-8 border-t border-slate-800 flex justify-between items-center">
+                    <p id="progreso-txt" class="text-slate-500 text-sm">Pregunta 1 de --</p>
+                    <button id="btn-confirm" onclick="siguiente()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-600 px-12 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all">
+                        Confirmar y Siguiente
+                    </button>
+                </footer>
+            </div>
+        </main>
+    </div>
 
     <script>
-        // CONFIGURACIÓN SUPABASE
         const SUPABASE_URL = 'https://pcuopqvmucmhtcdeswxh.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjdW9wcXZtdWNtaHRjZGVzd3hoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTk0NTgsImV4cCI6MjA4OTQzNTQ1OH0.g1xfdTtbz4aNW_QF_JcwoM7DCmgRLDxF2Ik48I7fq2M';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let reactivos = [];
-        let index = 0;
-        let seleccion = null;
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('v');
+        let reactivos = [];
+        let index = 0;
 
-        // Obtener datos del alumno logueado
-        const misCursos = JSON.parse(localStorage.getItem('mis_cursos'));
-        const cursoActual = misCursos.find(c => c.token_hex === token);
-        const alumnoNombre = cursoActual ? cursoActual.nombre_alumno : "Socio";
-
-        document.getElementById('info-hijo').innerText = `Entrenando: ${alumnoNombre}`;
-
-        // 1. Detección de Trampa (Cambio de Pestaña)
-        document.addEventListener('visibilitychange', async () => {
-            if (document.hidden) {
-                await _supabase.from('bitacora_vigilancia').insert({
-                    email: localStorage.getItem('session_email'),
-                    token_hex: token,
-                    nombre_alumno: alumnoNombre,
-                    evento: "ALERTA: El alumno salió de la pantalla del examen."
-                });
+        async function start() {
+            // 1. Detectar UAM para ocultar cámara/timer
+            const { data: config } = await _supabase.from('config_examenes').select('institucion').eq('token_hex', token).single();
+            if (config?.institucion === 'UAM') {
+                document.getElementById('timer-box').classList.add('uam-hide');
+                document.getElementById('camera-section').classList.add('uam-hide');
             }
-        });
 
-        // 2. Iniciar Cámara y Micrófono
-        async function initCamera() {
+            // 2. Iniciar Proctoring (Audio/Video)
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('webcam').srcObject = stream;
-                cargarPreguntas();
-            } catch (err) {
-                alert("Socio, activa la cámara para poder entrenar.");
-                window.location.href = 'dashboard.html';
-            }
+                setupAudio(stream);
+                load();
+            } catch (e) { alert("Socio, activa la cámara para continuar."); }
         }
 
-        // 3. Cargar Reactivos Aleatorios
-        async function cargarPreguntas() {
-            const { data, error } = await _supabase
-                .from('reactivos')
-                .select('*')
-                .eq('token_hex', token)
-                .limit(20);
+        function setupAudio(stream) {
+            const ctx = new AudioContext();
+            const src = ctx.createMediaStreamSource(stream);
+            const anl = ctx.createAnalyser();
+            src.connect(anl);
+            const data = new Uint8Array(anl.frequencyBinCount);
+            function update() {
+                anl.getByteFrequencyData(data);
+                const avg = data.reduce((a,b) => a+b) / data.length;
+                document.getElementById('audio-fill').style.width = Math.min(avg * 4, 100) + "%";
+                requestAnimationFrame(update);
+            }
+            update();
+        }
 
+        async function load() {
+            const { data } = await _supabase.from('reactivos').select('*').eq('token_hex', token);
             if (data && data.length > 0) {
                 reactivos = data;
-                document.getElementById('loading-box').classList.add('hidden');
-                document.getElementById('quiz-ui').classList.remove('hidden');
-                renderPregunta();
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('quiz-content').classList.remove('hidden');
+                render();
             }
         }
 
-        function renderPregunta() {
+        function render() {
             const r = reactivos[index];
-            document.getElementById('materia').innerText = r.materia;
-            document.getElementById('texto-pregunta').innerText = r.pregunta;
-            document.getElementById('num-pregunta').innerText = `Pregunta ${index + 1} de ${reactivos.length}`;
-            
-            // ALEATORIZAR OPCIONES
+            document.getElementById('label-materia').innerText = r.materia;
+            document.getElementById('txt-pregunta').innerText = r.pregunta;
+            document.getElementById('progreso-txt').innerText = `Pregunta ${index+1} de ${reactivos.length}`;
+
+            // SHUFFLE: Barajar opciones
             const ops = [
-                { id: 'a', t: r.opcion_a },
-                { id: 'b', t: r.opcion_b },
-                { id: 'c', t: r.opcion_c },
-                { id: 'd', t: r.opcion_d }
+                { k: 'a', v: r.opcion_a }, { k: 'b', v: r.opcion_b },
+                { k: 'c', v: r.opcion_c }, { k: 'd', v: r.opcion_d }
             ].sort(() => Math.random() - 0.5);
 
-            const grid = document.getElementById('grid-opciones');
+            const grid = document.getElementById('opciones-grid');
             grid.innerHTML = '';
-
             ops.forEach(o => {
                 const btn = document.createElement('button');
-                btn.className = "w-full text-left p-6 rounded-2xl border border-slate-800 bg-black/30 hover:border-cyan-500 transition-all text-slate-400 hover:text-white flex items-center gap-6 group";
+                btn.className = "w-full text-left p-6 rounded-2xl border border-slate-800 bg-black/20 hover:border-cyan-500 hover:bg-cyan-500/5 transition-all text-slate-300 flex items-center gap-5";
+                btn.innerHTML = `<span class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-500 tracking-tighter italic">?</span> ${o.v}`;
                 btn.onclick = () => {
-                    seleccion = o.id;
-                    document.querySelectorAll('#grid-opciones button').forEach(b => b.classList.remove('border-cyan-500', 'bg-cyan-500/5'));
-                    btn.classList.add('border-cyan-500', 'bg-cyan-500/5');
-                    const v = document.getElementById('btn-validar');
-                    v.disabled = false;
-                    v.classList.replace('bg-slate-800', 'bg-cyan-600');
-                    v.classList.replace('text-slate-500', 'text-white');
+                    document.getElementById('btn-confirm').disabled = false;
+                    document.querySelectorAll('#opciones-grid button').forEach(el => el.classList.remove('border-cyan-500', 'bg-cyan-500/10'));
+                    btn.classList.add('border-cyan-500', 'bg-cyan-500/10');
                 };
-                btn.innerHTML = `<span class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-xs group-hover:bg-cyan-500 group-hover:text-black transition-all">?</span> ${o.t}`;
                 grid.appendChild(btn);
             });
         }
 
-        initCamera();
+        start();
     </script>
 </body>
 </html>
