@@ -17,7 +17,7 @@
 
     <div id="splash-screen" class="hidden">
         <video id="splash-video" class="w-full max-w-2xl" muted playsinline>
-            <source src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur.mp4" type="video/mp4">
+            <source src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/TukurForge_Tech/TukurForge_Tech_Negro.mp4" type="video/mp4">
         </video>
     </div>
 
@@ -40,7 +40,6 @@
             </button>
         </form>
         
-        <a href="#" class="block text-xs text-slate-600 mt-6 hover:text-cyan-500">¿Olvidaste tu contraseña?</a>
         <p id="msg" class="text-red-500 text-xs mt-4 font-bold"></p>
 
         <div class="mt-12 pt-6 border-t border-slate-800 text-center text-[9px] text-slate-700">
@@ -64,38 +63,27 @@
             togglePassword.innerText = type === 'password' ? '👁️' : '🔒';
         });
 
-        // --- AQUÍ PEGAMOS EL SCRIPT REFORZADO ---
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const emailValue = document.getElementById('email').value.trim();
             const passValue = document.getElementById('pass').value.trim();
             const msg = document.getElementById('msg');
 
-            msg.innerText = "Validando credenciales...";
+            msg.innerText = "Conectando con TukurForge...";
             msg.style.color = "#22d3ee";
 
             try {
-                // PASO 1: Login directo sin joins para evitar errores de RLS/FK
-                const { data: usuarioData, error: userError } = await _supabase
+                const { data, error } = await _supabase
                     .from('usuarios_membresias')
-                    .select('*')
+                    .select('*, config_examenes(*)')
                     .eq('email', emailValue);
 
-                if (userError) throw userError;
-
-                if (usuarioData && usuarioData.length > 0) {
-                    // Validamos la contraseña contra cualquiera de los registros encontrados
-                    const match = usuarioData.find(u => u.password_hijo === passValue || u.password_padre === passValue);
+                if (data && data.length > 0) {
+                    const match = data.find(u => u.password_hijo === passValue || u.password_padre === passValue);
 
                     if (match) {
-                        // PASO 2: Intentamos traer los detalles de los exámenes vinculados
-                        const { data: cursosDetalle } = await _supabase
-                            .from('usuarios_membresias')
-                            .select('*, config_examenes(*)')
-                            .eq('email', emailValue);
-
                         localStorage.setItem('session_email', emailValue);
-                        localStorage.setItem('mis_cursos', JSON.stringify(cursosDetalle || usuarioData));
+                        localStorage.setItem('mis_cursos', JSON.stringify(data));
                         
                         document.getElementById('login-box').classList.add('hidden');
                         const splash = document.getElementById('splash-screen');
@@ -113,9 +101,7 @@
                     msg.style.color = "#ef4444";
                 }
             } catch (err) {
-                console.error("Detalle del error:", err);
-                msg.innerText = "Error de conexión. Verifica el SQL Editor.";
-                msg.style.color = "#f59e0b";
+                msg.innerText = "Error técnico de conexión.";
             }
         });
     </script>
