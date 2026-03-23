@@ -31,25 +31,28 @@
             <input type="email" id="email" placeholder="Correo Electrónico" required class="w-full bg-black/60 border border-slate-700 p-4 rounded-xl text-center outline-none focus:border-cyan-500">
             
             <div class="relative w-full">
-                <input type="password" id="pass" placeholder="Contraseña" required class="w-full bg-black/60 border border-slate-700 p-4 rounded-xl text-center outline-none focus:border-cyan-500">
+                <input type="password" id="pass" placeholder="Contraseña" required class="w-full bg-black/60 border border-slate-700 p-4 rounded-xl text-center outline-none focus:border-cyan-500 text-cyan-400 font-mono">
                 <button type="button" id="togglePassword" class="eye-btn text-slate-600 hover:text-cyan-500 transition-colors">👁️</button>
             </div>
 
-            <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 rounded-xl transition-all shadow-lg shadow-cyan-500/20">
+            <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 rounded-xl transition-all shadow-lg shadow-cyan-500/20 uppercase tracking-widest text-xs">
                 INICIAR ENTRENAMIENTO
             </button>
         </form>
         
-        <p id="msg" class="text-red-500 text-xs mt-4 font-bold"></p>
+        <a href="#" class="block text-[10px] text-slate-600 mt-6 hover:text-cyan-500 uppercase tracking-widest font-bold">¿Olvidaste tu contraseña?</a>
+        <p id="msg" class="text-red-500 text-xs mt-6 font-bold"></p>
 
         <div class="mt-12 pt-6 border-t border-slate-800 text-center text-[9px] text-slate-700">
             <p>Desarrollado por <strong>TukurForge Tech</strong></p>
             <p>División Tecnológica de <strong>H Levare Group</strong></p>
-            <p class="mt-2 text-slate-800 italic">© 2026. Derechos en trámite (IMPI)</p>
+            <p class="mt-2 text-slate-800 italic">© 2026. Todos los derechos reservados.</p>
+            <p class="text-slate-800 italic">(Solicitud de Marca en Trámite ante IMPI)</p>
         </div>
     </div>
 
     <script>
+        // CREDENCIALES DEL PROYECTO PCUOPQ...
         const SUPABASE_URL = 'https://pcuopqvmucmhtcdeswxh.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjdW9wcXZtdWNtaHRjZGVzd3hoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTk0NTgsImV4cCI6MjA4OTQzNTQ1OH0.g1xfdTtbz4aNW_QF_JcwoM7DCmgRLDxF2Ik48I7fq2M';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -69,22 +72,28 @@
             const passValue = document.getElementById('pass').value.trim();
             const msg = document.getElementById('msg');
 
-            msg.innerText = "Conectando con TukurForge...";
+            msg.innerText = "Sincronizando con la red TukurForge...";
             msg.style.color = "#22d3ee";
 
             try {
+                // CONSULTA REFORZADA: Busca por email y trae la configuración de exámenes asociada
                 const { data, error } = await _supabase
                     .from('usuarios_membresias')
                     .select('*, config_examenes(*)')
                     .eq('email', emailValue);
 
+                if (error) throw error;
+
                 if (data && data.length > 0) {
+                    // Validamos la contraseña contra password_hijo o password_padre
                     const match = data.find(u => u.password_hijo === passValue || u.password_padre === passValue);
 
                     if (match) {
+                        // Guardamos sesión y el paquete completo de cursos para el Dashboard Híbrido
                         localStorage.setItem('session_email', emailValue);
                         localStorage.setItem('mis_cursos', JSON.stringify(data));
                         
+                        // EFECTO SPLASH Y SALIDA
                         document.getElementById('login-box').classList.add('hidden');
                         const splash = document.getElementById('splash-screen');
                         const video = document.getElementById('splash-video');
@@ -97,11 +106,13 @@
                         msg.style.color = "#ef4444";
                     }
                 } else {
-                    msg.innerText = "Usuario no encontrado.";
+                    msg.innerText = "Usuario no registrado en el sistema.";
                     msg.style.color = "#ef4444";
                 }
             } catch (err) {
-                msg.innerText = "Error técnico de conexión.";
+                console.error("Error técnico:", err);
+                msg.innerText = "Error de red. Verifica tu conexión.";
+                msg.style.color = "#f59e0b";
             }
         });
     </script>
