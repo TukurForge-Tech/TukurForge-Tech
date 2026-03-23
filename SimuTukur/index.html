@@ -16,7 +16,7 @@
 <body class="bg-[#050914] text-white min-h-screen flex items-center justify-center p-6">
 
     <div id="splash-screen" class="hidden">
-        <video id="splash-video" class="w-full max-w-2xl" muted playsinline>
+        <video id="splash-video" class="w-full max-w-2xl" muted playsinline shadow-2xl>
             <source src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/TukurForge_Tech/TukurForge_Tech_Negro.mp4" type="video/mp4">
         </video>
     </div>
@@ -24,14 +24,14 @@
     <div class="max-w-md w-full login-card p-10 rounded-3xl border border-slate-800 shadow-2xl text-center relative" id="login-box">
         <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur.jpeg" alt="Logo" class="w-24 mx-auto mb-10 rounded-xl">
         
-        <h1 class="text-3xl font-bold text-slate-100 mb-2">Portal de Acceso</h1>
-        <p class="text-slate-500 text-[10px] uppercase tracking-[0.2em] mb-10 font-bold">Inicia Sesión con tus Credenciales</p>
+        <h1 class="text-3xl font-bold text-slate-100 mb-2 tracking-tight">Portal de Acceso</h1>
+        <p class="text-slate-500 text-[10px] uppercase tracking-[0.2em] mb-10 font-bold italic">Sincronización TukurForge</p>
 
         <form id="login-form" class="space-y-4">
-            <input type="email" id="email" placeholder="Correo Electrónico" required class="w-full bg-black/60 border border-slate-700 p-4 rounded-xl text-center outline-none focus:border-cyan-500">
+            <input type="email" id="email" placeholder="Correo Electrónico" required class="w-full bg-black/60 border border-slate-700 p-4 rounded-xl text-center outline-none focus:border-cyan-500 transition-all">
             
             <div class="relative w-full">
-                <input type="password" id="pass" placeholder="Contraseña" required class="w-full bg-black/60 border border-slate-700 p-4 rounded-xl text-center outline-none focus:border-cyan-500 text-cyan-400 font-mono">
+                <input type="password" id="pass" placeholder="Contraseña" required class="w-full bg-black/60 border border-slate-700 p-4 rounded-xl text-center outline-none focus:border-cyan-500 text-cyan-400 font-mono tracking-widest">
                 <button type="button" id="togglePassword" class="eye-btn text-slate-600 hover:text-cyan-500 transition-colors">👁️</button>
             </div>
 
@@ -40,7 +40,7 @@
             </button>
         </form>
         
-        <a href="#" class="block text-[10px] text-slate-600 mt-6 hover:text-cyan-500 uppercase tracking-widest font-bold">¿Olvidaste tu contraseña?</a>
+        <a href="#" class="block text-[9px] text-slate-600 mt-6 hover:text-cyan-500 uppercase tracking-widest font-bold transition-colors">¿Olvidaste tu contraseña?</a>
         <p id="msg" class="text-red-500 text-xs mt-6 font-bold"></p>
 
         <div class="mt-12 pt-6 border-t border-slate-800 text-center text-[9px] text-slate-700">
@@ -52,7 +52,7 @@
     </div>
 
     <script>
-        // CREDENCIALES DEL PROYECTO PCUOPQ...
+        // CONFIGURACIÓN DE CONEXIÓN PROYECTO PCUOPQ...
         const SUPABASE_URL = 'https://pcuopqvmucmhtcdeswxh.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjdW9wcXZtdWNtaHRjZGVzd3hoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTk0NTgsImV4cCI6MjA4OTQzNTQ1OH0.g1xfdTtbz4aNW_QF_JcwoM7DCmgRLDxF2Ik48I7fq2M';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -72,28 +72,31 @@
             const passValue = document.getElementById('pass').value.trim();
             const msg = document.getElementById('msg');
 
-            msg.innerText = "Sincronizando con la red TukurForge...";
+            msg.innerText = "Validando acceso en la red...";
             msg.style.color = "#22d3ee";
 
             try {
-                // CONSULTA REFORZADA: Busca por email y trae la configuración de exámenes asociada
+                // Consulta con Join para traer datos del examen de Karev y Halmir
                 const { data, error } = await _supabase
                     .from('usuarios_membresias')
                     .select('*, config_examenes(*)')
                     .eq('email', emailValue);
 
-                if (error) throw error;
+                if (error) {
+                    // DIAGNÓSTICO: Si hay error de red o CORS, este alert nos dirá el porqué
+                    alert("Error de Supabase: " + error.message + " (Código: " + error.code + ")");
+                    throw error;
+                }
 
                 if (data && data.length > 0) {
-                    // Validamos la contraseña contra password_hijo o password_padre
+                    // Validar contra password_hijo o password_padre
                     const match = data.find(u => u.password_hijo === passValue || u.password_padre === passValue);
 
                     if (match) {
-                        // Guardamos sesión y el paquete completo de cursos para el Dashboard Híbrido
                         localStorage.setItem('session_email', emailValue);
                         localStorage.setItem('mis_cursos', JSON.stringify(data));
                         
-                        // EFECTO SPLASH Y SALIDA
+                        // EFECTO SPLASH
                         document.getElementById('login-box').classList.add('hidden');
                         const splash = document.getElementById('splash-screen');
                         const video = document.getElementById('splash-video');
@@ -106,12 +109,12 @@
                         msg.style.color = "#ef4444";
                     }
                 } else {
-                    msg.innerText = "Usuario no registrado en el sistema.";
+                    msg.innerText = "Usuario no registrado.";
                     msg.style.color = "#ef4444";
                 }
             } catch (err) {
-                console.error("Error técnico:", err);
-                msg.innerText = "Error de red. Verifica tu conexión.";
+                console.error("Detalle del error técnico:", err);
+                msg.innerText = "Error de red. Verifica CORS en Supabase.";
                 msg.style.color = "#f59e0b";
             }
         });
