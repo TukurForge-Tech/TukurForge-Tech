@@ -25,18 +25,18 @@
                     </div>
                     <div>
                         <p class="text-[10px] text-cyan-500 font-black uppercase tracking-tighter">Coach SimuTukur</p>
-                        <p id="coach-status" class="text-xs font-bold text-slate-300">Analizando nivel...</p>
+                        <p id="coach-status" class="text-xs font-bold text-slate-300">Analizando desempeño...</p>
                     </div>
                 </div>
             </div>
 
             <div id="coach-messages" class="flex-1 overflow-y-auto p-6 space-y-4">
-    <div class="chat-bubble p-4 text-[11px] leading-relaxed text-slate-300">
-        ¡Bienvenido a tu sesión de entrenamiento! Hoy nos enfocaremos en dominar el nivel 
-        <span id="display-nivel" class="text-cyan-400 font-bold">--</span>. 
-        Mantén la concentración y analiza bien cada opción.
-    </div>
-</div>
+                <div class="chat-bubble p-4 text-[11px] leading-relaxed text-slate-300">
+                    ¡Bienvenido a tu sesión de entrenamiento! Hoy nos enfocaremos en dominar el nivel 
+                    <span id="display-nivel" class="text-cyan-400 font-bold">--</span>. 
+                    Mantén la concentración y analiza bien cada opción.
+                </div>
+            </div>
 
             <div class="p-6 bg-slate-950 border-t border-slate-800">
                 <div class="mb-4">
@@ -61,8 +61,7 @@
                     <h1 id="txt-pregunta" class="text-2xl font-medium mt-6 leading-relaxed text-slate-100">--</h1>
                 </header>
 
-                <div id="opciones-grid" class="space-y-4">
-                    </div>
+                <div id="opciones-grid" class="space-y-4"></div>
 
                 <footer class="mt-16 pt-8 border-t border-slate-800 flex justify-between items-center">
                     <div>
@@ -93,14 +92,11 @@
 
         document.getElementById('display-nivel').innerText = nivel == "1" ? "Principiante" : nivel == "2" ? "Intermedio" : "Avanzado";
 
-async function init() {
+        async function init() {
             try {
-                // 1. Cámara socio
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 document.getElementById('webcam').srcObject = stream;
 
-                // 2. Cargar reactivos (Filtramos por nivel)
-                // Usamos .eq('nivel', nivel) para que jale los que corresponden
                 const { data, error } = await _supabase
                     .from('reactivos')
                     .select('*')
@@ -113,13 +109,14 @@ async function init() {
                     document.getElementById('quiz-ui').classList.remove('hidden');
                     renderQuestion();
                 } else {
-                    alert("No hay reactivos para este nivel aún, socio.");
+                    alert("No hay reactivos para este nivel aún.");
                 }
             } catch (err) {
                 console.error(err);
-                alert("Socio, activa la cámara para que la IA te valide.");
+                alert("Por favor, active la cámara para que el sistema valide su identidad.");
             }
-        } // <--- ASEGÚRATE QUE ESTA LLAVE CIERRE TODO EL BLOQUE
+        }
+
         function renderQuestion() {
             const r = reactivos[index];
             document.getElementById('label-materia').innerText = r.materia;
@@ -127,7 +124,6 @@ async function init() {
             document.getElementById('progreso-txt').innerText = `Pregunta ${index + 1} de ${reactivos.length}`;
             document.getElementById('reactivo-id').innerText = r.id.split('-')[0];
             
-            // Lógica Shuffle: Mezclamos para que no memoricen la A, B, C...
             const opciones = [
                 { id: 'A', texto: r.opcion_a },
                 { id: 'B', texto: r.opcion_b },
@@ -156,29 +152,24 @@ async function init() {
         }
 
         function procesarRespuesta() {
-    const correcto = reactivos[index].respuesta_correcta;
-    
-    if (seleccionActual === correcto) {
-        aciertos++;
-        // Mensaje profesional sin la palabra "socio"
-        coachHabla("✅ ¡Excelente desempeño! Has demostrado dominio en este tema.");
-    } else {
-        // Mensaje técnico de análisis de error
-        coachHabla(`❌ Respuesta incorrecta. Análisis del error: ${reactivos[index].explicacion_ia}`);
-    }
+            const correcto = reactivos[index].respuesta_correcta;
+            if (seleccionActual === correcto) {
+                aciertos++;
+                coachHabla("✅ ¡Excelente desempeño! Has demostrado dominio en este tema.");
+            } else {
+                coachHabla(`❌ Respuesta incorrecta. Análisis del error: ${reactivos[index].explicacion_ia}`);
+            }
+            index++;
+            seleccionActual = null;
+            document.getElementById('btn-confirm').disabled = true;
+            if (index < reactivos.length) {
+                renderQuestion();
+            } else {
+                finalizarExamen();
+            }
+        }
 
-    // Aquí sumamos 1 para que 'renderQuestion()' sepa que debe mostrar la siguiente
-    index++; 
-    
-    seleccionActual = null;
-    document.getElementById('btn-confirm').disabled = true;
-
-    if (index < reactivos.length) {
-        renderQuestion();
-    } else {
-        finalizarExamen();
-    }
-}
+        function coachHabla(texto) {
             const container = document.getElementById('coach-messages');
             const div = document.createElement('div');
             div.className = "chat-bubble p-4 text-[11px] leading-relaxed text-slate-300 border-l-2 border-cyan-500 bg-cyan-500/5 transition-all";
@@ -189,7 +180,7 @@ async function init() {
 
         function finalizarExamen() {
             const final = (aciertos / reactivos.length) * 100;
-            coachHabla(`🏆 Examen terminado. Lograste un ${final}% de aciertos.`);
+            coachHabla(`🏆 Entrenamiento finalizado. Tu puntaje es de ${final}%.`);
             setTimeout(() => {
                 window.location.href = `dashboard.html?res=${final}`;
             }, 3000);
