@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Entrenamientos | SimuTukur</title>
+    <title>Panel de Control | SimuTukur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .card-glow:hover { box-shadow: 0 0 20px rgba(34, 211, 238, 0.15); border-color: #22d3ee; }
+        .lock-overlay { background: rgba(5, 9, 20, 0.8); backdrop-blur: 4px; }
         body { background-color: #050914; }
     </style>
 </head>
 <body class="text-white min-h-screen">
-
     <nav class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
@@ -23,61 +23,86 @@
     </nav>
 
     <main class="max-w-7xl mx-auto px-6 py-12">
-        <header class="mb-12">
-            <h1 id="saludo" class="text-4xl font-black mb-2">¡Hola! 👋</h1>
-            <p id="user-mail" class="text-slate-500 font-mono text-xs"></p>
+        <header class="mb-12 flex justify-between items-end">
+            <div>
+                <h1 id="saludo" class="text-4xl font-black mb-2">¡Hola! 👋</h1>
+                <p id="user-mail" class="text-slate-500 font-mono text-xs"></p>
+            </div>
+            <div class="text-right">
+                <span class="block text-[10px] text-slate-500 uppercase font-black">Tu Progreso General</span>
+                <div class="w-48 h-2 bg-slate-800 rounded-full mt-2 overflow-hidden">
+                    <div id="global-progress" class="h-full bg-cyan-500 transition-all" style="width: 0%"></div>
+                </div>
+            </div>
         </header>
 
         <div id="grid-cursos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
     </main>
 
+    <div id="modal-niveles" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-6">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-8">
+            <h3 class="text-2xl font-bold mb-2">Selecciona tu Nivel</h3>
+            <p class="text-slate-400 text-xs mb-8">Debes superar el porcentaje mínimo para desbloquear el siguiente reto.</p>
+            
+            <div class="space-y-4" id="lista-niveles">
+                <button onclick="irExamen(1)" class="w-full p-5 rounded-2xl bg-slate-800 border border-slate-700 hover:border-cyan-500 transition-all flex justify-between items-center group">
+                    <div class="text-left">
+                        <span class="block text-cyan-500 font-black text-[10px] uppercase">Fase 1</span>
+                        <span class="text-lg font-bold">Principiante</span>
+                    </div>
+                    <span class="text-xs text-slate-500 font-bold uppercase tracking-widest group-hover:text-cyan-400">Habilitado</span>
+                </button>
+
+                <div class="relative group">
+                    <button disabled class="w-full p-5 rounded-2xl bg-slate-950 border border-slate-900 flex justify-between items-center opacity-50 cursor-not-allowed">
+                        <div class="text-left">
+                            <span class="block text-slate-600 font-black text-[10px] uppercase">Fase 2</span>
+                            <span class="text-lg font-bold">Intermedio</span>
+                        </div>
+                        <span class="text-xl">🔒</span>
+                    </button>
+                    <div class="absolute -top-2 -right-2 bg-red-500 text-[8px] font-black px-2 py-1 rounded-md uppercase">Requiere 70% N1</div>
+                </div>
+            </div>
+            
+            <button onclick="cerrarModal()" class="w-full mt-8 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:text-white">Cancelar</button>
+        </div>
+    </div>
+
     <script>
         const sessionEmail = localStorage.getItem('session_email');
         const misCursos = JSON.parse(localStorage.getItem('mis_cursos'));
+        let tokenActivo = null;
 
         if (!sessionEmail || !misCursos) { window.location.href = 'index.html'; }
-
         document.getElementById('user-mail').innerText = sessionEmail;
 
-        // Lógica de Saludo Dinámico
-        const nombreAlumno = misCursos[0].nombre_alumno;
-        if (nombreAlumno) {
-            const todosIguales = misCursos.every(c => c.nombre_alumno === nombreAlumno);
-            document.getElementById('saludo').innerText = todosIguales ? `¡Hola, ${nombreAlumno}! 👋` : "¡Hola! 👋";
-        }
-
-        // Renderizado de Tarjetas
         const grid = document.getElementById('grid-cursos');
         misCursos.forEach(item => {
             const info = item.config_examenes;
-            const inst = info ? info.institucion : "Examen";
-            const area = info ? info.area : "General";
-            const plan = info ? info.plan : "Básico";
-            const desc = info ? info.descripcion : "Simulacro de admisión";
-            const intentos = item.intentos_simulacro_restantes || 0;
-
             const card = document.createElement('div');
             card.className = "bg-slate-900/40 border border-slate-800 p-8 rounded-3xl card-glow transition-all flex flex-col justify-between";
             card.innerHTML = `
                 <div>
-                    <div class="flex justify-between items-start mb-6">
-                        <span class="px-3 py-1 bg-cyan-500/10 text-cyan-500 text-[10px] font-black rounded-full uppercase">Plan ${plan}</span>
-                        <span class="text-[10px] text-slate-600 font-mono">#${item.token_hex}</span>
-                    </div>
-                    <h2 class="text-2xl font-bold mb-1">${inst}</h2>
-                    <p class="text-cyan-500 text-xs font-bold uppercase tracking-widest mb-4">${area}</p>
-                    <p class="text-slate-400 text-sm leading-relaxed mb-6">${desc}</p>
+                    <span class="px-3 py-1 bg-cyan-500/10 text-cyan-500 text-[10px] font-black rounded-full uppercase">Plan ${info.plan}</span>
+                    <h2 class="text-2xl font-bold mt-4 mb-1">${info.institucion}</h2>
+                    <p class="text-cyan-500 text-xs font-bold uppercase tracking-widest mb-6">${info.area}</p>
                 </div>
-                <div class="mt-4 pt-6 border-t border-slate-800/50">
-                    <div class="flex justify-between items-center mb-6">
-                        <span class="text-xs text-slate-500 italic">Intentos restantes:</span>
-                        <span class="text-lg font-black ${intentos > 10 ? 'text-green-500' : 'text-yellow-500'}">${intentos}</span>
-                    </div>
-                    <a href="examen.html?v=${item.token_hex}" class="block w-full bg-cyan-600 hover:bg-cyan-500 text-white text-center py-4 rounded-xl font-bold transition-all shadow-lg shadow-cyan-900/20">INGRESAR</a>
-                </div>
+                <button onclick="mostrarNiveles('${item.token_hex}')" class="block w-full bg-cyan-600 hover:bg-cyan-500 text-white py-4 rounded-xl font-bold transition-all shadow-lg shadow-cyan-900/20">INGRESAR</button>
             `;
             grid.appendChild(card);
         });
+
+        function mostrarNiveles(token) {
+            tokenActivo = token;
+            document.getElementById('modal-niveles').classList.remove('hidden');
+        }
+
+        function cerrarModal() { document.getElementById('modal-niveles').classList.add('hidden'); }
+
+        function irExamen(nivel) {
+            window.location.href = `examen.html?v=${tokenActivo}&n=${nivel}`;
+        }
 
         function logout() { localStorage.clear(); window.location.href = 'index.html'; }
     </script>
