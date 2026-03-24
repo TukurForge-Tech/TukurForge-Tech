@@ -93,13 +93,14 @@
 
         document.getElementById('display-nivel').innerText = nivel == "1" ? "Principiante" : nivel == "2" ? "Intermedio" : "Avanzado";
 
-        async function init() {
+async function init() {
             try {
                 // 1. Cámara socio
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 document.getElementById('webcam').srcObject = stream;
 
-                // 2. Cargar reactivos (Filtramos por nivel y tipo)
+                // 2. Cargar reactivos (Filtramos por nivel)
+                // Usamos .eq('nivel', nivel) para que jale los que corresponden
                 const { data, error } = await _supabase
                     .from('reactivos')
                     .select('*')
@@ -115,10 +116,10 @@
                     alert("No hay reactivos para este nivel aún, socio.");
                 }
             } catch (err) {
+                console.error(err);
                 alert("Socio, activa la cámara para que la IA te valide.");
             }
-        }
-
+        } // <--- ASEGÚRATE QUE ESTA LLAVE CIERRE TODO EL BLOQUE
         function renderQuestion() {
             const r = reactivos[index];
             document.getElementById('label-materia').innerText = r.materia;
