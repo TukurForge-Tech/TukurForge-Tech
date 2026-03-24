@@ -2,66 +2,73 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Simulador Oficial | TukurForge</title>
+    <title>Simulador Oficial | SimuTukur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #050914; color: white; overflow: hidden; height: 100vh; }
-        .grid-layout { display: grid; grid-template-columns: 320px 1fr; height: 100vh; }
-        .uam-hide { display: none !important; }
-        .audio-bar-container { background: #1e293b; height: 6px; border-radius: 10px; overflow: hidden; }
-        #audio-fill { background: #22d3ee; height: 100%; width: 0%; transition: width 0.1s; }
-        .proctoring-box { border: 2px solid #ef4444; position: relative; }
+        .grid-layout { display: grid; grid-template-columns: 350px 1fr; height: 100vh; }
+        .chat-bubble { background: rgba(34, 211, 238, 0.05); border: 1px solid rgba(34, 211, 238, 0.1); border-radius: 20px 20px 20px 0; }
+        .option-btn:hover { border-color: #22d3ee; background: rgba(34, 211, 238, 0.05); }
+        .option-selected { border-color: #22d3ee !important; background: rgba(34, 211, 238, 0.1) !important; }
     </style>
 </head>
 <body>
 
     <div id="master-container" class="grid-layout">
         
-        <aside class="bg-slate-900/50 border-r border-slate-800 p-6 flex flex-col gap-8">
-            <div id="timer-box">
-                <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Tiempo Restante</p>
-                <h2 id="timer" class="text-4xl font-mono text-cyan-400 font-bold">03:00:00</h2>
-            </div>
-
-            <div id="camera-section" class="flex flex-col gap-4">
-                <div class="proctoring-box rounded-2xl overflow-hidden shadow-2xl">
-                    <video id="webcam" autoplay muted playsinline class="w-full aspect-video object-cover bg-black"></video>
-                </div>
-                
-                <div>
-                    <p class="text-[9px] text-slate-500 uppercase font-bold mb-2">Monitor de Audio</p>
-                    <div class="audio-bar-container">
-                        <div id="audio-fill"></div>
+        <aside class="bg-slate-900 border-r border-slate-800 flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-slate-800 bg-slate-900/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                        <span class="text-xl">🤖</span>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-cyan-500 font-black uppercase tracking-tighter">Coach SimuTukur</p>
+                        <p id="coach-status" class="text-xs font-bold text-slate-300">Analizando nivel...</p>
                     </div>
                 </div>
             </div>
 
-            <div class="mt-auto pt-6 border-t border-slate-800">
-                <p id="hijo-nombre" class="text-xs font-bold text-slate-400 italic">Sesión Segura</p>
-                <p class="text-[9px] text-slate-600 uppercase mt-1">ID: TUKUR-PRO-2026</p>
+            <div id="coach-messages" class="flex-1 overflow-y-auto p-6 space-y-4">
+                <div class="chat-bubble p-4 text-[11px] leading-relaxed text-slate-300">
+                    ¡Qué onda socio! Vamos a darle con todo al nivel <span id="display-nivel" class="text-cyan-400 font-bold">--</span>. No te presiones, analiza bien cada opción.
+                </div>
+            </div>
+
+            <div class="p-6 bg-slate-950 border-t border-slate-800">
+                <div class="mb-4">
+                    <p class="text-[9px] text-slate-500 uppercase font-bold mb-1 tracking-widest">Cronómetro</p>
+                    <h2 id="timer" class="text-3xl font-mono text-slate-400">00:00:00</h2>
+                </div>
+                <div class="rounded-xl overflow-hidden border border-red-500/30">
+                    <video id="webcam" autoplay muted playsinline class="w-full aspect-video object-cover bg-black"></video>
+                </div>
             </div>
         </aside>
 
-        <main class="relative overflow-y-auto p-12">
-            <div id="loading" class="absolute inset-0 flex flex-col items-center justify-center bg-[#050914] z-50">
-                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-cyan-500 mb-4"></div>
-                <p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Iniciando Red TukurForge...</p>
+        <main class="relative overflow-y-auto p-12 bg-[#050914]">
+            <div id="loading-overlay" class="absolute inset-0 bg-[#050914] z-50 flex flex-col items-center justify-center">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-cyan-500 mb-4"></div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Sincronizando con SimuTukur...</p>
             </div>
 
-            <div id="quiz-content" class="max-w-3xl mx-auto hidden">
+            <div id="quiz-ui" class="max-w-3xl mx-auto hidden">
                 <header class="mb-12">
-                    <span id="label-materia" class="px-3 py-1 bg-cyan-500/10 text-cyan-500 text-[10px] font-black rounded-full uppercase border border-cyan-500/20">MATERIA</span>
-                    <h1 id="txt-pregunta" class="text-2xl font-medium mt-6 leading-relaxed text-slate-100">Cargando...</h1>
+                    <span id="label-materia" class="px-3 py-1 bg-cyan-500/10 text-cyan-500 text-[10px] font-black rounded-full uppercase border border-cyan-500/20">Materia</span>
+                    <h1 id="txt-pregunta" class="text-2xl font-medium mt-6 leading-relaxed text-slate-100">--</h1>
                 </header>
 
                 <div id="opciones-grid" class="space-y-4">
                     </div>
 
                 <footer class="mt-16 pt-8 border-t border-slate-800 flex justify-between items-center">
-                    <p id="progreso-txt" class="text-slate-500 text-sm">Pregunta 1 de --</p>
-                    <button id="btn-confirm" onclick="siguiente()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-600 px-12 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all">
-                        Confirmar y Siguiente
+                    <div>
+                        <p id="progreso-txt" class="text-slate-500 text-sm font-bold">Pregunta 1 de 20</p>
+                        <p class="text-[10px] text-slate-600 uppercase mt-1">ID Reactivo: <span id="reactivo-id">--</span></p>
+                    </div>
+                    <button id="btn-confirm" onclick="procesarRespuesta()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-600 px-12 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all shadow-lg shadow-cyan-900/20">
+                        Confirmar
                     </button>
                 </footer>
             </div>
@@ -70,84 +77,48 @@
 
     <script>
         const SUPABASE_URL = 'https://pcuopqvmucmhtcdeswxh.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjdW9wcXZtdWNtaHRjZGVzd3hoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTk0NTgsImV4cCI6MjA4OTQzNTQ1OH0.g1xfdTtbz4aNW_QF_JcwoM7DCmgRLDxF2Ik48I7fq2M';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const SUPABASE_KEY = 'TU_ANON_KEY_AQUI'; 
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('v');
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('v');
+        const nivel = params.get('n') || "1";
+        
         let reactivos = [];
         let index = 0;
+        let aciertos = 0;
+        let seleccionActual = null;
 
-        async function start() {
-            // 1. Detectar UAM para ocultar cámara/timer
-            const { data: config } = await _supabase.from('config_examenes').select('institucion').eq('token_hex', token).single();
-            if (config?.institucion === 'UAM') {
-                document.getElementById('timer-box').classList.add('uam-hide');
-                document.getElementById('camera-section').classList.add('uam-hide');
-            }
+        document.getElementById('display-nivel').innerText = nivel == "1" ? "Principiante" : nivel == "2" ? "Intermedio" : "Avanzado";
 
-            // 2. Iniciar Proctoring (Audio/Video)
+        async function init() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                // 1. Cámara socio
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 document.getElementById('webcam').srcObject = stream;
-                setupAudio(stream);
-                load();
-            } catch (e) { alert("Socio, activa la cámara para continuar."); }
-        }
 
-        function setupAudio(stream) {
-            const ctx = new AudioContext();
-            const src = ctx.createMediaStreamSource(stream);
-            const anl = ctx.createAnalyser();
-            src.connect(anl);
-            const data = new Uint8Array(anl.frequencyBinCount);
-            function update() {
-                anl.getByteFrequencyData(data);
-                const avg = data.reduce((a,b) => a+b) / data.length;
-                document.getElementById('audio-fill').style.width = Math.min(avg * 4, 100) + "%";
-                requestAnimationFrame(update);
-            }
-            update();
-        }
+                // 2. Cargar reactivos (Filtramos por nivel y tipo)
+                const { data, error } = await _supabase
+                    .from('reactivos')
+                    .select('*')
+                    .eq('nivel', nivel)
+                    .limit(20);
 
-        async function load() {
-            const { data } = await _supabase.from('reactivos').select('*').eq('token_hex', token);
-            if (data && data.length > 0) {
-                reactivos = data;
-                document.getElementById('loading').classList.add('hidden');
-                document.getElementById('quiz-content').classList.remove('hidden');
-                render();
+                if (data && data.length > 0) {
+                    reactivos = data;
+                    document.getElementById('loading-overlay').classList.add('hidden');
+                    document.getElementById('quiz-ui').classList.remove('hidden');
+                    renderQuestion();
+                } else {
+                    alert("No hay reactivos para este nivel aún, socio.");
+                }
+            } catch (err) {
+                alert("Socio, activa la cámara para que la IA te valide.");
             }
         }
 
-        function render() {
+        function renderQuestion() {
             const r = reactivos[index];
             document.getElementById('label-materia').innerText = r.materia;
             document.getElementById('txt-pregunta').innerText = r.pregunta;
-            document.getElementById('progreso-txt').innerText = `Pregunta ${index+1} de ${reactivos.length}`;
-
-            // SHUFFLE: Barajar opciones
-            const ops = [
-                { k: 'a', v: r.opcion_a }, { k: 'b', v: r.opcion_b },
-                { k: 'c', v: r.opcion_c }, { k: 'd', v: r.opcion_d }
-            ].sort(() => Math.random() - 0.5);
-
-            const grid = document.getElementById('opciones-grid');
-            grid.innerHTML = '';
-            ops.forEach(o => {
-                const btn = document.createElement('button');
-                btn.className = "w-full text-left p-6 rounded-2xl border border-slate-800 bg-black/20 hover:border-cyan-500 hover:bg-cyan-500/5 transition-all text-slate-300 flex items-center gap-5";
-                btn.innerHTML = `<span class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-500 tracking-tighter italic">?</span> ${o.v}`;
-                btn.onclick = () => {
-                    document.getElementById('btn-confirm').disabled = false;
-                    document.querySelectorAll('#opciones-grid button').forEach(el => el.classList.remove('border-cyan-500', 'bg-cyan-500/10'));
-                    btn.classList.add('border-cyan-500', 'bg-cyan-500/10');
-                };
-                grid.appendChild(btn);
-            });
-        }
-
-        start();
-    </script>
-</body>
-</html>
+            document.getElementById('prog
