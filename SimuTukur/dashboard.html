@@ -2,63 +2,67 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centro de Operaciones | SimuTukur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background-color: #050914; color: white; height: 100vh; overflow: hidden; }
-        .dashboard-grid { display: grid; grid-template-columns: 350px 1fr 350px; height: 100vh; }
+        body { background-color: #050914; color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .dashboard-grid { display: grid; grid-template-columns: 350px 1fr 350px; flex: 1; overflow: hidden; }
         .chat-bubble { background: rgba(34, 211, 238, 0.05); border: 1px solid rgba(34, 211, 238, 0.1); border-radius: 20px 20px 20px 0; }
         .simu-logo-glow { filter: drop-shadow(0 0 15px rgba(34, 211, 238, 0.3)); }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <div id="selector-modal" class="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md hidden flex flex-col items-center justify-center p-6 text-center">
         <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur.jpeg" class="w-32 rounded-3xl mb-8 simu-logo-glow">
-        <h2 class="text-3xl font-black mb-2">Seleccione su Entrenamiento</h2>
-        <p class="text-slate-500 mb-8 uppercase text-[10px] tracking-widest">Cuentas vinculadas detectadas</p>
-        <div id="lista-examenes" class="grid gap-4 w-full max-w-lg"></div>
+        <h2 class="text-3xl font-black mb-2 italic">Seleccione su Entrenamiento</h2>
+        <div id="lista-examenes" class="grid gap-4 w-full max-w-lg mt-4"></div>
     </div>
 
+    <nav class="border-b border-slate-800 p-6 flex justify-between items-center bg-slate-900/50 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <span class="font-black text-2xl text-cyan-500 uppercase tracking-tighter">SimuTukur</span>
+        </div>
+        <button onclick="logout()" class="text-[10px] font-bold text-red-500 uppercase tracking-widest hover:text-red-400 transition-colors">Cerrar Sesión</button>
+    </nav>
+
     <div class="dashboard-grid">
-        <aside class="bg-slate-900/50 border-r border-slate-800 p-6 flex flex-col gap-6 overflow-hidden">
-            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Historial de Tutoría</h3>
-            <div id="historial-ia" class="flex-1 overflow-y-auto space-y-4 pr-2 text-[11px] text-slate-400 italic">
-                Cargando historial de análisis...
+        <aside class="p-6 bg-slate-900/30 border-r border-slate-800 flex flex-col overflow-hidden">
+            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">Historial de Tutoría</h3>
+            <div id="historial-ia" class="flex-1 space-y-4 overflow-y-auto pr-2 text-[11px] text-slate-400 italic">
+                Cargando registros de desempeño...
             </div>
         </aside>
 
-        <main class="flex flex-col p-8 bg-slate-950/20">
-            <header class="mb-8 flex justify-between items-end">
-                <div>
-                    <h1 class="text-3xl font-black">Hola, <span id="nombre-hijo" class="text-cyan-500">Estudiante</span></h1>
-                    <p id="label-examen" class="text-[10px] text-slate-500 uppercase font-mono mt-1 italic">Sincronizando perfil...</p>
-                </div>
-                <button onclick="logout()" class="text-[10px] font-bold text-red-500 uppercase tracking-tighter">Cerrar Sesión</button>
+        <main class="flex flex-col p-8 overflow-hidden">
+            <header class="mb-8">
+                <h1 class="text-3xl font-black italic">Hola, <span id="nombre-alumno" class="text-cyan-500">Estudiante</span></h1>
+                <p id="label-examen" class="text-[10px] text-slate-500 uppercase font-mono mt-1">Sincronizando perfil académico...</p>
             </header>
 
             <div class="flex-1 bg-slate-900/40 border border-slate-800 rounded-[32px] p-6 flex flex-col shadow-2xl relative overflow-hidden">
                 <div id="chat-messages" class="flex-1 overflow-y-auto space-y-6 mb-4 pr-4">
                     <div class="flex items-start gap-4">
                         <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur.jpeg" class="w-10 h-10 rounded-xl simu-logo-glow">
-                        <div id="welcome-msg" class="chat-bubble p-5 text-[12px] leading-relaxed text-slate-300">
-                            Analizando su perfil académico...
+                        <div id="welcome-text" class="chat-bubble p-5 text-[12px] leading-relaxed text-slate-300">
+                            Bienvenido a su centro de mando. Estoy analizando su progreso para optimizar su plan de estudio.
                         </div>
                     </div>
                 </div>
                 <div class="relative">
-                    <input type="text" placeholder="Consulte su plan de mejora con Simu..." class="w-full bg-slate-950/80 border border-slate-800 p-5 rounded-2xl text-[12px] outline-none focus:border-cyan-500 pr-12 transition-all">
-                    <div class="absolute right-4 top-4 text-cyan-500">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                    </div>
+                    <input type="text" placeholder="Consulte su plan de mejora con Simu..." class="w-full bg-slate-950/80 border border-slate-800 p-5 rounded-2xl text-[12px] outline-none focus:border-cyan-500 transition-all">
+                    <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur.jpeg" class="w-8 h-8 rounded-lg absolute right-4 top-4 border border-slate-700">
                 </div>
             </div>
         </main>
 
-        <aside class="bg-slate-900/50 border-l border-slate-800 p-6 flex flex-col gap-6">
-            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Módulos Disponibles</h3>
-            <div id="niveles-list" class="space-y-4">
+        <aside class="p-6 bg-slate-900/30 border-l border-slate-800 flex flex-col gap-6 overflow-hidden">
+            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Módulos de Evaluación</h3>
+            <div id="niveles-list" class="space-y-4 overflow-y-auto pr-2">
                 <p class="text-[10px] text-slate-600 animate-pulse">Consultando reglas del simulador...</p>
             </div>
         </aside>
@@ -74,7 +78,6 @@
 
         async function init() {
             if (!misCursos) { window.location.href = 'index.html'; return; }
-
             if (!cursoActivo) {
                 if (misCursos.length > 1) { mostrarSelector(); } 
                 else { seleccionarExamen(misCursos[0]); }
@@ -87,8 +90,8 @@
             modal.classList.remove('hidden');
             misCursos.forEach(c => {
                 const btn = document.createElement('button');
-                btn.className = "bg-slate-900 border border-slate-800 p-6 rounded-2xl text-left hover:border-cyan-500 transition-all";
-                btn.innerHTML = `<span class="text-cyan-500 font-black text-[10px] uppercase">${c.config_examenes.institucion}</span><p class="font-bold">${c.config_examenes.area}</p>`;
+                btn.className = "bg-slate-900 border border-slate-800 p-6 rounded-2xl text-left hover:border-cyan-500 transition-all group";
+                btn.innerHTML = `<span class="text-cyan-500 font-black text-[10px] uppercase">${c.config_examenes.institucion}</span><p class="font-bold text-white group-hover:text-cyan-400 transition-colors">${c.config_examenes.area}</p>`;
                 btn.onclick = () => seleccionarExamen(c);
                 lista.appendChild(btn);
             });
@@ -100,59 +103,51 @@
         }
 
         async function cargarDashboard() {
-            document.getElementById('nombre-hijo').innerText = cursoActivo.nombre_alumno;
-            document.getElementById('label-examen').innerText = `Plan: ${cursoActivo.config_examenes.institucion} | ${cursoActivo.config_examenes.area}`;
+            document.getElementById('nombre-alumno').innerText = cursoActivo.nombre_alumno;
+            document.getElementById('label-examen').innerText = `Entrenamiento: ${cursoActivo.config_examenes.institucion} | ${cursoActivo.config_examenes.area}`;
             
-            // 1. Cargar Reglas (Puntas y Tiempos)
-            const { data: reglas } = await _supabase.from('reglas_simulador')
-                .select('*')
-                .eq('institucion', cursoActivo.config_examenes.institucion);
+            const { data: reglas } = await _supabase.from('reglas_simulador').select('*').eq('institucion', cursoActivo.config_examenes.institucion);
+            const { data: resultados } = await _supabase.from('resultados_examenes').select('*').eq('email', cursoActivo.email).order('created_at', { ascending: false });
 
-            // 2. Cargar Último Resultado
-            const { data: ultimo } = await _supabase.from('resultados_examenes')
-                .select('*')
-                .eq('email', cursoActivo.email)
-                .order('created_at', { ascending: false }).limit(1).single();
-
-            renderNiveles(reglas, ultimo);
-            actualizarChatSimu(ultimo);
+            renderNiveles(reglas, resultados ? resultados[0] : null);
+            renderHistorial(resultados);
+            if(resultados && resultados[0]) actualizarChat(resultados[0]);
         }
 
         function renderNiveles(reglas, ultimo) {
             const list = document.getElementById('niveles-list');
             list.innerHTML = '';
-            
             const orden = ["Principiante", "Medio", "Avanzado"];
+            
             orden.forEach(nom => {
                 const r = reglas.find(x => x.nivel === nom);
                 if (!r) return;
-
-                const card = document.createElement('div');
-                const bloqueado = (nom === "Medio" && (!ultimo || ultimo.puntaje < 70)) || 
-                                  (nom === "Avanzado" && (!ultimo || ultimo.puntaje < 85));
+                const bloq = (nom === "Medio" && (!ultimo || ultimo.puntaje < 70)) || (nom === "Avanzado" && (!ultimo || ultimo.puntaje < 85));
                 
-                card.className = `bg-slate-900 border border-slate-800 p-5 rounded-2xl transition-all ${bloqueado ? 'opacity-40 cursor-not-allowed' : 'hover:border-cyan-500 cursor-pointer'}`;
-                card.innerHTML = `
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-[9px] text-cyan-500 font-black uppercase">${nom}</span>
-                        <span>${bloqueado ? '🔒' : '🔓'}</span>
-                    </div>
-                    <p class="text-sm font-bold text-slate-200">${r.cantidad_preguntas} Preguntas | ${r.tiempo_minutos} Min</p>
-                `;
-                if (!bloqueado) card.onclick = () => window.location.href = `examen.html?v=${cursoActivo.token_hex}&n=${nom}&q=${r.cantidad_preguntas}&t=${r.tiempo_minutos}`;
+                const card = document.createElement('div');
+                card.className = `bg-slate-900 border border-slate-800 p-5 rounded-2xl transition-all ${bloq ? 'opacity-40 cursor-not-allowed' : 'hover:border-cyan-500 cursor-pointer'}`;
+                card.innerHTML = `<div class="flex justify-between items-center mb-1"><span class="text-[9px] text-cyan-500 font-black uppercase">${nom}</span><span>${bloq ? '🔒' : '🔓'}</span></div><p class="text-sm font-bold text-slate-200">${r.cantidad_preguntas} Reactivos | ${r.tiempo_minutos} Min</p>`;
+                if (!bloq) card.onclick = () => window.location.href = `examen.html?v=${cursoActivo.token_hex}&n=${nom}&q=${r.cantidad_preguntas}&t=${r.tiempo_minutos}`;
                 list.appendChild(card);
             });
         }
 
-        function actualizarChatSimu(u) {
-            const msg = document.getElementById('welcome-msg');
-            if (u) {
-                msg.innerHTML = `Bienvenido de nuevo. Su último desempeño fue de <b>${u.puntaje}%</b>. 
-                                Probabilidad de ingreso estimada: <b>${u.probabilidad_ingreso}%</b>. 
-                                ${u.dictamen_ia}`;
-            } else {
-                msg.innerText = "Inicie su evaluación de nivel Principiante para generar su diagnóstico inicial.";
+        function actualizarChat(u) {
+            const chat = document.getElementById('chat-messages');
+            const resUrl = new URLSearchParams(window.location.search).get('res');
+            if (resUrl) {
+                const div = document.createElement('div');
+                div.className = "flex items-start gap-4 animate-pulse";
+                div.innerHTML = `<img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur.jpeg" class="w-10 rounded-xl"><div class="chat-bubble p-5 text-[12px] bg-cyan-500/10 border border-cyan-500/20 text-slate-200">Su entrenamiento ha finalizado con <b>${resUrl}%</b>. He actualizado su diagnóstico de probabilidad e identificado las áreas de mejora en su historial.</div>`;
+                chat.appendChild(div);
+                chat.scrollTop = chat.scrollHeight;
             }
+        }
+
+        function renderHistorial(datos) {
+            const hist = document.getElementById('historial-ia');
+            if(!datos || datos.length === 0) return;
+            hist.innerHTML = datos.map(d => `<div class="bg-slate-800/30 p-3 rounded-xl border border-slate-800 mb-2"><p class="text-cyan-500 font-black text-[9px] uppercase">${d.nivel} - ${new Date(d.created_at).toLocaleDateString()}</p><p class="text-white font-bold text-[12px]">${d.puntaje}% Aciertos</p><p class="text-[9px] text-slate-500 mt-1">Probabilidad: ${d.probabilidad_ingreso}%</p></div>`).join('');
         }
 
         function logout() { localStorage.clear(); window.location.href = 'index.html'; }
