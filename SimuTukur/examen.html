@@ -17,19 +17,19 @@
     <div id="master-container" class="grid-layout">
         <aside class="bg-slate-900 border-r border-slate-800 p-6 flex flex-col gap-6">
             <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-center">
-                <p class="text-[9px] text-slate-500 uppercase font-black mb-1 italic">Tiempo Restante</p>
+                <p class="text-[9px] text-slate-500 uppercase font-black mb-1 italic">Tiempo de Sesión</p>
                 <h2 id="timer" class="text-3xl font-mono text-cyan-400 font-bold tracking-tighter">--:--:--</h2>
             </div>
             <div class="relative rounded-2xl overflow-hidden border-2 border-red-500/20 shadow-2xl">
                 <video id="webcam" autoplay muted playsinline class="w-full aspect-video object-cover bg-black"></video>
             </div>
             <div>
-                <p class="text-[8px] text-slate-600 uppercase font-bold mb-1">Monitor de Audio Ambiental</p>
+                <p class="text-[8px] text-slate-600 uppercase font-bold mb-1 italic">Vigilancia de Audio</p>
                 <div class="audio-bar"><div id="audio-fill"></div></div>
             </div>
             <div class="mt-auto p-4 bg-red-500/5 border border-red-500/10 rounded-xl">
-                <p class="text-[9px] text-red-500 font-black uppercase tracking-widest">Monitor IA Activo</p>
-                <p class="text-[8px] text-slate-500 mt-1 italic leading-tight italic">Captura y análisis biométrico en curso. Sesión protegida por TukurForge.</p>
+                <p class="text-[9px] text-red-500 font-black uppercase tracking-widest italic">Monitor IA Activo</p>
+                <p class="text-[8px] text-slate-500 mt-1 italic leading-tight">Su sesión está siendo procesada por SimuTukur para validación oficial.</p>
             </div>
         </aside>
 
@@ -37,12 +37,12 @@
             <div id="quiz-ui" class="max-w-3xl mx-auto">
                 <header class="mb-10">
                     <span id="label-materia" class="px-3 py-1 bg-cyan-500/10 text-cyan-500 text-[10px] font-black rounded-full border border-cyan-500/20 uppercase">Materia</span>
-                    <h1 id="txt-pregunta" class="text-2xl font-medium mt-6 leading-relaxed">Cargando reactivos oficiales...</h1>
+                    <h1 id="txt-pregunta" class="text-2xl font-medium mt-6 leading-relaxed">Sincronizando banco de reactivos...</h1>
                 </header>
                 <div id="opciones-grid" class="space-y-4"></div>
                 <footer class="mt-16 pt-8 border-t border-slate-800 flex justify-between items-center">
                     <p id="progreso-txt" class="text-slate-500 text-sm font-bold">Pregunta -- de --</p>
-                    <button id="btn-confirm" onclick="procesarRespuesta()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 px-12 py-4 rounded-xl font-bold uppercase text-xs transition-all shadow-lg shadow-cyan-900/20">Confirmar Respuesta</button>
+                    <button id="btn-confirm" onclick="procesarRespuesta()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 px-12 py-4 rounded-xl font-bold uppercase text-[10px] transition-all shadow-lg shadow-cyan-900/20">Confirmar Respuesta</button>
                 </footer>
             </div>
         </main>
@@ -53,8 +53,8 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjdW9wcXZtdWNtaHRjZGVzd3hoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzg1OTQ1OCwiZXhwIjoyMDg5NDM1NDU4fQ.K5p2k2z8i2mLQhlxsP2voILlos2hELhKbAVPNH2_p30';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const p = new URLSearchParams(window.location.search);
-        const nivel = p.get('n'), token = p.get('v'), totalQ = parseInt(p.get('q')), totalM = parseInt(p.get('t'));
+        const params = new URLSearchParams(window.location.search);
+        const nivel = params.get('n'), token = params.get('v'), totalQ = parseInt(params.get('q')), totalM = parseInt(params.get('t'));
         let reactivos = [], index = 0, aciertos = 0, seleccionActual = null, incidencias = 0, tiempoSeg = totalM * 60;
 
         async function init() {
@@ -62,9 +62,10 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('webcam').srcObject = stream;
                 setupAudio(stream);
+                // Cargar reactivos por nivel
                 const { data } = await _supabase.from('reactivos').select('*').eq('nivel', nivel === "Principiante" ? 1 : nivel === "Medio" ? 2 : 3).limit(totalQ);
                 if (data) { reactivos = data; render(); startTimer(); }
-            } catch (e) { alert("Acceso Denegado: Se requiere cámara y audio para validar el simulador."); window.location.href='dashboard.html'; }
+            } catch (e) { alert("Acceso denegado: Se requiere cámara/audio."); window.location.href='dashboard.html'; }
         }
 
         function setupAudio(s) {
@@ -79,9 +80,9 @@
             const r = reactivos[index];
             document.getElementById('label-materia').innerText = r.materia;
             document.getElementById('txt-pregunta').innerText = r.pregunta;
-            document.getElementById('progreso-txt').innerText = `Pregunta ${index+1} de ${reactivos.length}`;
-            const ops = [{id:'A',v:r.opcion_a},{id:'B',v:r.opcion_b},{id:'C',v:r.opcion_c},{id:'D',v:r.opcion_d}].sort(()=>Math.random()-0.5);
+            document.getElementById('progreso-txt').innerText = `Reactivo ${index+1} de ${reactivos.length}`;
             const g = document.getElementById('opciones-grid'); g.innerHTML = '';
+            const ops = [{id:'a',v:r.opcion_a},{id:'b',v:r.opcion_b},{id:'c',v:r.opcion_c},{id:'d',v:r.opcion_d}].sort(()=>Math.random()-0.5);
             ops.forEach(o => {
                 const b = document.createElement('button');
                 b.className = "w-full text-left p-6 rounded-2xl border border-slate-800 bg-black/20 flex items-center gap-5 transition-all";
@@ -94,7 +95,13 @@
         async function procesarRespuesta() {
             const corr = (seleccionActual === reactivos[index].respuesta_correcta);
             if (corr) aciertos++;
-            await _supabase.from('bitacora_reactivos_vistos').insert({ email: localStorage.getItem('session_email'), reactivo_id: reactivos[index].id, es_correcto: corr, nivel: nivel === "Principiante" ? 1 : 2 });
+            // GUARDAR CADA PASO CON EL TOKEN_HEX
+            await _supabase.from('bitacora_reactivos_vistos').insert({ 
+                email: localStorage.getItem('session_email'), 
+                reactivo_id: reactivos[index].id, 
+                es_correcto: corr, 
+                token_hex: token 
+            });
             index++; if (index < reactivos.length) render(); else finalizar();
         }
 
@@ -108,15 +115,21 @@
         }
 
         async function finalizar() {
-            document.getElementById('master-container').innerHTML = `<div class="fixed inset-0 bg-[#050914] flex flex-col items-center justify-center z-[500]"><div class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-6"></div><h2 class="text-2xl font-black text-white uppercase italic">Sincronizando con Simu...</h2></div>`;
+            // BLOQUEO DE TRANSACCIÓN
+            document.getElementById('master-container').innerHTML = `<div class="fixed inset-0 bg-[#050914] flex flex-col items-center justify-center z-[500]"><div class="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-6"></div><h2 class="text-2xl font-black text-white italic">Sincronizando con Simu...</h2><p id="st" class="text-slate-500 text-[10px] mt-2 uppercase">Asegurando integridad de datos</p></div>`;
             const pF = ((aciertos / reactivos.length) * 100).toFixed(2);
+            const email = localStorage.getItem('session_email');
+            
             try {
-                await Promise.all([
-                    _supabase.from('resultados_examenes').insert({ email: localStorage.getItem('session_email'), token_hex: token, nivel: nivel, puntaje: pF, incidencias_vigilancia: incidencias, probabilidad_ingreso: (pF * 0.8).toFixed(2), dictamen_ia: "Sesión validada." }),
-                    _supabase.from('analisis_progreso_ia').upsert({ email: localStorage.getItem('session_email'), ultima_revision: new Date().toISOString(), nivel_maestria: pF, token_hex: token }, { onConflict: 'email' })
-                ]);
-                window.location.href = `dashboard.html?res=${pF}`;
-            } catch (e) { alert("Error de red. Verifique su conexión."); location.reload(); }
+                // GUARDADO SECUENCIAL PARA EVITAR PÉRDIDAS
+                document.getElementById('st').innerText = "PASO 1: Guardando resultados...";
+                await _supabase.from('resultados_examenes').insert({ email, token_hex: token, nivel, puntaje: pF, incidencias_vigilancia: incidencias, probabilidad_ingreso: (pF * 0.8).toFixed(2) });
+                
+                document.getElementById('st').innerText = "PASO 2: Actualizando perfil maestro...";
+                await _supabase.from('analisis_progreso_ia').upsert({ email, token_hex: token, ultima_revision: new Date().toISOString(), nivel_maestria: pF }, { onConflict: 'email,token_hex' });
+                
+                window.location.href = `dashboard.html?res=${pF}&v=${token}`;
+            } catch (e) { alert("Error de sincronización. No cierre el navegador."); location.reload(); }
         }
         init();
     </script>
