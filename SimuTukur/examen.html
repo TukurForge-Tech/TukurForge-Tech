@@ -23,26 +23,27 @@
                 <video id="webcam" autoplay muted playsinline class="w-full aspect-video object-cover bg-black"></video>
             </div>
             <div class="mt-auto pt-6 border-t border-slate-800">
-                <p class="text-[10px] text-slate-600 uppercase font-black">ID SESIÓN: TUKUR-2026</p>
+                <p class="text-[10px] text-slate-600 uppercase font-black">Sistema de Vigilancia Activo</p>
+                <p class="text-[9px] text-slate-700 mt-1">ID SESIÓN: TUKUR-PRO-2026</p>
             </div>
         </aside>
 
         <main class="relative overflow-y-auto p-12 bg-[#050914]">
             <div id="loading-overlay" class="absolute inset-0 bg-[#050914] z-50 flex flex-col items-center justify-center">
                 <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-cyan-500 mb-4"></div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Cargando Reactivos...</p>
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Sincronizando Banco de Reactivos...</p>
             </div>
             <div id="quiz-ui" class="max-w-3xl mx-auto hidden">
                 <header class="mb-12">
                     <span id="label-materia" class="px-3 py-1 bg-cyan-500/10 text-cyan-500 text-[10px] font-black rounded-full uppercase border border-cyan-500/20">Materia</span>
-                    <h1 id="txt-pregunta" class="text-2xl font-medium mt-6 leading-relaxed text-slate-100">Cargando...</h1>
+                    <h1 id="txt-pregunta" class="text-2xl font-medium mt-6 leading-relaxed text-slate-100">Cargando pregunta...</h1>
                 </header>
                 <div id="opciones-grid" class="space-y-4"></div>
                 <footer class="mt-16 pt-8 border-t border-slate-800 flex justify-between items-center">
                     <div>
                         <p id="progreso-txt" class="text-slate-500 text-sm font-bold">Pregunta 1 de 20</p>
                     </div>
-                    <button id="btn-confirm" onclick="procesarRespuesta()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-600 px-12 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all">Confirmar</button>
+                    <button id="btn-confirm" onclick="procesarRespuesta()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-600 px-12 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all shadow-lg shadow-cyan-900/20">Confirmar Respuesta</button>
                 </footer>
             </div>
         </main>
@@ -58,7 +59,7 @@
         const nivel = params.get('n') || "1";
         
         let reactivos = [], index = 0, aciertos = 0, seleccionActual = null;
-        let tiempoRestante = 180 * 60; // 3 horas
+        let tiempoRestante = 180 * 60; // 3 Horas
 
         async function init() {
             try {
@@ -72,7 +73,7 @@
                     renderQuestion();
                     iniciarTimer();
                 }
-            } catch (err) { alert("Active la cámara para iniciar."); }
+            } catch (err) { alert("Es necesario activar la cámara para validar su identidad en el simulador."); }
         }
 
         function iniciarTimer() {
@@ -89,21 +90,30 @@
             document.getElementById('label-materia').innerText = r.materia;
             document.getElementById('txt-pregunta').innerText = r.pregunta;
             document.getElementById('progreso-txt').innerText = `Pregunta ${index+1} de ${reactivos.length}`;
+            
             const ops = [{id:'A',t:r.opcion_a},{id:'B',t:r.opcion_b},{id:'C',t:r.opcion_c},{id:'D',t:r.opcion_d}].sort(()=>Math.random()-0.5);
             const grid = document.getElementById('opciones-grid');
             grid.innerHTML = '';
+            
             ops.forEach(op => {
                 const btn = document.createElement('button');
-                btn.className="option-btn w-full text-left p-6 rounded-2xl border border-slate-800 bg-black/20 flex items-center gap-5";
-                btn.innerHTML = `<span class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-[10px] font-bold">?</span> ${op.t}`;
-                btn.onclick = () => { seleccionActual = op.id; document.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('option-selected')); btn.classList.add('option-selected'); document.getElementById('btn-confirm').disabled=false; };
+                btn.className="option-btn w-full text-left p-6 rounded-2xl border border-slate-800 bg-black/20 flex items-center gap-5 transition-all";
+                btn.innerHTML = `<span class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-500 italic">?</span> <span class="text-sm">${op.t}</span>`;
+                btn.onclick = () => { 
+                    seleccionActual = op.id; 
+                    document.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('option-selected')); 
+                    btn.classList.add('option-selected'); 
+                    document.getElementById('btn-confirm').disabled=false; 
+                };
                 grid.appendChild(btn);
             });
         }
 
         function procesarRespuesta() {
             if (seleccionActual === reactivos[index].respuesta_correcta) aciertos++;
-            index++; seleccionActual = null; document.getElementById('btn-confirm').disabled = true;
+            index++; 
+            seleccionActual = null; 
+            document.getElementById('btn-confirm').disabled = true;
             if (index < reactivos.length) renderQuestion(); else finalizarExamen();
         }
 
