@@ -2,108 +2,94 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control | SimuTukur</title>
+    <title>Centro de Operaciones | SimuTukur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .card-glow:hover { box-shadow: 0 0 20px rgba(34, 211, 238, 0.15); border-color: #22d3ee; }
-        .lock-overlay { background: rgba(5, 9, 20, 0.8); backdrop-blur: 4px; }
-        body { background-color: #050914; }
+        body { background-color: #050914; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .dashboard-grid { display: grid; grid-template-columns: 400px 1fr 400px; flex: 1; overflow: hidden; }
+        .chat-area { background: rgba(15, 23, 42, 0.5); border-right: 1px border-slate-800; }
+        .history-area { background: rgba(15, 23, 42, 0.5); border-left: 1px border-slate-800; }
     </style>
 </head>
-<body class="text-white min-h-screen">
-    <nav class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur.jpeg" class="w-10 rounded-lg" alt="Logo">
-                <span class="font-black text-xl tracking-tighter text-cyan-500">SimuTukur</span>
-            </div>
-            <button onclick="logout()" class="text-[10px] font-bold text-red-500 hover:text-red-400 uppercase tracking-widest transition-colors">Cerrar Sesión</button>
+<body class="text-white">
+    <nav class="border-b border-slate-800 p-6 flex justify-between items-center bg-slate-900/50 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <span class="font-black text-2xl text-cyan-500 uppercase tracking-tighter">SimuTukur</span>
         </div>
+        <button onclick="logout()" class="text-[10px] font-bold text-red-500 uppercase tracking-widest">Cerrar Sesión</button>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-6 py-12">
-        <header class="mb-12 flex justify-between items-end">
-            <div>
-                <h1 id="saludo" class="text-4xl font-black mb-2">¡Hola! 👋</h1>
-                <p id="user-mail" class="text-slate-500 font-mono text-xs"></p>
-            </div>
-            <div class="text-right">
-                <span class="block text-[10px] text-slate-500 uppercase font-black">Tu Progreso General</span>
-                <div class="w-48 h-2 bg-slate-800 rounded-full mt-2 overflow-hidden">
-                    <div id="global-progress" class="h-full bg-cyan-500 transition-all" style="width: 0%"></div>
+    <div class="dashboard-grid">
+        <aside class="chat-area p-6 flex flex-col">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center text-xl shadow-lg shadow-cyan-500/20">🤖</div>
+                <div>
+                    <h3 class="font-bold text-sm">Simu</h3>
+                    <p class="text-[9px] text-cyan-500 uppercase font-black">Asesor Pedagógico</p>
                 </div>
             </div>
-        </header>
+            <div id="chat-messages" class="flex-1 space-y-4 overflow-y-auto mb-4 p-2">
+                <div class="bg-cyan-500/10 border border-cyan-500/20 p-4 rounded-2xl text-[11px] leading-relaxed text-slate-300">
+                    Bienvenido a su centro de mando. He analizado su desempeño reciente para optimizar su plan de estudio. Seleccione un nivel para continuar su preparación.
+                </div>
+            </div>
+            <div class="relative">
+                <input type="text" placeholder="Consulte a su asesor Simu..." class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl text-[11px] outline-none focus:border-cyan-500 transition-all">
+            </div>
+        </aside>
 
-        <div id="grid-cursos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
-    </main>
+        <main class="flex flex-col items-center justify-center p-12 text-center">
+            <div class="relative group">
+                <div class="absolute -inset-1 bg-cyan-500 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur.jpeg" class="relative w-64 rounded-3xl shadow-2xl border border-slate-800" alt="Logo SimuTukur">
+            </div>
+            <h1 class="text-4xl font-black mt-8 mb-2 tracking-tighter">SimuTukur</h1>
+            <p class="text-slate-500 font-mono text-[10px] uppercase tracking-[0.3em]">Plataforma de Alto Rendimiento Académico</p>
+        </main>
 
-    <div id="modal-niveles" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-6">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-8">
-            <h3 class="text-2xl font-bold mb-2">Selecciona tu Nivel</h3>
-            <p class="text-slate-400 text-xs mb-8">Debes superar el porcentaje mínimo para desbloquear el siguiente reto.</p>
-            
-            <div class="space-y-4" id="lista-niveles">
-                <button onclick="irExamen(1)" class="w-full p-5 rounded-2xl bg-slate-800 border border-slate-700 hover:border-cyan-500 transition-all flex justify-between items-center group">
-                    <div class="text-left">
-                        <span class="block text-cyan-500 font-black text-[10px] uppercase">Fase 1</span>
-                        <span class="text-lg font-bold">Principiante</span>
+        <aside class="history-area p-6 flex flex-col gap-6">
+            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Módulos de Evaluación</h3>
+            <div id="niveles-list" class="space-y-4">
+                <div onclick="irExamen(1)" class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl flex justify-between items-center group cursor-pointer hover:border-cyan-500 transition-all">
+                    <div>
+                        <span class="text-[9px] text-cyan-500 font-black uppercase">Fase 1</span>
+                        <p class="font-bold text-sm">Principiante</p>
                     </div>
-                    <span class="text-xs text-slate-500 font-bold uppercase tracking-widest group-hover:text-cyan-400">Habilitado</span>
-                </button>
-
-                <div class="relative group">
-                    <button disabled class="w-full p-5 rounded-2xl bg-slate-950 border border-slate-900 flex justify-between items-center opacity-50 cursor-not-allowed">
-                        <div class="text-left">
-                            <span class="block text-slate-600 font-black text-[10px] uppercase">Fase 2</span>
-                            <span class="text-lg font-bold">Intermedio</span>
-                        </div>
-                        <span class="text-xl">🔒</span>
-                    </button>
-                    <div class="absolute -top-2 -right-2 bg-red-500 text-[8px] font-black px-2 py-1 rounded-md uppercase">Requiere 70% N1</div>
+                    <span class="text-[9px] font-black text-cyan-500 uppercase tracking-widest group-hover:translate-x-1 transition-transform">Ingresar →</span>
+                </div>
+                <div class="bg-slate-950 border border-slate-900 p-5 rounded-2xl flex justify-between items-center opacity-40 cursor-not-allowed">
+                    <div>
+                        <span class="text-[9px] text-slate-600 font-black uppercase">Fase 2</span>
+                        <p class="font-bold text-sm text-slate-500">Intermedio</p>
+                    </div>
+                    <span class="text-lg">🔒</span>
                 </div>
             </div>
             
-            <button onclick="cerrarModal()" class="w-full mt-8 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:text-white">Cancelar</button>
-        </div>
+            <div class="mt-8 pt-6 border-t border-slate-800/50">
+                <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Análisis de Desempeño</h3>
+                <div id="historial-ia" class="bg-slate-900/30 p-4 rounded-xl text-[10px] text-slate-500 italic leading-relaxed">
+                    No se registran diagnósticos recientes. Inicie una evaluación para generar su mapa de mejora.
+                </div>
+            </div>
+        </aside>
     </div>
 
     <script>
-        const sessionEmail = localStorage.getItem('session_email');
-        const misCursos = JSON.parse(localStorage.getItem('mis_cursos'));
-        let tokenActivo = null;
-
-        if (!sessionEmail || !misCursos) { window.location.href = 'index.html'; }
-        document.getElementById('user-mail').innerText = sessionEmail;
-
-        const grid = document.getElementById('grid-cursos');
-        misCursos.forEach(item => {
-            const info = item.config_examenes;
-            const card = document.createElement('div');
-            card.className = "bg-slate-900/40 border border-slate-800 p-8 rounded-3xl card-glow transition-all flex flex-col justify-between";
-            card.innerHTML = `
-                <div>
-                    <span class="px-3 py-1 bg-cyan-500/10 text-cyan-500 text-[10px] font-black rounded-full uppercase">Plan ${info.plan}</span>
-                    <h2 class="text-2xl font-bold mt-4 mb-1">${info.institucion}</h2>
-                    <p class="text-cyan-500 text-xs font-bold uppercase tracking-widest mb-6">${info.area}</p>
-                </div>
-                <button onclick="mostrarNiveles('${item.token_hex}')" class="block w-full bg-cyan-600 hover:bg-cyan-500 text-white py-4 rounded-xl font-bold transition-all shadow-lg shadow-cyan-900/20">INGRESAR</button>
-            `;
-            grid.appendChild(card);
-        });
-
-        function mostrarNiveles(token) {
-            tokenActivo = token;
-            document.getElementById('modal-niveles').classList.remove('hidden');
+        const params = new URLSearchParams(window.location.search);
+        const resultado = params.get('res');
+        
+        if (resultado) {
+            const mensaje = `Evaluación finalizada con un puntaje del ${resultado}%. Los temas críticos han sido identificados en su perfil de estudio.`;
+            document.getElementById('historial-ia').innerText = mensaje;
+            document.getElementById('historial-ia').classList.remove('italic');
+            document.getElementById('historial-ia').classList.add('text-cyan-500/80', 'not-italic');
         }
 
-        function cerrarModal() { document.getElementById('modal-niveles').classList.add('hidden'); }
-
-        function irExamen(nivel) {
-            window.location.href = `examen.html?v=${tokenActivo}&n=${nivel}`;
+        function irExamen(n) {
+            const token = localStorage.getItem('token_hex') || '9c3e7f1b';
+            window.location.href = `examen.html?v=${token}&n=${n}`;
         }
-
         function logout() { localStorage.clear(); window.location.href = 'index.html'; }
     </script>
 </body>
