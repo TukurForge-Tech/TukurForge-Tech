@@ -6,146 +6,156 @@
     <title>Centro de Operaciones | SimuTukur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #050914; color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-        .dashboard-grid { display: grid; grid-template-columns: 350px 1fr 350px; flex: 1; overflow: hidden; }
-        .chat-bubble { background: rgba(34, 211, 238, 0.05); border: 1px solid rgba(34, 211, 238, 0.1); border-radius: 20px 20px 20px 0; }
-        .simu-logo-glow { filter: drop-shadow(0 0 15px rgba(34, 211, 238, 0.3)); }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        body { background-color: #050a14; color: white; font-family: 'Segoe UI', sans-serif; }
+        .card-glass { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; }
+        .color-cian { color: #00f2ff; }
+        .btn-perfil { transition: all 0.3s ease; border: 1px solid #00f2ff; color: #00f2ff; }
+        .btn-perfil:hover { background: #00f2ff; color: #050a14; box-shadow: 0 0 15px #00f2ff; }
+        .nivel-card { transition: transform 0.2s; cursor: pointer; }
+        .nivel-card:hover:not(.locked) { transform: scale(1.02); background: rgba(0, 242, 255, 0.05); }
+        .locked { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
     </style>
 </head>
 <body>
 
-    <div id="selector-modal" class="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl hidden flex flex-col items-center justify-center p-6 text-center">
-        <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur.jpeg" class="w-32 rounded-3xl mb-8 simu-logo-glow">
-        <h2 class="text-3xl font-black mb-2 italic">Seleccione su Entrenamiento</h2>
-        <div id="lista-examenes" class="grid gap-4 w-full max-w-lg mt-4"></div>
-    </div>
-
-    <nav class="border-b border-slate-800 p-6 flex justify-between items-center bg-slate-900/50">
-        <div class="flex items-center gap-3">
-            <span class="font-black text-2xl text-cyan-500 uppercase tracking-tighter italic">SimuTukur</span>
+    <header class="p-6 flex justify-between items-center border-b border-gray-800">
+        <h1 class="text-3xl font-black italic color-cian tracking-tighter">SIMUTUKUR</h1>
+        
+        <div class="flex gap-4 items-center">
+            <button onclick="cambiarEntrenamiento()" class="btn-perfil px-4 py-2 rounded-lg font-bold text-sm uppercase">
+                <i class="fa-solid fa-arrows-rotate mr-2"></i> Cambiar Perfil
+            </button>
+            <button onclick="cerrarSesion()" class="text-red-500 font-bold hover:text-red-400 text-sm uppercase tracking-widest">
+                Cerrar Sesión
+            </button>
         </div>
-        <button onclick="logout()" class="text-[10px] font-bold text-red-500 uppercase tracking-widest hover:text-red-400 transition-colors">Cerrar Sesión</button>
-    </nav>
+    </header>
 
-    <div class="dashboard-grid">
-        <aside class="p-6 bg-slate-900/30 border-r border-slate-800 flex flex-col overflow-hidden">
-            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">Historial de este Plan</h3>
-            <div id="historial-ia" class="flex-1 space-y-4 overflow-y-auto pr-2 text-[11px] text-slate-400 italic">
-                Cargando registros...
+    <main class="max-w-7xl mx-auto p-8 grid grid-cols-12 gap-8">
+        
+        <aside class="col-span-3">
+            <h3 class="text-gray-500 font-bold text-xs uppercase tracking-widest mb-4">Historial de este plan</h3>
+            <div id="historial-vacio" class="card-glass p-6 text-sm text-gray-400 italic">
+                Sin registros previos.
             </div>
         </aside>
 
-        <main class="flex flex-col p-8 overflow-hidden">
-            <header class="mb-8">
-                <h1 class="text-3xl font-black italic text-white">Hola, <span id="nombre-alumno" class="text-cyan-500">...</span></h1>
-                <p id="label-examen" class="text-[10px] text-slate-500 uppercase font-mono mt-1">Sincronizando...</p>
-            </header>
-
-            <div class="flex-1 bg-slate-900/40 border border-slate-800 rounded-[32px] p-6 flex flex-col shadow-2xl relative overflow-hidden">
-                <div id="chat-messages" class="flex-1 overflow-y-auto space-y-6 mb-4 pr-4">
-                    <div class="flex items-start gap-4">
-                        <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur.jpeg" class="w-10 h-10 rounded-xl simu-logo-glow">
-                        <div id="welcome-text" class="chat-bubble p-5 text-[12px] leading-relaxed text-slate-300">
-                            Analizando su perfil...
-                        </div>
-                    </div>
+        <section class="col-span-6">
+            <div id="info-usuario" class="mb-8">
                 </div>
-                <div class="relative">
-                    <input type="text" placeholder="Consulte su plan de mejora con Simu..." class="w-full bg-slate-950/80 border border-slate-800 p-5 rounded-2xl text-[12px] outline-none focus:border-cyan-500">
-                    <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur.jpeg" class="w-8 h-8 rounded-lg absolute right-4 top-4 border border-slate-700">
+
+            <div class="card-glass p-8 flex flex-col items-center justify-center min-h-[300px]">
+                <div class="flex items-center gap-4 mb-6 bg-gray-900/50 p-4 rounded-xl border border-gray-700 w-full">
+                    <img src="https://simutukur.tukurforge.com/logo_bho.png" class="w-12 h-12 rounded-lg" alt="Simu">
+                    <p class="text-gray-300 text-sm italic leading-relaxed" id="msj-simu">
+                        Cargando configuración de entrenamiento...
+                    </p>
+                </div>
+                <div class="mt-auto w-full border-t border-gray-800 pt-6 text-center">
+                    <p class="text-xs text-gray-500 italic">Consulte su plan de mejora con Simu...</p>
                 </div>
             </div>
-        </main>
+        </section>
 
-        <aside class="p-6 bg-slate-900/30 border-l border-slate-800 flex flex-col gap-6 overflow-hidden">
-            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Niveles Disponibles</h3>
-            <div id="niveles-list" class="space-y-4 overflow-y-auto pr-2"></div>
+        <aside class="col-span-3">
+            <h3 class="text-gray-500 font-bold text-xs uppercase tracking-widest mb-4">Niveles Disponibles</h3>
+            <div id="contenedor-niveles" class="space-y-4">
+                </div>
         </aside>
-    </div>
+
+    </main>
 
     <script>
-        const SUPABASE_URL = 'https://pcuopqvmucmhtcdeswxh.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjdW9wcXZtdWNtaHRjZGVzd3hoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzg1OTQ1OCwiZXhwIjoyMDg5NDM1NDU4fQ.K5p2k2z8i2mLQhlxsP2voILlos2hELhKbAVPNH2_p30';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Configuración de Supabase (Asegúrate de tener tus claves en el entorno)
+        const supabaseUrl = 'https://pcuopqvmucmhtcdeswxh.supabase.co'; 
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjdW9wcXZtdWNtaHRjZGVzd3hoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzg1OTQ1OCwiZXhwIjoyMDg5NDM1NDU4fQ.K5p2k2z8i2mLQhlxsP2voILlos2hELhKbAVPNH2_p30'; 
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        let cursoActivo = JSON.parse(localStorage.getItem('curso_seleccionado'));
-        const misCursos = JSON.parse(localStorage.getItem('mis_cursos'));
-
-        async function init() {
-            if (!misCursos) { window.location.href = 'index.html'; return; }
-            if (!cursoActivo) {
-                if (misCursos.length > 1) { mostrarSelector(); } 
-                else { seleccionarExamen(misCursos[0]); }
-            } else { cargarDashboard(); }
-        }
-
-        function mostrarSelector() {
-            const modal = document.getElementById('selector-modal');
-            const lista = document.getElementById('lista-examenes');
-            modal.classList.remove('hidden');
-            misCursos.forEach(c => {
-                const btn = document.createElement('button');
-                btn.className = "bg-slate-900 border border-slate-800 p-6 rounded-2xl text-left hover:border-cyan-500 transition-all group";
-                btn.innerHTML = `<span class="text-cyan-500 font-black text-[10px] uppercase">${c.config_examenes.institucion}</span><p class="font-bold text-white group-hover:text-cyan-400">${c.config_examenes.area}</p>`;
-                btn.onclick = () => seleccionarExamen(c);
-                lista.appendChild(btn);
-            });
-        }
-
-        function seleccionarExamen(curso) {
-            localStorage.setItem('curso_seleccionado', JSON.stringify(curso));
-            window.location.reload();
-        }
+        // Recuperamos el token_hex guardado al seleccionar al hijo
+        const tokenHex = localStorage.getItem('token_hex');
+        const nombreAlumno = localStorage.getItem('nombre_alumno') || "Aspirante";
 
         async function cargarDashboard() {
-            document.getElementById('nombre-alumno').innerText = cursoActivo.nombre_alumno;
-            document.getElementById('label-examen').innerText = `PLAN: ${cursoActivo.config_examenes.institucion} | TOKEN: ${cursoActivo.token_hex}`;
-            
-            // FILTRADO POR CORREO Y TOKEN
-            const { data: reglas } = await _supabase.from('reglas_simulador').select('*').eq('institucion', cursoActivo.config_examenes.institucion);
-            const { data: resultados } = await _supabase.from('resultados_examenes')
-                .select('*')
-                .eq('email', cursoActivo.email)
-                .eq('token_hex', cursoActivo.token_hex)
-                .order('created_at', { ascending: false });
+            if (!tokenHex) {
+                window.location.href = 'login.html';
+                return;
+            }
 
-            renderNiveles(reglas, resultados ? resultados[0] : null);
-            renderHistorial(resultados);
-            
-            if(resultados && resultados[0]) {
-                document.getElementById('welcome-text').innerHTML = `Socio, su último desempeño en este plan fue de <b>${resultados[0].puntaje}%</b>. He actualizado su diagnóstico de probabilidad de ingreso al <b>${resultados[0].probabilidad_ingreso}%</b>.`;
-            } else {
-                document.getElementById('welcome-text').innerText = "Bienvenido. Inicie su evaluación de nivel Principiante para que pueda generar su primer diagnóstico de IA.";
+            try {
+                // 1. Buscamos Institución y Área en config_examenes
+                const { data: config, error: errConfig } = await _supabase
+                    .from('config_examenes')
+                    .select('institucion, area')
+                    .eq('token_hex', tokenHex)
+                    .single();
+
+                if (errConfig) throw errConfig;
+
+                // 2. Concatenamos para el match en reglas_simulador
+                // Ej: "UNAM" + " " + "A4" = "UNAM A4" | "ECOEMS" + " " + "GENERAL" = "ECOEMS GENERAL"
+                const nombreInstitucionFull = config.area ? `${config.institucion} ${config.area}` : config.institucion;
+
+                // 3. Pintamos la UI limpia (Sin Token, Plan Grande)
+                document.getElementById('info-usuario').innerHTML = `
+                    <h2 class="text-5xl font-black italic mb-2 tracking-tighter">Hola, <span class="color-cian">${nombreAlumno}</span></h2>
+                    <p class="text-2xl font-bold uppercase text-gray-400">Plan: <span class="text-white">${nombreInstitucionFull}</span></p>
+                `;
+                document.getElementById('msj-simu').innerText = `Bienvenido. Inicie su evaluación de nivel Principiante para ${nombreInstitucionFull}.`;
+
+                // 4. Traemos los niveles dinámicos de reglas_simulador
+                const { data: niveles, error: errNiveles } = await _supabase
+                    .from('reglas_simulador')
+                    .select('*')
+                    .eq('institucion', nombreInstitucionFull)
+                    .order('id', { ascending: true });
+
+                if (errNiveles) throw errNiveles;
+
+                const contenedor = document.getElementById('contenedor-niveles');
+                contenedor.innerHTML = "";
+
+                niveles.forEach(n => {
+                    // Lógica de bloqueo (puedes ajustarla según progreso real después)
+                    const isLocked = n.nivel !== 'Principiante'; 
+
+                    contenedor.innerHTML += `
+                        <div class="card-glass p-4 nivel-card ${isLocked ? 'locked' : ''}" 
+                             onclick="${isLocked ? "alert('Complete el nivel anterior para desbloquear.')" : `iniciarEntrenamiento('${n.nivel}', '${nombreInstitucionFull}')`}">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="color-cian font-bold text-xs uppercase tracking-tighter">${n.nivel}</h4>
+                                <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'} text-[10px]"></i>
+                            </div>
+                            <p class="text-lg font-bold">${n.cantidad_preguntas} Reactivos | ${n.tiempo_minutos} Min</p>
+                        </div>
+                    `;
+                });
+
+            } catch (error) {
+                console.error("Error Dashboard:", error.message);
             }
         }
 
-        function renderNiveles(reglas, ultimo) {
-            const list = document.getElementById('niveles-list');
-            list.innerHTML = '';
-            const orden = ["Principiante", "Medio", "Avanzado"];
-            orden.forEach(nom => {
-                const r = reglas.find(x => x.nivel === nom);
-                if (!r) return;
-                const bloq = (nom === "Medio" && (!ultimo || ultimo.puntaje < 70)) || (nom === "Avanzado" && (!ultimo || ultimo.puntaje < 85));
-                const card = document.createElement('div');
-                card.className = `bg-slate-900 border border-slate-800 p-5 rounded-2xl transition-all ${bloq ? 'opacity-40 cursor-not-allowed' : 'hover:border-cyan-500 cursor-pointer'}`;
-                card.innerHTML = `<div class="flex justify-between items-center mb-1"><span class="text-[9px] text-cyan-500 font-black uppercase">${nom}</span><span>${bloq ? '🔒' : '🔓'}</span></div><p class="text-sm font-bold text-slate-200">${r.cantidad_preguntas} Reactivos | ${r.tiempo_minutos} Min</p>`;
-                if (!bloq) card.onclick = () => window.location.href = `examen.html?v=${cursoActivo.token_hex}&n=${nom}&q=${r.cantidad_preguntas}&t=${r.tiempo_minutos}`;
-                list.appendChild(card);
-            });
+        function cambiarEntrenamiento() {
+            // Solo quitamos el token del hijo para que regrese a la selección
+            localStorage.removeItem('token_hex');
+            window.location.href = 'seleccion_hijo.html';
         }
 
-        function renderHistorial(datos) {
-            const hist = document.getElementById('historial-ia');
-            if(!datos || datos.length === 0) { hist.innerText = "Sin registros previos."; return; }
-            hist.innerHTML = datos.map(d => `<div class="bg-slate-800/30 p-3 rounded-xl border border-slate-800 mb-2"><p class="text-cyan-500 font-black text-[9px] uppercase">${d.nivel} - ${new Date(d.created_at).toLocaleDateString()}</p><p class="text-white font-bold text-[12px]">${d.puntaje}% Aciertos</p></div>`).join('');
+        function cerrarSesion() {
+            localStorage.clear();
+            window.location.href = 'login.html';
         }
 
-        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
-        init();
+        function iniciarEntrenamiento(nivel, plan) {
+            // Guardamos nivel y plan para el simulador y redirigimos
+            localStorage.setItem('nivel_actual', nivel);
+            localStorage.setItem('plan_actual', plan);
+            window.location.href = 'simulador.html';
+        }
+
+        window.onload = cargarDashboard;
     </script>
 </body>
 </html>
