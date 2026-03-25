@@ -7,70 +7,42 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #050914; color: white; overflow: hidden; height: 100vh; }
-        .grid-layout { display: grid; grid-template-columns: 350px 1fr; height: 100vh; }
-        .chat-bubble { background: rgba(34, 211, 238, 0.05); border: 1px solid rgba(34, 211, 238, 0.1); border-radius: 20px 20px 20px 0; }
+        .grid-layout { display: grid; grid-template-columns: 320px 1fr; height: 100vh; }
         .option-btn:hover { border-color: #22d3ee; background: rgba(34, 211, 238, 0.05); }
         .option-selected { border-color: #22d3ee !important; background: rgba(34, 211, 238, 0.1) !important; }
     </style>
 </head>
 <body>
-
     <div id="master-container" class="grid-layout">
-        
-        <aside class="bg-slate-900 border-r border-slate-800 flex flex-col overflow-hidden">
-            <div class="p-6 border-b border-slate-800 bg-slate-900/50">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-                        <span class="text-xl">🤖</span>
-                    </div>
-                    <div>
-                        <p class="text-[10px] text-cyan-500 font-black uppercase tracking-tighter">Coach SimuTukur</p>
-                        <p id="coach-status" class="text-xs font-bold text-slate-300">Analizando desempeño...</p>
-                    </div>
-                </div>
+        <aside class="bg-slate-900 border-r border-slate-800 p-6 flex flex-col gap-8">
+            <div id="timer-box">
+                <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Tiempo Restante</p>
+                <h2 id="timer" class="text-4xl font-mono text-cyan-400 font-bold text-center bg-slate-950 py-4 rounded-xl border border-slate-800">03:00:00</h2>
             </div>
-
-            <div id="coach-messages" class="flex-1 overflow-y-auto p-6 space-y-4">
-                <div class="chat-bubble p-4 text-[11px] leading-relaxed text-slate-300">
-                    ¡Bienvenido a tu sesión de entrenamiento! Hoy nos enfocaremos en dominar el nivel 
-                    <span id="display-nivel" class="text-cyan-400 font-bold">--</span>. 
-                    Mantén la concentración y analiza bien cada opción.
-                </div>
+            <div class="rounded-2xl overflow-hidden border-2 border-red-500/20 shadow-2xl">
+                <video id="webcam" autoplay muted playsinline class="w-full aspect-video object-cover bg-black"></video>
             </div>
-
-            <div class="p-6 bg-slate-950 border-t border-slate-800">
-                <div class="mb-4">
-                    <p class="text-[9px] text-slate-500 uppercase font-bold mb-1 tracking-widest">Cronómetro</p>
-                    <h2 id="timer" class="text-3xl font-mono text-slate-400">00:00:00</h2>
-                </div>
-                <div class="rounded-xl overflow-hidden border border-red-500/30">
-                    <video id="webcam" autoplay muted playsinline class="w-full aspect-video object-cover bg-black"></video>
-                </div>
+            <div class="mt-auto pt-6 border-t border-slate-800">
+                <p class="text-[10px] text-slate-600 uppercase font-black">ID SESIÓN: TUKUR-2026</p>
             </div>
         </aside>
 
         <main class="relative overflow-y-auto p-12 bg-[#050914]">
             <div id="loading-overlay" class="absolute inset-0 bg-[#050914] z-50 flex flex-col items-center justify-center">
                 <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-cyan-500 mb-4"></div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Sincronizando con SimuTukur...</p>
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Cargando Reactivos...</p>
             </div>
-
             <div id="quiz-ui" class="max-w-3xl mx-auto hidden">
                 <header class="mb-12">
                     <span id="label-materia" class="px-3 py-1 bg-cyan-500/10 text-cyan-500 text-[10px] font-black rounded-full uppercase border border-cyan-500/20">Materia</span>
-                    <h1 id="txt-pregunta" class="text-2xl font-medium mt-6 leading-relaxed text-slate-100">--</h1>
+                    <h1 id="txt-pregunta" class="text-2xl font-medium mt-6 leading-relaxed text-slate-100">Cargando...</h1>
                 </header>
-
                 <div id="opciones-grid" class="space-y-4"></div>
-
                 <footer class="mt-16 pt-8 border-t border-slate-800 flex justify-between items-center">
                     <div>
                         <p id="progreso-txt" class="text-slate-500 text-sm font-bold">Pregunta 1 de 20</p>
-                        <p class="text-[10px] text-slate-600 uppercase mt-1">ID Reactivo: <span id="reactivo-id">--</span></p>
                     </div>
-                    <button id="btn-confirm" onclick="procesarRespuesta()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-600 px-12 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all shadow-lg shadow-cyan-900/20">
-                        Confirmar
-                    </button>
+                    <button id="btn-confirm" onclick="procesarRespuesta()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-600 px-12 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all">Confirmar</button>
                 </footer>
             </div>
         </main>
@@ -85,107 +57,60 @@
         const token = params.get('v');
         const nivel = params.get('n') || "1";
         
-        let reactivos = [];
-        let index = 0;
-        let aciertos = 0;
-        let seleccionActual = null;
-
-        document.getElementById('display-nivel').innerText = nivel == "1" ? "Principiante" : nivel == "2" ? "Intermedio" : "Avanzado";
+        let reactivos = [], index = 0, aciertos = 0, seleccionActual = null;
+        let tiempoRestante = 180 * 60; // 3 horas
 
         async function init() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 document.getElementById('webcam').srcObject = stream;
-
-                const { data, error } = await _supabase
-                    .from('reactivos')
-                    .select('*')
-                    .eq('nivel', nivel)
-                    .limit(20);
-
+                const { data } = await _supabase.from('reactivos').select('*').eq('nivel', nivel).limit(20);
                 if (data && data.length > 0) {
                     reactivos = data;
                     document.getElementById('loading-overlay').classList.add('hidden');
                     document.getElementById('quiz-ui').classList.remove('hidden');
                     renderQuestion();
-                } else {
-                    alert("No hay reactivos para este nivel aún.");
+                    iniciarTimer();
                 }
-            } catch (err) {
-                console.error(err);
-                alert("Por favor, active la cámara para que el sistema valide su identidad.");
-            }
+            } catch (err) { alert("Active la cámara para iniciar."); }
+        }
+
+        function iniciarTimer() {
+            const el = document.getElementById('timer');
+            const int = setInterval(() => {
+                const h = Math.floor(tiempoRestante / 3600), m = Math.floor((tiempoRestante % 3600) / 60), s = tiempoRestante % 60;
+                el.innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+                if (tiempoRestante-- <= 0) { clearInterval(int); finalizarExamen(); }
+            }, 1000);
         }
 
         function renderQuestion() {
             const r = reactivos[index];
             document.getElementById('label-materia').innerText = r.materia;
             document.getElementById('txt-pregunta').innerText = r.pregunta;
-            document.getElementById('progreso-txt').innerText = `Pregunta ${index + 1} de ${reactivos.length}`;
-            document.getElementById('reactivo-id').innerText = r.id.split('-')[0];
-            
-            const opciones = [
-                { id: 'A', texto: r.opcion_a },
-                { id: 'B', texto: r.opcion_b },
-                { id: 'C', texto: r.opcion_c },
-                { id: 'D', texto: r.opcion_d }
-            ].sort(() => Math.random() - 0.5);
-
+            document.getElementById('progreso-txt').innerText = `Pregunta ${index+1} de ${reactivos.length}`;
+            const ops = [{id:'A',t:r.opcion_a},{id:'B',t:r.opcion_b},{id:'C',t:r.opcion_c},{id:'D',t:r.opcion_d}].sort(()=>Math.random()-0.5);
             const grid = document.getElementById('opciones-grid');
             grid.innerHTML = '';
-            
-            opciones.forEach(op => {
+            ops.forEach(op => {
                 const btn = document.createElement('button');
-                btn.className = "option-btn w-full text-left p-6 rounded-2xl border border-slate-800 bg-black/20 transition-all flex items-center gap-5 group";
-                btn.innerHTML = `
-                    <span class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-500 group-hover:text-cyan-400 italic">?</span>
-                    <span class="text-slate-300 text-sm">${op.texto}</span>
-                `;
-                btn.onclick = () => {
-                    seleccionActual = op.id;
-                    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('option-selected'));
-                    btn.classList.add('option-selected');
-                    document.getElementById('btn-confirm').disabled = false;
-                };
+                btn.className="option-btn w-full text-left p-6 rounded-2xl border border-slate-800 bg-black/20 flex items-center gap-5";
+                btn.innerHTML = `<span class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-[10px] font-bold">?</span> ${op.t}`;
+                btn.onclick = () => { seleccionActual = op.id; document.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('option-selected')); btn.classList.add('option-selected'); document.getElementById('btn-confirm').disabled=false; };
                 grid.appendChild(btn);
             });
         }
 
         function procesarRespuesta() {
-            const correcto = reactivos[index].respuesta_correcta;
-            if (seleccionActual === correcto) {
-                aciertos++;
-                coachHabla("✅ ¡Excelente desempeño! Has demostrado dominio en este tema.");
-            } else {
-                coachHabla(`❌ Respuesta incorrecta. Análisis del error: ${reactivos[index].explicacion_ia}`);
-            }
-            index++;
-            seleccionActual = null;
-            document.getElementById('btn-confirm').disabled = true;
-            if (index < reactivos.length) {
-                renderQuestion();
-            } else {
-                finalizarExamen();
-            }
-        }
-
-        function coachHabla(texto) {
-            const container = document.getElementById('coach-messages');
-            const div = document.createElement('div');
-            div.className = "chat-bubble p-4 text-[11px] leading-relaxed text-slate-300 border-l-2 border-cyan-500 bg-cyan-500/5 transition-all";
-            div.innerText = texto;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
+            if (seleccionActual === reactivos[index].respuesta_correcta) aciertos++;
+            index++; seleccionActual = null; document.getElementById('btn-confirm').disabled = true;
+            if (index < reactivos.length) renderQuestion(); else finalizarExamen();
         }
 
         function finalizarExamen() {
-            const final = (aciertos / reactivos.length) * 100;
-            coachHabla(`🏆 Entrenamiento finalizado. Tu puntaje es de ${final}%.`);
-            setTimeout(() => {
-                window.location.href = `dashboard.html?res=${final}`;
-            }, 3000);
+            const res = (aciertos / reactivos.length) * 100;
+            window.location.href = `dashboard.html?res=${res}&v=${token}`;
         }
-
         init();
     </script>
 </body>
