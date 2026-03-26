@@ -15,29 +15,27 @@
 <body>
     <div id="master-container" class="grid-layout">
         <aside class="bg-slate-900 border-r border-slate-800 p-6 flex flex-col gap-6">
-            <div class="bg-black p-4 rounded-xl border border-slate-800 text-center">
+            <div class="bg-black p-4 rounded-xl border border-slate-800 text-center shadow-inner">
                 <p class="text-[9px] text-slate-500 uppercase font-black mb-1 italic">Cronómetro de Sesión</p>
                 <h2 id="timer" class="text-3xl font-mono text-cyan-400 font-bold tracking-tighter">00:00:00</h2>
             </div>
             <video id="webcam" autoplay muted playsinline class="w-full aspect-video object-cover bg-black rounded-2xl border border-cyan-500/30 scale-x-[-1]"></video>
-            <div class="mt-auto p-4 bg-red-500/5 border border-red-500/10 rounded-xl">
-                <p class="text-[9px] text-red-500 font-black uppercase tracking-widest italic">Monitor IA Activo</p>
-            </div>
-            <div class="mt-4">
-                <button onclick="abortarExamen()" class="w-full py-2 border border-red-500/30 text-red-500 text-[9px] font-black uppercase rounded-lg hover:bg-red-500 hover:text-white transition-all italic">
-                    <i class="fa-solid fa-circle-xmark mr-1"></i> Abortar Examen
+            <div class="mt-auto">
+                <button onclick="confirmarAborto()" class="w-full py-3 border border-red-500/30 text-red-500 text-[10px] font-black uppercase rounded-lg hover:bg-red-500 hover:text-white transition-all italic">
+                    Abortar Examen
+                </button>
             </div>
         </aside>
 
         <main class="relative p-12 overflow-y-auto">
             <div id="quiz-ui" class="max-w-3xl mx-auto">
                 <header class="mb-12">
-                    <span id="label-materia" class="px-3 py-1 bg-cyan-500/10 text-cyan-400 text-[10px] font-black rounded-full border border-cyan-500/20 uppercase italic">Cargando...</span>
+                    <span id="label-materia" class="px-3 py-1 bg-cyan-500/10 text-cyan-400 text-[10px] font-black rounded-full border border-cyan-500/20 uppercase italic"></span>
                     <h1 id="txt-pregunta" class="text-2xl font-bold mt-8 text-slate-100 italic">Preparando reactivos...</h1>
                 </header>
                 <div id="opciones-grid" class="space-y-4"></div>
                 <footer class="mt-16 pt-8 border-t border-slate-800 flex justify-between items-center">
-                    <p id="progreso-txt" class="text-slate-500 text-xs font-bold italic uppercase">Pregunta -- de --</p>
+                    <p id="progreso-txt" class="text-slate-500 text-xs font-bold italic uppercase"></p>
                     <button id="btn-confirm" onclick="procesarRespuesta()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 px-10 py-4 rounded-xl font-bold uppercase text-[10px] transition-all">Confirmar Respuesta</button>
                 </footer>
             </div>
@@ -46,7 +44,9 @@
 
     <script>
         const params = new URLSearchParams(window.location.search);
-        const nivel = params.get('n'), token = params.get('v'), cantQ = parseInt(params.get('q')) || 40, mins = parseInt(params.get('t')) || 60;
+        const token = params.get('v'), nivel = localStorage.getItem('simu_nivel');
+        const cantQ = parseInt(localStorage.getItem('simu_preguntas')), mins = parseInt(localStorage.getItem('simu_tiempo'));
+        const esPro = localStorage.getItem('es_pro') === "true";
         let reactivos = [], index = 0, aciertos = 0, seleccionActual = null, tiempoSeg = mins * 60;
 
         async function init() {
@@ -56,70 +56,59 @@
                 
                 const plan = localStorage.getItem('plan_actual');
                 const nivelID = (nivel === "Principiante") ? 1 : (nivel === "Medio") ? 2 : 3;
-
-                // LÓGICA DE FILTRO: UNAM (General + Área) o ECOEMS (Base)
                 let tipos = plan.includes("UNAM") ? ['UNAM_GENERAL', plan.split(' ')[1]] : [plan.split(' ')[0]];
 
-                const { data, error } = await _supabase.from('reactivos').select('*').in('tipo_examen', tipos).eq('nivel', nivelID).limit(cantQ);
-
-                if (data && data.length > 0) { reactivos = data.sort(() => Math.random() - 0.5); render(); startTimer(); }
-                else { alert("No hay reactivos para " + plan); window.location.href = 'dashboard.html'; }
+                const { data } = await _supabase.from('reactivos').select('*').in('tipo_examen', tipos).eq('nivel', nivelID).limit(cantQ);
+                
+                if (data && data.length > 0) {
+                    reactivos = data.sort(() => Math.random() - 0.5);
+                    if (!esPro) await descontarIntento(); // Descuenta al iniciar para Básico
+                    render(); startTimer();
+                } else { window.location.href = 'dashboard.html'; }
             } catch (e) { window.location.href = 'dashboard.html'; }
         }
 
-        // examen.html - Función Render Corregida
+        async function descontarIntento() {
+            const email = localStorage.getItem('session_email');
+            const { data } = await _supabase.from('usuarios_membresias').select('intentos_simulacro_restantes').eq('email', email).eq('token_hex', token).single();
+            if (data) {
+                await _supabase.from('usuarios_membresias').update({ intentos_simulacro_restantes: data.intentos_simulacro_restantes - 1 }).eq('email', email).eq('token_hex', token);
+            }
+        }
+
+        async function confirmarAborto() {
+            let msg = esPro ? "¿Está seguro de que desea finalizar la sesión? Su progreso no será guardado." : "ATENCIÓN: Al ser Plan Básico, este intento ya ha sido descontado. ¿Desea abandonar el examen?";
+            if (confirm(msg)) window.location.href = 'dashboard.html';
+        }
+
         function render() {
             const r = reactivos[index];
-            // MOSTRAR TÍTULO DEL EXAMEN (Línea 90 aprox)
-            const plan = localStorage.getItem('plan_actual');
-            document.getElementById('label-materia').innerText = `${plan} | ${r.materia}`;
-            
+            document.getElementById('label-materia').innerText = `${localStorage.getItem('plan_actual')} | ${r.materia}`;
             document.getElementById('txt-pregunta').innerText = r.pregunta;
             document.getElementById('progreso-txt').innerText = `REACTIVO ${index + 1} DE ${reactivos.length}`;
             
-            const g = document.getElementById('opciones-grid');
-            g.innerHTML = '';
-            
-            const ops = [
-                {id: 'a', v: r.opcion_a, letra: 'A'}, 
-                {id: 'b', v: r.opcion_b, letra: 'B'}, 
-                {id: 'c', v: r.opcion_c, letra: 'C'}, 
-                {id: 'd', v: r.opcion_d, letra: 'D'}
+            const g = document.getElementById('opciones-grid'); g.innerHTML = '';
+            const contenido = [
+                { id: 'a', t: r.opcion_a }, { id: 'b', t: r.opcion_b },
+                { id: 'c', t: r.opcion_c }, { id: 'd', t: r.opcion_d }
             ].sort(() => Math.random() - 0.5);
-        
-            ops.forEach(o => {
+
+            const letras = ['A', 'B', 'C', 'D']; // Letras visuales fijas
+            contenido.forEach((op, i) => {
                 const b = document.createElement('button');
-                // ETIQUETA DE LETRA CORREGIDA
                 b.className = "w-full text-left p-5 rounded-xl border border-slate-800 bg-slate-900/50 flex items-center gap-4 transition-all text-sm italic hover:border-cyan-500";
-                b.innerHTML = `
-                    <span class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-[11px] font-black text-cyan-400">
-                        ${o.letra}
-                    </span> 
-                    <span class="text-slate-200">${o.v}</span>
-                `;
+                b.innerHTML = `<span class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-[11px] font-black text-cyan-400">${letras[i]}</span> <span class="text-slate-200">${op.t}</span>`;
                 b.onclick = () => {
-                    seleccionActual = o.id;
-                    document.querySelectorAll('#opciones-grid button').forEach(x => x.classList.remove('option-selected'));
+                    seleccionActual = op.id;
+                    document.querySelectorAll('button').forEach(x => x.classList.remove('option-selected'));
                     b.classList.add('option-selected');
                     document.getElementById('btn-confirm').disabled = false;
                 };
                 g.appendChild(b);
             });
+            document.getElementById('btn-confirm').disabled = true;
         }
 
-        function abortarExamen() {
-            const plan = localStorage.getItem('plan_actual');
-            // Si el plan NO incluye la palabra PRO, lanzamos la advertencia pesada
-            const advertencia = plan.includes("PRO") 
-                ? "¿Seguro que quieres salir? Tu progreso actual no se guardará."
-                : "⚠️ ATENCIÓN: Tienes un PLAN BÁSICO. Si abortas ahora, este simulador se contará como USADO y perderás una de tus 3 oportunidades. ¿Deseas continuar?";
-        
-            if (confirm(advertencia)) {
-                // Si aborta, mandamos un registro de "INTENTO FALLIDO" para que se descuente en Básico
-                window.location.href = 'dashboard.html?status=aborted';
-            }
-        }
-        
         async function procesarRespuesta() {
             if (seleccionActual === reactivos[index].respuesta_correcta) aciertos++;
             index++; if (index < reactivos.length) render(); else finalizar();
@@ -135,7 +124,7 @@
 
         async function finalizar() {
             const p = ((aciertos / reactivos.length) * 100).toFixed(2);
-            await _supabase.from('resultados_examenes').insert({ email: localStorage.getItem('session_email'), token_hex: token, nivel, puntaje: p });
+            await _supabase.from('resultados_examenes').insert({ email: localStorage.getItem('session_email'), token_hex: token, nivel: localStorage.getItem('simu_nivel'), puntaje: p });
             window.location.href = `dashboard.html?res=${p}`;
         }
         init();
