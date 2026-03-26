@@ -6,10 +6,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
+    <script src="simu-telemetria.js"></script> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background-color: #050914; color: white; overflow: hidden; height: 100vh; font-family: sans-serif; }
         .grid-layout { display: grid; grid-template-columns: 320px 1fr; height: 100vh; }
         .option-selected { border-color: #00f2ff !important; background: rgba(0, 242, 255, 0.1) !important; }
+        #audio-fill { transition: width 0.1s; background: #00f2ff; height: 100%; width: 0%; }
     </style>
 </head>
 <body>
@@ -19,10 +21,19 @@
                 <p class="text-[9px] text-slate-500 uppercase font-black mb-1 italic">Cronómetro de Sesión</p>
                 <h2 id="timer" class="text-3xl font-mono text-cyan-400 font-bold tracking-tighter">00:00:00</h2>
             </div>
+            
             <video id="webcam" autoplay muted playsinline class="w-full aspect-video object-cover bg-black rounded-2xl border border-cyan-500/30 scale-x-[-1]"></video>
+
+            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                <p class="text-[8px] text-slate-600 uppercase font-bold mb-2 italic">Frecuencia de Audio</p>
+                <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="audio-fill"></div>
+                </div>
+            </div>
+
             <div class="mt-auto">
                 <button onclick="confirmarAborto()" class="w-full py-3 border border-red-500/30 text-red-500 text-[10px] font-black uppercase rounded-lg hover:bg-red-500 hover:text-white transition-all italic">
-                    Abortar Examen
+                    Finalizar Sesión
                 </button>
             </div>
         </aside>
@@ -44,7 +55,7 @@
 
     <script>
         const params = new URLSearchParams(window.location.search);
-        const token = params.get('v'), nivel = localStorage.getItem('simu_nivel');
+        const token = params.get('v'), nivelLabel = localStorage.getItem('simu_nivel');
         const cantQ = parseInt(localStorage.getItem('simu_preguntas')), mins = parseInt(localStorage.getItem('simu_tiempo'));
         const esPro = localStorage.getItem('es_pro') === "true";
         let reactivos = [], index = 0, aciertos = 0, seleccionActual = null, tiempoSeg = mins * 60;
@@ -53,32 +64,45 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('webcam').srcObject = stream;
+                setupAudioMonitor(stream);
                 
                 const plan = localStorage.getItem('plan_actual');
-                const nivelID = (nivel === "Principiante") ? 1 : (nivel === "Medio") ? 2 : 3;
+                const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
                 let tipos = plan.includes("UNAM") ? ['UNAM_GENERAL', plan.split(' ')[1]] : [plan.split(' ')[0]];
 
                 const { data } = await _supabase.from('reactivos').select('*').in('tipo_examen', tipos).eq('nivel', nivelID).limit(cantQ);
                 
                 if (data && data.length > 0) {
                     reactivos = data.sort(() => Math.random() - 0.5);
-                    if (!esPro) await descontarIntento(); // Descuenta al iniciar para Básico
+                    if (!esPro) await ejecutarDescuentoIntento();
                     render(); startTimer();
                 } else { window.location.href = 'dashboard.html'; }
             } catch (e) { window.location.href = 'dashboard.html'; }
         }
 
-        async function descontarIntento() {
-            const email = localStorage.getItem('session_email');
-            const { data } = await _supabase.from('usuarios_membresias').select('intentos_simulacro_restantes').eq('email', email).eq('token_hex', token).single();
-            if (data) {
-                await _supabase.from('usuarios_membresias').update({ intentos_simulacro_restantes: data.intentos_simulacro_restantes - 1 }).eq('email', email).eq('token_hex', token);
+        function setupAudioMonitor(stream) {
+            const audioContext = new AudioContext();
+            const source = audioContext.createMediaStreamSource(stream);
+            const analyser = audioContext.createAnalyser();
+            source.connect(analyser);
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+            function update() {
+                analyser.getByteFrequencyData(dataArray);
+                const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                document.getElementById('audio-fill').style.width = Math.min(volume * 4, 100) + "%";
+                if (volume > 60) registrarEventoVigilancia("Ruido excesivo detectado");
+                requestAnimationFrame(update);
             }
+            update();
         }
 
         async function confirmarAborto() {
-            let msg = esPro ? "¿Está seguro de que desea finalizar la sesión? Su progreso no será guardado." : "ATENCIÓN: Al ser Plan Básico, este intento ya ha sido descontado. ¿Desea abandonar el examen?";
-            if (confirm(msg)) window.location.href = 'dashboard.html';
+            let msg = esPro ? "¿Desea finalizar la sesión? Su progreso no será guardado." : "ATENCIÓN: Tienes un Plan Básico. Si abandonas ahora, se descontará 1 oportunidad. ¿Deseas continuar?";
+            if (confirm(msg)) {
+                await registrarEventoVigilancia("Examen abortado por el alumno");
+                window.location.href = 'dashboard.html';
+            }
         }
 
         function render() {
@@ -93,7 +117,7 @@
                 { id: 'c', t: r.opcion_c }, { id: 'd', t: r.opcion_d }
             ].sort(() => Math.random() - 0.5);
 
-            const letras = ['A', 'B', 'C', 'D']; // Letras visuales fijas
+            const letras = ['A', 'B', 'C', 'D'];
             contenido.forEach((op, i) => {
                 const b = document.createElement('button');
                 b.className = "w-full text-left p-5 rounded-xl border border-slate-800 bg-slate-900/50 flex items-center gap-4 transition-all text-sm italic hover:border-cyan-500";
@@ -110,8 +134,17 @@
         }
 
         async function procesarRespuesta() {
-            if (seleccionActual === reactivos[index].respuesta_correcta) aciertos++;
-            index++; if (index < reactivos.length) render(); else finalizar();
+            const r = reactivos[index];
+            const esCorrecto = (seleccionActual === r.respuesta_correcta);
+            
+            // TELEMETRÍA AUTOMÁTICA
+            const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
+            await registrarPasoPorReactivo(r.id, esCorrecto, nivelID);
+
+            if (esCorrecto) aciertos++;
+            index++; 
+            if (index < reactivos.length) render(); 
+            else finalizar();
         }
 
         function startTimer() {
@@ -123,9 +156,11 @@
         }
 
         async function finalizar() {
-            const p = ((aciertos / reactivos.length) * 100).toFixed(2);
-            await _supabase.from('resultados_examenes').insert({ email: localStorage.getItem('session_email'), token_hex: token, nivel: localStorage.getItem('simu_nivel'), puntaje: p });
-            window.location.href = `dashboard.html?res=${p}`;
+            const p = (aciertos / reactivos.length) * 100;
+            const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
+            
+            await guardarResultadoFinal(p, nivelID);
+            window.location.href = `dashboard.html?res=${Math.round(p)}`;
         }
         init();
     </script>
