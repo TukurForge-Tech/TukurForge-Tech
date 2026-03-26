@@ -63,18 +63,42 @@
             } catch (e) { window.location.href = 'dashboard.html'; }
         }
 
+        // examen.html - Función Render Corregida
         function render() {
             const r = reactivos[index];
-            document.getElementById('label-materia').innerText = r.materia;
+            // MOSTRAR TÍTULO DEL EXAMEN (Línea 90 aprox)
+            const plan = localStorage.getItem('plan_actual');
+            document.getElementById('label-materia').innerText = `${plan} | ${r.materia}`;
+            
             document.getElementById('txt-pregunta').innerText = r.pregunta;
             document.getElementById('progreso-txt').innerText = `REACTIVO ${index + 1} DE ${reactivos.length}`;
-            const g = document.getElementById('opciones-grid'); g.innerHTML = '';
             
-            ['a','b','c','d'].forEach(id => {
+            const g = document.getElementById('opciones-grid');
+            g.innerHTML = '';
+            
+            const ops = [
+                {id: 'a', v: r.opcion_a, letra: 'A'}, 
+                {id: 'b', v: r.opcion_b, letra: 'B'}, 
+                {id: 'c', v: r.opcion_c, letra: 'C'}, 
+                {id: 'd', v: r.opcion_d, letra: 'D'}
+            ].sort(() => Math.random() - 0.5);
+        
+            ops.forEach(o => {
                 const b = document.createElement('button');
-                b.className = "w-full text-left p-5 rounded-xl border border-slate-800 bg-slate-900/50 flex items-center gap-4 transition-all text-sm italic";
-                b.innerHTML = `<span class="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-[9px] font-bold text-slate-500 italic">?</span> ${r['opcion_'+id]}`;
-                b.onclick = () => { seleccionActual = id; document.querySelectorAll('button').forEach(x => x.classList.remove('option-selected')); b.classList.add('option-selected'); document.getElementById('btn-confirm').disabled = false; };
+                // ETIQUETA DE LETRA CORREGIDA
+                b.className = "w-full text-left p-5 rounded-xl border border-slate-800 bg-slate-900/50 flex items-center gap-4 transition-all text-sm italic hover:border-cyan-500";
+                b.innerHTML = `
+                    <span class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-[11px] font-black text-cyan-400">
+                        ${o.letra}
+                    </span> 
+                    <span class="text-slate-200">${o.v}</span>
+                `;
+                b.onclick = () => {
+                    seleccionActual = o.id;
+                    document.querySelectorAll('#opciones-grid button').forEach(x => x.classList.remove('option-selected'));
+                    b.classList.add('option-selected');
+                    document.getElementById('btn-confirm').disabled = false;
+                };
                 g.appendChild(b);
             });
         }
