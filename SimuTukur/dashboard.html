@@ -140,7 +140,27 @@
             }).join('');
         }
 
-        function irAlExamen(n, q, t) { window.location.href = `examen.html?n=${n}&q=${q}&t=${t}&v=${localStorage.getItem('token_hex_hijo')}`; }
+        // dashboard.html
+        function irAlExamen(nivel, q, t) {
+            // BLINDAJE: Guardamos todo internamente, no en la URL
+            localStorage.setItem('simu_nivel', nivel);
+            localStorage.setItem('simu_preguntas', q);
+            localStorage.setItem('simu_tiempo', t);
+            
+            // La URL ahora es limpia y segura
+            const token = localStorage.getItem('token_hex_hijo');
+            window.location.href = `examen.html?v=${token}`; 
+        }
+        
+        // Lógica para mostrar el tipo de Plan (Línea 95 aprox)
+        const infoPlan = document.getElementById('plan-actual');
+        const esPro = cursoSeleccionado.tipo_membresia === 'PRO'; // Asumiendo este campo en tu BD
+        infoPlan.innerHTML = `
+            Plan Activo: <span class="text-white">${nombrePlan}</span> 
+            <span class="ml-2 px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                ${esPro ? 'MEMBRESÍA PRO (ILIMITADA)' : 'PLAN BÁSICO (3 SIMULADORES)'}
+            </span>
+        `;
         function cerrarSesion() { localStorage.clear(); window.location.href = 'index.html'; }
         window.onload = inicializarDashboard;
     </script>
