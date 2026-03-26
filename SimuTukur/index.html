@@ -6,6 +6,7 @@
     <title>Acceso Unificado | TukurForge Tech</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
     <style>
         #splash-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; }
         .hidden { display: none !important; }
@@ -47,16 +48,11 @@
             <p>Desarrollado por <strong>TukurForge Tech</strong></p>
             <p>División Tecnológica de <strong>H Levare Group</strong></p>
             <p class="mt-2 text-slate-800 italic">© 2026. Todos los derechos reservados.</p>
-            <p class="text-slate-800 italic">(Solicitud de Marca en Trámite ante IMPI)</p>
         </div>
     </div>
 
     <script>
-        // CONFIGURACIÓN DE CONEXIÓN PROYECTO PCUOPQ...
-        const SUPABASE_URL = 'https://pcuopqvmucmhtcdeswxh.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjdW9wcXZtdWNtaHRjZGVzd3hoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTk0NTgsImV4cCI6MjA4OTQzNTQ1OH0.g1xfdTtbz4aNW_QF_JcwoM7DCmgRLDxF2Ik48I7fq2M';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+        // La variable "_supabase" ya viene de supabase-client.js
         const togglePassword = document.getElementById('togglePassword');
         const passwordInput = document.getElementById('pass');
 
@@ -76,25 +72,23 @@
             msg.style.color = "#22d3ee";
 
             try {
-                // Consulta con Join para traer datos del examen de Karev y Halmir
+                // Consultamos al usuario
                 const { data, error } = await _supabase
                     .from('usuarios_membresias')
-                    .select('*, config_examenes(*)')
+                    .select('*')
                     .eq('email', emailValue);
 
-                if (error) {
-                    // DIAGNÓSTICO: Si hay error de red o CORS, este alert nos dirá el porqué
-                    alert("Error de Supabase: " + error.message + " (Código: " + error.code + ")");
-                    throw error;
-                }
+                if (error) throw error;
 
                 if (data && data.length > 0) {
-                    // Validar contra password_hijo o password_padre
+                    // Buscamos coincidencia de contraseña
                     const match = data.find(u => u.password_hijo === passValue || u.password_padre === passValue);
 
                     if (match) {
-                        localStorage.setItem('session_email', emailValue);
-                        localStorage.setItem('mis_cursos', JSON.stringify(data));
+                        // 🛡️ CORRECCIÓN CLAVE: Guardar las variables que el Dashboard espera
+                        localStorage.setItem('token_hex', match.token_hex);
+                        localStorage.setItem('nombre_alumno', match.nombre_alumno);
+                        localStorage.setItem('session_email', emailValue); // Por si se ocupa
                         
                         // EFECTO SPLASH
                         document.getElementById('login-box').classList.add('hidden');
@@ -103,6 +97,7 @@
                         splash.classList.remove('hidden');
                         video.play();
                         
+                        // Redirección al terminar el video
                         video.onended = () => { window.location.href = 'dashboard.html'; };
                     } else {
                         msg.innerText = "Contraseña incorrecta socio.";
@@ -114,7 +109,7 @@
                 }
             } catch (err) {
                 console.error("Detalle del error técnico:", err);
-                msg.innerText = "Error de red. Verifica CORS en Supabase.";
+                msg.innerText = "Error de red. Verifica conexión.";
                 msg.style.color = "#f59e0b";
             }
         });
