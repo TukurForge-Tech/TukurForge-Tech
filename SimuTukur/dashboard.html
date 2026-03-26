@@ -6,6 +6,7 @@
     <title>Centro de Operaciones | SimuTukur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background-color: #050a14; color: white; font-family: 'Segoe UI', sans-serif; }
@@ -68,23 +69,21 @@
     </main>
 
     <script>
-        // Configuración de Supabase (Asegúrate de tener tus claves en el entorno)
-        const supabaseUrl = 'https://pcuopqvmucmhtcdeswxh.supabase.co'; 
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjdW9wcXZtdWNtaHRjZGVzd3hoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzg1OTQ1OCwiZXhwIjoyMDg5NDM1NDU4fQ.K5p2k2z8i2mLQhlxsP2voILlos2hELhKbAVPNH2_p30'; 
-        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-        // Recuperamos el token_hex guardado al seleccionar al hijo
-        const tokenHex = localStorage.getItem('token_hex');
-        const nombreAlumno = localStorage.getItem('nombre_alumno') || "Aspirante";
+        // La variable "_supabase" ya está disponible porque cargamos "supabase-client.js" arriba
 
         async function cargarDashboard() {
-            if (!tokenHex) {
-                window.location.href = 'login.html';
+            // Usamos la lógica centralizada de token
+            const tokenHex = localStorage.getItem('token_hex');
+            const nombreAlumno = localStorage.getItem('nombre_alumno') || "Aspirante";
+
+            if (!tokenHex || tokenHex === "null") {
+                console.warn("Sesión no válida, regresando al inicio.");
+                window.location.href = 'index.html'; 
                 return;
             }
 
             try {
-                // 1. Buscamos Institución y Área en config_examenes
+                // 1. Obtener Institución y Área
                 const { data: config, error: errConfig } = await _supabase
                     .from('config_examenes')
                     .select('institucion, area')
@@ -93,18 +92,16 @@
 
                 if (errConfig) throw errConfig;
 
-                // 2. Concatenamos para el match en reglas_simulador
-                // Ej: "UNAM" + " " + "A4" = "UNAM A4" | "ECOEMS" + " " + "GENERAL" = "ECOEMS GENERAL"
                 const nombreInstitucionFull = config.area ? `${config.institucion} ${config.area}` : config.institucion;
 
-                // 3. Pintamos la UI limpia (Sin Token, Plan Grande)
+                // 2. UI: Nombre Grande y Plan (Sin Token interno)
                 document.getElementById('info-usuario').innerHTML = `
                     <h2 class="text-5xl font-black italic mb-2 tracking-tighter">Hola, <span class="color-cian">${nombreAlumno}</span></h2>
                     <p class="text-2xl font-bold uppercase text-gray-400">Plan: <span class="text-white">${nombreInstitucionFull}</span></p>
                 `;
                 document.getElementById('msj-simu').innerText = `Bienvenido. Inicie su evaluación de nivel Principiante para ${nombreInstitucionFull}.`;
 
-                // 4. Traemos los niveles dinámicos de reglas_simulador
+                // 3. Obtener Niveles desde reglas_simulador
                 const { data: niveles, error: errNiveles } = await _supabase
                     .from('reglas_simulador')
                     .select('*')
@@ -117,12 +114,11 @@
                 contenedor.innerHTML = "";
 
                 niveles.forEach(n => {
-                    // Lógica de bloqueo (puedes ajustarla según progreso real después)
                     const isLocked = n.nivel !== 'Principiante'; 
 
                     contenedor.innerHTML += `
                         <div class="card-glass p-4 nivel-card ${isLocked ? 'locked' : ''}" 
-                             onclick="${isLocked ? "alert('Complete el nivel anterior para desbloquear.')" : `iniciarEntrenamiento('${n.nivel}', '${nombreInstitucionFull}')`}">
+                             onclick="${isLocked ? "alert('Nivel bloqueado. Complete el anterior.')" : `iniciarEntrenamiento('${n.nivel}', '${nombreInstitucionFull}')`}">
                             <div class="flex justify-between items-start mb-2">
                                 <h4 class="color-cian font-bold text-xs uppercase tracking-tighter">${n.nivel}</h4>
                                 <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'} text-[10px]"></i>
@@ -133,28 +129,29 @@
                 });
 
             } catch (error) {
-                console.error("Error Dashboard:", error.message);
+                console.error("Error en Dashboard:", error.message);
+                // Si la base de datos falla o el token es inválido:
+                // window.location.href = 'index.html'; 
             }
         }
 
         function cambiarEntrenamiento() {
-            // Solo quitamos el token del hijo para que regrese a la selección
             localStorage.removeItem('token_hex');
-            window.location.href = 'seleccion_hijo.html';
+            window.location.href = 'index.html'; 
         }
 
         function cerrarSesion() {
             localStorage.clear();
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         }
 
         function iniciarEntrenamiento(nivel, plan) {
-            // Guardamos nivel y plan para el simulador y redirigimos
             localStorage.setItem('nivel_actual', nivel);
             localStorage.setItem('plan_actual', plan);
-            window.location.href = 'simulador.html';
+            window.location.href = 'examen.html';
         }
 
+        // Arrancamos el motor
         window.onload = cargarDashboard;
     </script>
 </body>
