@@ -26,9 +26,7 @@
             <h1 class="text-2xl font-black italic color-cian tracking-tighter">SIMUTUKUR</h1>
             <button onclick="cerrarSesion()" class="text-red-500 font-bold hover:text-red-400 text-[10px] uppercase tracking-widest">Cerrar Sesión</button>
         </div>
-        <div id="pestanas-cursos" class="flex gap-2 overflow-x-auto pb-1">
-            <p class="text-[10px] text-gray-600 animate-pulse">Sincronizando perfiles...</p>
-        </div>
+        <div id="pestanas-cursos" class="flex gap-2 overflow-x-auto pb-1"></div>
     </header>
 
     <main class="grid grid-cols-12 h-[calc(100vh-140px)]">
@@ -50,12 +48,12 @@
                 </div>
                 <div id="chat-box" class="flex-grow p-6 overflow-y-auto text-xs text-gray-300 space-y-4">
                     <p class="bg-gray-800/40 p-4 rounded-2xl rounded-tl-none border border-white/5 max-w-[85%]">
-                        Sesión iniciada. Selecciona una pestaña superior para cargar el entrenamiento correspondiente.
+                        Sesión iniciada. Seleccione una pestaña superior para cargar el entrenamiento correspondiente.
                     </p>
                 </div>
                 <div class="p-4 border-t border-white/5 bg-black/40">
                     <div class="flex gap-2 bg-gray-900 border border-white/10 rounded-xl p-2">
-                        <input type="text" id="user-input" placeholder="Pregunta algo a Simu..." class="bg-transparent flex-grow text-xs p-2 outline-none">
+                        <input type="text" id="user-input" placeholder="Pregunte algo a Simu..." class="bg-transparent flex-grow text-xs p-2 outline-none">
                         <button class="bg-cyan-600 p-2 px-4 rounded-lg text-[10px] font-bold uppercase">Enviar</button>
                     </div>
                 </div>
@@ -69,20 +67,18 @@
     </main>
 
     <script>
-        // EL CORAZÓN DEL DASHBOARD: SE CARGA AL INICIO
         async function inicializarDashboard() {
             const email = localStorage.getItem('session_email');
             if (!email) { window.location.href = 'index.html'; return; }
 
             try {
-                // Consultamos la base de datos para obtener los hijos/planes
                 const { data: suscripciones, error } = await _supabase
                     .from('usuarios_membresias')
                     .select('*, config_examenes(*)')
                     .eq('email', email);
 
                 if (error || !suscripciones || suscripciones.length === 0) {
-                    document.getElementById('pestanas-cursos').innerHTML = "<p class='text-xs text-red-500 font-bold uppercase'>Error: No se encontraron cursos vinculados.</p>";
+                    document.getElementById('pestanas-cursos').innerHTML = "<p class='text-xs text-red-500 font-bold uppercase'>Error de vinculación.</p>";
                     return;
                 }
 
@@ -96,53 +92,41 @@
                     btn.innerText = nombreTab;
                     btn.onclick = () => seleccionarCurso(s, btn);
                     contenedorTabs.appendChild(btn);
-                    
-                    // Activamos el primero automáticamente para quitar el "Cargando..."
                     if (index === 0) seleccionarCurso(s, btn);
                 });
-
-            } catch (err) {
-                console.error("Falla crítica de sincronización:", err);
-            }
+            } catch (err) { console.error(err); }
         }
 
         async function seleccionarCurso(data, btn) {
-            // UI de Pestañas
             document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
             const nombrePlan = data.config_examenes.area ? `${data.config_examenes.institucion} ${data.config_examenes.area}` : data.config_examenes.institucion;
-            
-            // Actualizar Saludo y Plan
             document.getElementById('saludo-alumno').innerHTML = `Hola, <span class="color-cian italic">${data.nombre_alumno}</span>`;
             
-            // Buscamos el plan dentro del objeto config_examenes que viene del JOIN
             const esPro = data.config_examenes.plan === 'PRO';
             document.getElementById('plan-actual-container').innerHTML = `
                 <p class="text-[10px] uppercase font-bold text-gray-500 italic tracking-widest">
                     Plan Activo: <span class="text-white">${nombrePlan}</span> 
                     <span class="ml-2 px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 font-black">
-                        ${esPro ? 'MEMBRESÍA PRO (ILIMITADA)' : 'PLAN BÁSICO (3 USOS)'}
+                        ${esPro ? 'MEMBRESÍA PRO (ILIMITADA)' : `PLAN BÁSICO (${data.intentos_simulacro_restantes} RESTANTES)`}
                     </span>
                 </p>
             `;
             
-            // Guardamos localmente para el examen.html
             localStorage.setItem('token_hex_hijo', data.token_hex);
             localStorage.setItem('plan_actual', nombrePlan);
+            localStorage.setItem('es_pro', esPro);
 
-            // Cargamos el historial y los niveles en paralelo
             cargarHistorial(data.token_hex);
             cargarNiveles(nombrePlan);
         }
 
         async function cargarHistorial(token) {
             const contenedor = document.getElementById('contenedor-historial');
-            contenedor.innerHTML = "<p class='text-[8px] text-gray-600 italic'>Consultando bitácora...</p>";
-            
-            const { data, error } = await _supabase.from('resultados_examenes').select('*').eq('token_hex', token).order('created_at', { ascending: false });
+            const { data } = await _supabase.from('resultados_examenes').select('*').eq('token_hex', token).order('created_at', { ascending: false });
 
-            if (error || !data || data.length === 0) {
+            if (!data || data.length === 0) {
                 contenedor.innerHTML = `<div class="card-glass p-4 text-[9px] text-gray-500 italic border-dashed text-center">Sin actividad registrada.</div>`;
                 return;
             }
@@ -158,11 +142,8 @@
         }
 
         async function cargarNiveles(plan) {
+            const { data } = await _supabase.from('reglas_simulador').select('*').eq('institucion', plan).order('id', { ascending: true });
             const contenedor = document.getElementById('contenedor-niveles');
-            const { data, error } = await _supabase.from('reglas_simulador').select('*').eq('institucion', plan).order('id', { ascending: true });
-            
-            if (error || !data) { contenedor.innerHTML = "<p class='text-[10px] text-red-500'>Error de reglas.</p>"; return; }
-            
             contenedor.innerHTML = data.map(n => {
                 const isLocked = n.nivel !== 'Principiante';
                 return `
@@ -180,8 +161,7 @@
             localStorage.setItem('simu_nivel', nivel);
             localStorage.setItem('simu_preguntas', q);
             localStorage.setItem('simu_tiempo', t);
-            const token = localStorage.getItem('token_hex_hijo');
-            window.location.href = `examen.html?v=${token}`; 
+            window.location.href = `examen.html?v=${localStorage.getItem('token_hex_hijo')}`; 
         }
         
         function cerrarSesion() { localStorage.clear(); window.location.href = 'index.html'; }
