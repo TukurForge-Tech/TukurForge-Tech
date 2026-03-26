@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="simu-telemetria.js"></script> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background-color: #050a14; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         .card-glass { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; }
@@ -103,7 +103,8 @@
 
             const nombrePlan = data.config_examenes.area ? `${data.config_examenes.institucion} ${data.config_examenes.area}` : data.config_examenes.institucion;
             document.getElementById('saludo-alumno').innerHTML = `Hola, <span class="color-cian italic">${data.nombre_alumno}</span>`;
-            
+            localStorage.setItem('nombre_alumno', data.nombre_alumno);
+
             const esPro = data.config_examenes.plan === 'PRO';
             document.getElementById('plan-actual-container').innerHTML = `
                 <p class="text-[10px] uppercase font-bold text-gray-500 italic tracking-widest">
@@ -124,7 +125,8 @@
 
         async function cargarHistorial(token) {
             const contenedor = document.getElementById('contenedor-historial');
-            const { data } = await _supabase.from('resultados_examenes').select('*').eq('token_hex', token).order('created_at', { ascending: false });
+            // AJUSTE: Leer columna puntaje_obtenido
+            const { data } = await _supabase.from('resultados_examenes').select('*').eq('token_hex', token).order('fecha_aplicacion', { ascending: false });
 
             if (!data || data.length === 0) {
                 contenedor.innerHTML = `<div class="card-glass p-4 text-[9px] text-gray-500 italic border-dashed text-center">Sin actividad registrada.</div>`;
@@ -133,10 +135,10 @@
             contenedor.innerHTML = data.map(reg => `
                 <div class="card-glass p-3 border-l-2 border-cyan-500 bg-white/5 transition-all hover:bg-white/10">
                     <div class="flex justify-between items-center text-[8px] mb-1">
-                        <span class="text-cyan-400 font-black uppercase tracking-tighter">${reg.nivel}</span>
-                        <span class="text-gray-600">${new Date(reg.created_at).toLocaleDateString()}</span>
+                        <span class="text-cyan-400 font-black uppercase tracking-tighter">${reg.tipo_prueba}</span>
+                        <span class="text-gray-600">${new Date(reg.fecha_aplicacion).toLocaleDateString()}</span>
                     </div>
-                    <p class="text-lg font-black text-white">${reg.puntaje}% <span class="text-[9px] text-gray-500 font-normal italic">Aciertos</span></p>
+                    <p class="text-lg font-black text-white">${reg.puntaje_obtenido}% <span class="text-[9px] text-gray-500 font-normal italic">Aciertos</span></p>
                 </div>
             `).join('');
         }
