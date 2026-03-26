@@ -10,114 +10,57 @@
         body { background-color: #050914; color: white; overflow: hidden; height: 100vh; font-family: sans-serif; }
         .grid-layout { display: grid; grid-template-columns: 320px 1fr; height: 100vh; }
         .option-selected { border-color: #00f2ff !important; background: rgba(0, 242, 255, 0.1) !important; }
-        #audio-fill { transition: width 0.1s; background: #00f2ff; height: 100%; width: 0%; }
     </style>
 </head>
 <body>
     <div id="master-container" class="grid-layout">
         <aside class="bg-slate-900 border-r border-slate-800 p-6 flex flex-col gap-6">
-            <div class="bg-black p-4 rounded-xl border border-slate-800 text-center shadow-inner">
+            <div class="bg-black p-4 rounded-xl border border-slate-800 text-center">
                 <p class="text-[9px] text-slate-500 uppercase font-black mb-1 italic">Cronómetro de Sesión</p>
                 <h2 id="timer" class="text-3xl font-mono text-cyan-400 font-bold tracking-tighter">00:00:00</h2>
             </div>
-            
-            <div class="relative rounded-2xl overflow-hidden border border-cyan-500/30">
-                <video id="webcam" autoplay muted playsinline class="w-full aspect-video object-cover bg-black scale-x-[-1]"></video>
-                <div class="absolute top-2 left-2 px-2 py-1 bg-red-600 text-[8px] font-bold rounded animate-pulse">REC</div>
-            </div>
-
-            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800">
-                <p class="text-[8px] text-slate-600 uppercase font-bold mb-2 italic">Frecuencia de Audio</p>
-                <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                    <div id="audio-fill"></div>
-                </div>
-            </div>
-
+            <video id="webcam" autoplay muted playsinline class="w-full aspect-video object-cover bg-black rounded-2xl border border-cyan-500/30 scale-x-[-1]"></video>
             <div class="mt-auto p-4 bg-red-500/5 border border-red-500/10 rounded-xl">
                 <p class="text-[9px] text-red-500 font-black uppercase tracking-widest italic">Monitor IA Activo</p>
-                <p class="text-[8px] text-slate-500 mt-1 italic leading-tight">Procesando biometría facial y ruido ambiental en tiempo real.</p>
             </div>
         </aside>
 
         <main class="relative p-12 overflow-y-auto">
             <div id="quiz-ui" class="max-w-3xl mx-auto">
                 <header class="mb-12">
-                    <span id="label-materia" class="px-3 py-1 bg-cyan-500/10 text-cyan-400 text-[10px] font-black rounded-full border border-cyan-500/20 uppercase italic">Sincronizando...</span>
-                    <h1 id="txt-pregunta" class="text-2xl font-bold mt-8 leading-relaxed text-slate-100">Cargando reactivos del servidor...</h1>
+                    <span id="label-materia" class="px-3 py-1 bg-cyan-500/10 text-cyan-400 text-[10px] font-black rounded-full border border-cyan-500/20 uppercase italic">Cargando...</span>
+                    <h1 id="txt-pregunta" class="text-2xl font-bold mt-8 text-slate-100 italic">Preparando reactivos...</h1>
                 </header>
-
                 <div id="opciones-grid" class="space-y-4"></div>
-
                 <footer class="mt-16 pt-8 border-t border-slate-800 flex justify-between items-center">
-                    <p id="progreso-txt" class="text-slate-500 text-xs font-bold italic tracking-widest">Pregunta -- de --</p>
-                    <button id="btn-confirm" onclick="procesarRespuesta()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 px-10 py-4 rounded-xl font-bold uppercase text-[10px] transition-all shadow-lg shadow-cyan-900/20">Confirmar Respuesta</button>
+                    <p id="progreso-txt" class="text-slate-500 text-xs font-bold italic uppercase">Pregunta -- de --</p>
+                    <button id="btn-confirm" onclick="procesarRespuesta()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 px-10 py-4 rounded-xl font-bold uppercase text-[10px] transition-all">Confirmar Respuesta</button>
                 </footer>
             </div>
         </main>
     </div>
 
     <script>
-        // RECUPERAR PARÁMETROS DINÁMICOS
         const params = new URLSearchParams(window.location.search);
-        const nivel = params.get('n') || "Principiante";
-        const token = params.get('v');
-        const cantQ = parseInt(params.get('q')) || 40;
-        const mins = parseInt(params.get('t')) || 60;
-
-        let reactivos = [], index = 0, aciertos = 0, seleccionActual = null, incidencias = 0;
-        let tiempoSeg = mins * 60;
+        const nivel = params.get('n'), token = params.get('v'), cantQ = parseInt(params.get('q')) || 40, mins = parseInt(params.get('t')) || 60;
+        let reactivos = [], index = 0, aciertos = 0, seleccionActual = null, tiempoSeg = mins * 60;
 
         async function init() {
-            if (isNaN(tiempoSeg)) tiempoSeg = 3600; // Fix para NaN
-
             try {
-                // Iniciar Periféricos
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('webcam').srcObject = stream;
-                setupAudioMonitor(stream);
-
-                // Cargar Reactivos Limitados
-                const nivelID = (nivel === "Principiante") ? 1 : (nivel === "Medio") ? 2 : 3;
+                
                 const plan = localStorage.getItem('plan_actual');
+                const nivelID = (nivel === "Principiante") ? 1 : (nivel === "Medio") ? 2 : 3;
 
-                const { data, error } = await _supabase
-                    .from('reactivos')
-                    .select('*')
-                    .eq('institucion', plan)
-                    .eq('nivel', nivelID)
-                    .limit(cantQ);
+                // LÓGICA DE FILTRO: UNAM (General + Área) o ECOEMS (Base)
+                let tipos = plan.includes("UNAM") ? ['UNAM_GENERAL', plan.split(' ')[1]] : [plan.split(' ')[0]];
 
-                if (error || !data || data.length === 0) {
-                    alert("Error: No hay reactivos para " + plan + " en nivel " + nivel);
-                    window.location.href = 'dashboard.html';
-                    return;
-                }
+                const { data, error } = await _supabase.from('reactivos').select('*').in('tipo_examen', tipos).eq('nivel', nivelID).limit(cantQ);
 
-                reactivos = data.sort(() => Math.random() - 0.5);
-                render();
-                startTimer();
-
-            } catch (err) {
-                alert("Simu requiere cámara y audio para validar tu identidad.");
-                window.location.href = 'dashboard.html';
-            }
-        }
-
-        function setupAudioMonitor(stream) {
-            const audioContext = new AudioContext();
-            const source = audioContext.createMediaStreamSource(stream);
-            const analyser = audioContext.createAnalyser();
-            source.connect(analyser);
-            const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-            function update() {
-                analyser.getByteFrequencyData(dataArray);
-                const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
-                document.getElementById('audio-fill').style.width = Math.min(volume * 4, 100) + "%";
-                if (volume > 50) incidencias++;
-                requestAnimationFrame(update);
-            }
-            update();
+                if (data && data.length > 0) { reactivos = data.sort(() => Math.random() - 0.5); render(); startTimer(); }
+                else { alert("No hay reactivos para " + plan); window.location.href = 'dashboard.html'; }
+            } catch (e) { window.location.href = 'dashboard.html'; }
         }
 
         function render() {
@@ -125,70 +68,35 @@
             document.getElementById('label-materia').innerText = r.materia;
             document.getElementById('txt-pregunta').innerText = r.pregunta;
             document.getElementById('progreso-txt').innerText = `REACTIVO ${index + 1} DE ${reactivos.length}`;
+            const g = document.getElementById('opciones-grid'); g.innerHTML = '';
             
-            const g = document.getElementById('opciones-grid');
-            g.innerHTML = '';
-            
-            const ops = [
-                {id: 'a', v: r.opcion_a}, {id: 'b', v: r.opcion_b}, 
-                {id: 'c', v: r.opcion_c}, {id: 'd', v: r.opcion_d}
-            ].sort(() => Math.random() - 0.5);
-
-            ops.forEach(o => {
+            ['a','b','c','d'].forEach(id => {
                 const b = document.createElement('button');
-                b.className = "w-full text-left p-5 rounded-xl border border-slate-800 bg-slate-900/50 flex items-center gap-4 transition-all text-sm";
-                b.innerHTML = `<span class="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-[9px] font-bold text-slate-500 italic">?</span> ${o.v}`;
-                b.onclick = () => {
-                    seleccionActual = o.id;
-                    document.querySelectorAll('#opciones-grid button').forEach(x => x.classList.remove('option-selected'));
-                    b.classList.add('option-selected');
-                    document.getElementById('btn-confirm').disabled = false;
-                };
+                b.className = "w-full text-left p-5 rounded-xl border border-slate-800 bg-slate-900/50 flex items-center gap-4 transition-all text-sm italic";
+                b.innerHTML = `<span class="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-[9px] font-bold text-slate-500 italic">?</span> ${r['opcion_'+id]}`;
+                b.onclick = () => { seleccionActual = id; document.querySelectorAll('button').forEach(x => x.classList.remove('option-selected')); b.classList.add('option-selected'); document.getElementById('btn-confirm').disabled = false; };
                 g.appendChild(b);
             });
-            document.getElementById('btn-confirm').disabled = true;
         }
 
         async function procesarRespuesta() {
-            const correcto = (seleccionActual === reactivos[index].respuesta_correcta);
-            if (correcto) aciertos++;
-
-            index++;
-            if (index < reactivos.length) render();
-            else finalizar();
+            if (seleccionActual === reactivos[index].respuesta_correcta) aciertos++;
+            index++; if (index < reactivos.length) render(); else finalizar();
         }
 
         function startTimer() {
-            const timerEl = document.getElementById('timer');
-            const interval = setInterval(() => {
-                const h = Math.floor(tiempoSeg / 3600);
-                const m = Math.floor((tiempoSeg % 3600) / 60);
-                const s = tiempoSeg % 60;
-                timerEl.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-                if (tiempoSeg-- <= 0) { clearInterval(interval); finalizar(); }
+            setInterval(() => {
+                const h = Math.floor(tiempoSeg / 3600), m = Math.floor((tiempoSeg % 3600) / 60), s = tiempoSeg % 60;
+                document.getElementById('timer').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+                if (tiempoSeg-- <= 0) finalizar();
             }, 1000);
         }
 
         async function finalizar() {
-            document.getElementById('master-container').innerHTML = `
-                <div class="fixed inset-0 bg-black flex flex-col items-center justify-center">
-                    <div class="w-12 h-12 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <h2 class="text-xl font-bold italic color-cian">Sincronizando con H Levare Group...</h2>
-                </div>`;
-            
-            const puntaje = ((aciertos / reactivos.length) * 100).toFixed(2);
-            const email = localStorage.getItem('session_email');
-
-            try {
-                await _supabase.from('resultados_examenes').insert({
-                    email, token_hex: token, nivel, puntaje, incidencias_vigilancia: incidencias
-                });
-                window.location.href = `dashboard.html?res=${puntaje}`;
-            } catch (e) {
-                window.location.href = 'dashboard.html';
-            }
+            const p = ((aciertos / reactivos.length) * 100).toFixed(2);
+            await _supabase.from('resultados_examenes').insert({ email: localStorage.getItem('session_email'), token_hex: token, nivel, puntaje: p });
+            window.location.href = `dashboard.html?res=${p}`;
         }
-
         init();
     </script>
 </body>
