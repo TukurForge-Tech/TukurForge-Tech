@@ -12,7 +12,7 @@
         body { background-color: #050a14; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         .card-glass { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; }
         .color-cian { color: #00f2ff; }
-        .btn-tab { border: 1px solid rgba(0, 242, 255, 0.2); transition: all 0.3s; }
+        .btn-tab { border: 1px solid rgba(0, 242, 255, 0.2); transition: all 0.3s; cursor: pointer; }
         .btn-tab.active { background: #00f2ff; color: #050a14; border-color: #00f2ff; box-shadow: 0 0 10px #00f2ff; }
         .nivel-card { transition: transform 0.2s; cursor: pointer; }
         .nivel-card:hover:not(.locked) { transform: scale(1.02); background: rgba(0, 242, 255, 0.05); }
@@ -33,16 +33,13 @@
         <aside class="col-span-3 border-r border-gray-800 p-6 flex flex-col bg-black/20">
             <h3 class="text-gray-500 font-bold text-[10px] uppercase tracking-widest mb-6 italic">Línea del Tiempo de Aprendizaje</h3>
             <div id="contenedor-historial" class="flex-grow overflow-y-auto space-y-4 pr-2">
-                <div class="card-glass p-4 text-[10px] text-gray-500 italic border-dashed">
-                    No se han detectado evaluaciones previas para este perfil.
                 </div>
-            </div>
         </aside>
 
         <section class="col-span-6 p-8 flex flex-col h-full bg-[#050a14]">
             <div id="info-usuario" class="mb-6">
-                <h2 id="saludo-alumno" class="text-3xl font-black italic tracking-tighter">Hola, <span class="color-cian italic">Cargando...</span></h2>
-                <p id="plan-actual" class="text-[10px] uppercase font-bold text-gray-500 mt-1 italic tracking-widest">Plan: Seleccione un curso</p>
+                <h2 id="saludo-alumno" class="text-2xl font-black italic tracking-tighter">Hola, <span class="color-cian italic">Cargando...</span></h2>
+                <p id="plan-actual" class="text-[10px] uppercase font-bold text-gray-500 mt-1 italic tracking-widest">Plan: --</p>
             </div>
 
             <div class="card-glass flex-grow flex flex-col overflow-hidden">
@@ -52,13 +49,13 @@
                 </div>
                 <div id="chat-box" class="flex-grow p-6 overflow-y-auto text-xs text-gray-300 space-y-4">
                     <p class="bg-gray-800/40 p-4 rounded-2xl rounded-tl-none border border-white/5 max-w-[80%]">
-                        Hola. Soy Simu. He sincronizado tu banco de reactivos. Selecciona un nivel en el panel derecho para comenzar.
+                        Hola. He sincronizado tu perfil. Selecciona un nivel para comenzar tu evaluación.
                     </p>
                 </div>
                 <div class="p-4 border-t border-white/5 bg-black/40">
-                    <div class="flex gap-2 bg-gray-900 border border-white/10 rounded-xl p-2 shadow-inner">
-                        <input type="text" id="user-input" placeholder="Escribe aquí tu duda académica..." class="bg-transparent flex-grow text-xs p-2 outline-none">
-                        <button class="bg-cyan-600 hover:bg-cyan-500 p-2 px-4 rounded-lg text-[10px] font-bold uppercase transition-colors">Enviar</button>
+                    <div class="flex gap-2 bg-gray-900 border border-white/10 rounded-xl p-2">
+                        <input type="text" id="user-input" placeholder="Escribe aquí tu duda..." class="bg-transparent flex-grow text-xs p-2 outline-none">
+                        <button class="bg-cyan-600 p-2 px-4 rounded-lg text-[10px] font-bold uppercase">Enviar</button>
                     </div>
                 </div>
             </div>
@@ -71,20 +68,14 @@
     </main>
 
     <script>
-        let cursoSeleccionado = null;
-
         async function inicializarDashboard() {
-            const tokenPadre = localStorage.getItem('token_hex');
-            if (!tokenPadre) { window.location.href = 'index.html'; return; }
-
-            // 1. Obtener todos los cursos vinculados a este usuario/familia
             const email = localStorage.getItem('session_email');
-            const { data: suscripciones, error } = await _supabase
+            if (!email) { window.location.href = 'index.html'; return; }
+
+            const { data: suscripciones } = await _supabase
                 .from('usuarios_membresias')
                 .select('*, config_examenes(*)')
                 .eq('email', email);
-
-            if (error || !suscripciones) return;
 
             const contenedorTabs = document.getElementById('pestanas-cursos');
             contenedorTabs.innerHTML = "";
@@ -96,59 +87,61 @@
                 btn.innerText = nombreTab;
                 btn.onclick = () => seleccionarCurso(s, btn);
                 contenedorTabs.appendChild(btn);
-
-                // Cargar el primero por defecto
                 if (index === 0) seleccionarCurso(s, btn);
             });
         }
 
         async function seleccionarCurso(data, btn) {
-            // Actualizar UI de botones
             document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            cursoSeleccionado = data;
             const nombrePlan = data.config_examenes.area ? `${data.config_examenes.institucion} ${data.config_examenes.area}` : data.config_examenes.institucion;
-            
             document.getElementById('saludo-alumno').innerHTML = `Hola, <span class="color-cian italic">${data.nombre_alumno}</span>`;
             document.getElementById('plan-actual').innerText = `Plan Activo: ${nombrePlan}`;
             
-            // Guardar localmente para el examen
             localStorage.setItem('token_hex_hijo', data.token_hex);
             localStorage.setItem('plan_actual', nombrePlan);
 
-            // Cargar Niveles desde reglas_simulador
-            const { data: niveles } = await _supabase
-                .from('reglas_simulador')
-                .select('*')
-                .eq('institucion', nombrePlan)
-                .order('id', { ascending: true });
+            await Promise.all([
+                cargarNiveles(nombrePlan),
+                cargarHistorial(data.token_hex)
+            ]);
+        }
 
-            const contenedor = document.getElementById('contenedor-niveles');
-            contenedor.innerHTML = "";
-            
-            niveles.forEach(n => {
-                const isLocked = n.nivel !== 'Principiante';
-                contenedor.innerHTML += `
-                    <div class="card-glass p-4 nivel-card ${isLocked ? 'locked' : ''}" 
-                         onclick="${isLocked ? '' : `irAlExamen('${n.nivel}', ${n.cantidad_preguntas}, ${n.tiempo_minutos})`}">
-                        <div class="flex justify-between items-start mb-1">
-                            <h4 class="color-cian font-bold text-[9px] uppercase tracking-tighter italic">${n.nivel}</h4>
-                            <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'} text-[8px] text-gray-600"></i>
-                        </div>
-                        <p class="text-sm font-black">${n.cantidad_preguntas} Reactivos | ${n.tiempo_minutos} Min</p>
+        async function cargarHistorial(token) {
+            const contenedor = document.getElementById('contenedor-historial');
+            const { data } = await _supabase.from('resultados_examenes').select('*').eq('token_hex', token).order('created_at', { ascending: false });
+
+            if (!data || data.length === 0) {
+                contenedor.innerHTML = `<div class="card-glass p-4 text-[10px] text-gray-500 italic border-dashed">No se han detectado evaluaciones previas.</div>`;
+                return;
+            }
+            contenedor.innerHTML = data.map(reg => `
+                <div class="card-glass p-3 border-l-2 border-cyan-500 bg-white/5">
+                    <div class="flex justify-between items-center text-[8px] mb-1">
+                        <span class="text-cyan-400 font-black uppercase">${reg.nivel}</span>
+                        <span class="text-gray-600">${new Date(reg.created_at).toLocaleDateString()}</span>
                     </div>
-                `;
-            });
+                    <p class="text-lg font-black">${reg.puntaje}% <span class="text-[8px] text-gray-500 font-normal">Aciertos</span></p>
+                </div>
+            `).join('');
         }
 
-        function irAlExamen(nivel, q, t) {
-            const token = localStorage.getItem('token_hex_hijo');
-            window.location.href = `examen.html?n=${nivel}&q=${q}&t=${t}&v=${token}`;
+        async function cargarNiveles(plan) {
+            const { data } = await _supabase.from('reglas_simulador').select('*').eq('institucion', plan).order('id', { ascending: true });
+            const contenedor = document.getElementById('contenedor-niveles');
+            contenedor.innerHTML = data.map(n => {
+                const isLocked = n.nivel !== 'Principiante';
+                return `
+                    <div class="card-glass p-4 nivel-card ${isLocked ? 'locked' : ''}" onclick="${isLocked ? '' : `irAlExamen('${n.nivel}', ${n.cantidad_preguntas}, ${n.tiempo_minutos})`}">
+                        <h4 class="color-cian font-bold text-[9px] uppercase italic">${n.nivel}</h4>
+                        <p class="text-sm font-black">${n.cantidad_preguntas} Reactivos | ${n.tiempo_minutos} Min</p>
+                    </div>`;
+            }).join('');
         }
 
+        function irAlExamen(n, q, t) { window.location.href = `examen.html?n=${n}&q=${q}&t=${t}&v=${localStorage.getItem('token_hex_hijo')}`; }
         function cerrarSesion() { localStorage.clear(); window.location.href = 'index.html'; }
-
         window.onload = inicializarDashboard;
     </script>
 </body>
