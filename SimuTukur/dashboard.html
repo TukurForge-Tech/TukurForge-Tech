@@ -116,7 +116,8 @@
             // Actualizar Saludo y Plan
             document.getElementById('saludo-alumno').innerHTML = `Hola, <span class="color-cian italic">${data.nombre_alumno}</span>`;
             
-            const esPro = data.tipo_membresia === 'PRO';
+            // Buscamos el plan dentro del objeto config_examenes que viene del JOIN
+            const esPro = data.config_examenes.plan === 'PRO';
             document.getElementById('plan-actual-container').innerHTML = `
                 <p class="text-[10px] uppercase font-bold text-gray-500 italic tracking-widest">
                     Plan Activo: <span class="text-white">${nombrePlan}</span> 
