@@ -60,3 +60,17 @@ async function ejecutarDescuentoIntento() {
         console.error("Error silencioso en descuento:", e);
     }
 }
+
+// 5. Guardar el veredicto final de vigilancia sin usar API de pago
+async function guardarAnalisisVigilancia(detalles_analisis) {
+    const { error } = await _supabase.from('analisis_vigilancia_ia').insert({
+        email: localStorage.getItem('session_email'),
+        token_hex: localStorage.getItem('token_hex_hijo'),
+        nombre_alumno: localStorage.getItem('nombre_alumno'),
+        tipo_sensor: "Audio/Video Local",
+        analisis_ia: detalles_analisis.veredicto, // Texto del veredicto
+        nivel_riesgo: detalles_analisis.riesgo,   // "Bajo", "Medio", "Alto"
+        timestamp: new Date().toISOString()
+    });
+    if (error) console.error("Error en analisis_vigilancia_ia:", error.message);
+}
