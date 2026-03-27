@@ -125,13 +125,18 @@
 
         async function cargarHistorial(token) {
             const contenedor = document.getElementById('contenedor-historial');
-            // AJUSTE: Leer columna puntaje_obtenido
-            const { data } = await _supabase.from('resultados_examenes').select('*').eq('token_hex', token).order('fecha_aplicacion', { ascending: false });
-
-            if (!data || data.length === 0) {
+            
+            // Consulta usando fecha_aplicacion para el orden
+            const { data, error } = await _supabase.from('resultados_examenes')
+                .select('*')
+                .eq('token_hex', token)
+                .order('fecha_aplicacion', { ascending: false });
+        
+            if (error || !data || data.length === 0) {
                 contenedor.innerHTML = `<div class="card-glass p-4 text-[9px] text-gray-500 italic border-dashed text-center">Sin actividad registrada.</div>`;
                 return;
             }
+            
             contenedor.innerHTML = data.map(reg => `
                 <div class="card-glass p-3 border-l-2 border-cyan-500 bg-white/5 transition-all hover:bg-white/10">
                     <div class="flex justify-between items-center text-[8px] mb-1">
