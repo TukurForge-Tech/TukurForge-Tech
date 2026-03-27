@@ -66,30 +66,50 @@
                 document.getElementById('webcam').srcObject = stream;
                 setupAudioMonitor(stream);
                 
-                const plan = localStorage.getItem('plan_actual');
+                const planActual = localStorage.getItem('plan_actual'); 
                 const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
-                let tipos = plan.includes("UNAM") ? ['UNAM_GENERAL', plan.split(' ')[1]] : [plan.split(' ')[0]];
-        
-                const { data, error } = await _supabase.from('reactivos').select('*').in('tipo_examen', tipos).eq('nivel', nivelID).limit(cantQ);
+
+                let filtroTipos = [];
+                        
+                        if (planActual.includes("UNAM")) {
+                            // Si es UNAM, extraemos el área (A1, A2, A3, A4) dinámicamente
+                            // Buscamos la palabra que empiece con 'A' seguida de un número
+                            const areaMatch = planActual.match(/A[1-4]/); 
+                            const areaExtraida = areaMatch ? areaMatch[0] : null;
+                            
+                            // Filtramos por las preguntas generales Y las de su área específica
+                            filtroTipos = ['UNAM_GENERAL'];
+                            if (areaExtraida) filtroTipos.push(areaExtraida);
+                        } else {
+                            // Para ECOEMS u otros, simplemente tomamos la primera palabra 
+                            // Esto buscará "ECOEMS" en la columna tipo_examen
+                            filtroTipos = [planActual.split(' ')[0]];
+                        }
                 
-                if (data && data.length > 0) {
-                    reactivos = data.sort(() => Math.random() - 0.5);
-                    // EJECUCIÓN ASÍNCRONA: No bloqueamos el examen por el descuento
-                    if (!esPro) ejecutarDescuentoIntento(); 
-                    render(); 
-                    startTimer();
-                } else { 
-                    console.error("No se encontraron reactivos:", error);
-                    alert("No hay reactivos cargados para este examen.");
-                    window.location.href = 'dashboard.html'; 
+                        // 3. CONSULTA FLEXIBLE
+                        const { data, error } = await _supabase
+                            .from('reactivos')
+                            .select('*')
+                            .in('tipo_examen', filtroTipos) // 'in' permite buscar múltiples valores a la vez
+                            .eq('nivel', nivelID)
+                            .limit(cantQ);
+                
+                        if (data && data.length > 0) {
+                            reactivos = data.sort(() => Math.random() - 0.5);
+                            if (!esPro) ejecutarDescuentoIntento(); 
+                            render(); 
+                            startTimer();
+                        } else { 
+                            console.error("No se encontraron reactivos para:", filtroTipos);
+                            alert(`No hay reactivos para ${planActual} en nivel ${nivelLabel}`);
+                            window.location.href = 'dashboard.html'; 
+                        }
+                    } catch (e) { 
+                        console.error("Error crítico:", e);
+                        alert("Asegúrate de permitir el acceso a la cámara y micrófono.");
+                        window.location.href = 'dashboard.html';
+                    }
                 }
-            } catch (e) { 
-                console.error("Error crítico en init:", e);
-                // Si fallan los permisos de cámara, avisamos antes de sacar al usuario
-                alert("Asegúrate de permitir el acceso a la cámara y micrófono.");
-                // window.location.href = 'dashboard.html'; // COMENTA ESTA LÍNEA para pruebas si sigue fallando
-            }
-        }
 
         function setupAudioMonitor(stream) {
             const audioContext = new AudioContext();
