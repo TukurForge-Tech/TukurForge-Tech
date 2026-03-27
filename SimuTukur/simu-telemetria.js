@@ -86,12 +86,12 @@ async function guardarProgresoIA(puntaje) {
     // Nota: Asegúrate de tener estas columnas en tu tabla en Supabase
     const { error } = await _supabase.from('analisis_progreso_ia').insert({
         email: localStorage.getItem('session_email'),
+        token_hex: localStorage.getItem('token_hex_hijo'), // Llave de rastreo
         nombre_alumno: localStorage.getItem('nombre_alumno'),
         materia: localStorage.getItem('plan_nombre_completo'), 
-        // Si no tienes las siguientes columnas, créalas en tu tabla:
-        // puntaje_obtenido: Math.round(puntaje),
-        // probabilidad_ingreso: prob,
-        // fecha_analisis: new Date().toISOString()
+        puntaje_obtenido: Math.round(puntaje),
+        probabilidad_ingreso: prob,
+        fecha_analisis: new Date().toISOString()
     });
     if (error) console.error("Error en analisis_progreso_ia:", error.message);
 }
