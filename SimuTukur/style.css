@@ -1,0 +1,71 @@
+/* style.css - Estilos Globales del Simulador */
+
+body { 
+    background-color: #050914; /* Tono unificado para todo el sistema */
+    color: white; 
+    font-family: 'Segoe UI', sans-serif; 
+    overflow: hidden; 
+    height: 100vh; 
+}
+
+/* Componentes UI */
+.card-glass { 
+    background: rgba(255, 255, 255, 0.03); 
+    border: 1px solid rgba(255, 255, 255, 0.1); 
+    border-radius: 15px; 
+}
+
+.color-cian { 
+    color: #00f2ff; 
+}
+
+/* Dashboard - Pestañas */
+.btn-tab { 
+    border: 1px solid rgba(0, 242, 255, 0.2); 
+    transition: all 0.3s; 
+    cursor: pointer; 
+    color: white; 
+}
+.btn-tab.active { 
+    background: #00f2ff; 
+    color: #050a14; 
+    border-color: #00f2ff; 
+    box-shadow: 0 0 10px #00f2ff; 
+    font-weight: 900; 
+}
+
+/* Dashboard - Tarjetas de Nivel */
+.nivel-card { 
+    transition: transform 0.2s; 
+    cursor: pointer; 
+    border: 1px solid rgba(255,255,255,0.05); 
+}
+.nivel-card:hover:not(.locked) { 
+    transform: scale(1.02); 
+    background: rgba(0, 242, 255, 0.05); 
+    border-color: #00f2ff; 
+}
+.locked { 
+    opacity: 0.3; 
+    filter: grayscale(1); 
+    cursor: not-allowed; 
+}
+
+/* Examen - Layout y Opciones */
+.grid-layout { 
+    display: grid; 
+    grid-template-columns: 360px 1fr; 
+    height: 100vh; 
+}
+.option-selected { 
+    border-color: #00f2ff !important; 
+    background: rgba(0, 242, 255, 0.1) !important; 
+}
+
+/* Examen - Barra de Audio */
+#audio-fill { 
+    transition: width 0.1s; 
+    background: #00f2ff; 
+    height: 100%; 
+    width: 0%; 
+}
