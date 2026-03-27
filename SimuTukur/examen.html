@@ -135,12 +135,12 @@
 
         async function procesarRespuesta() {
             const r = reactivos[index];
-            const esCorrecto = (seleccionActual === r.respuesta_correcta);
+            const esCorrecto = (seleccionActual === r.respuesta_correcta); // Devuelve true/false
             
-            // TELEMETRÍA AUTOMÁTICA
+            // REGISTRO MILIMÉTRICO EN BITÁCORA
             const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
             await registrarPasoPorReactivo(r.id, esCorrecto, nivelID);
-
+        
             if (esCorrecto) aciertos++;
             index++; 
             if (index < reactivos.length) render(); 
@@ -159,7 +159,10 @@
             const p = (aciertos / reactivos.length) * 100;
             const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
             
+            // GUARDADO FINAL CON NOMBRES DE COLUMNAS REALES
             await guardarResultadoFinal(p, nivelID);
+            
+            // Redirección con el puntaje redondeado para visualización
             window.location.href = `dashboard.html?res=${Math.round(p)}`;
         }
         init();
