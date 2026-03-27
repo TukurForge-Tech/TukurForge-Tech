@@ -30,7 +30,7 @@ async function guardarResultadoFinal(puntajeFinal, nivelFinal) {
         email: localStorage.getItem('session_email'),
         token_hex: localStorage.getItem('token_hex_hijo'),
         nombre_alumno: localStorage.getItem('nombre_alumno'),
-        tipo_prueba: localStorage.getItem('plan_actual'), // Ej: UNAM A4
+        tipo_prueba: localStorage.getItem('plan_nombre_completo'), // Guarda "UNAM A4" o "ECOEMS GENERAL"
         puntaje_obtenido: Math.round(puntajeFinal), // Integer
         nivel_examen: parseInt(nivelFinal), // Integer
         fecha_aplicacion: new Date().toISOString() // Timestamp
