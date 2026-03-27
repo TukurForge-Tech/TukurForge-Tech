@@ -58,11 +58,71 @@ async function seleccionarCurso(data, btn) {
 
     cargarHistorial(data.token_hex);
     cargarNiveles(nombrePlan);
+
+    // --- NUEVO: REVISAR SI VENIMOS DE UN EXAMEN ---
+    const params = new URLSearchParams(window.location.search);
+    const puntajeReciente = params.get('res');
+    
+    if (puntajeReciente) {
+        mostrarFeedbackIA(puntajeReciente, data.token_hex);
+    } else {
+        document.getElementById('chat-box').innerHTML = `
+            <p class="bg-gray-800/40 p-5 rounded-2xl rounded-tl-none border border-white/5 max-w-[85%] leading-relaxed">
+                Sesión iniciada. Seleccione una pestaña superior para cargar el entrenamiento correspondiente.
+            </p>
+        `;
+    }
 }
+
+// --- NUEVO: FUNCIÓN PARA EL CHAT DE IA ---
+async function mostrarFeedbackIA(puntaje, token) {
+    const chatBox = document.getElementById('chat-box');
+    
+    // 1. Evaluación Académica
+    let probabilidad = ""; let colorProb = ""; let msj = "";
+    if (puntaje < 50) {
+        probabilidad = "BAJA"; colorProb = "text-red-400";
+        msj = "Detecto áreas de oportunidad críticas. Necesitamos reforzar los fundamentos.";
+    } else if (puntaje < 80) {
+        probabilidad = "MEDIA"; colorProb = "text-yellow-400";
+        msj = "Vas por buen camino, pero aún hay conceptos que debemos afinar para asegurar tu lugar.";
+    } else {
+        probabilidad = "ALTA"; colorProb = "text-green-400";
+        msj = "¡Excelente rendimiento! Tienes un dominio sólido de los temas. Mantén este ritmo.";
+    }
+
+    // 2. Traer el último veredicto de vigilancia de la BD
+    const { data: vigData } = await _supabase.from('analisis_vigilancia_ia')
+        .select('nivel_riesgo, analisis_ia')
+        .eq('token_hex', token)
+        .order('timestamp', { ascending: false })
+        .limit(1);
+
+    let reporteVis = "Sin reporte de vigilancia reciente.";
+    let colorVis = "text-gray-400";
+    if (vigData && vigData.length > 0) {
+        reporteVis = vigData[0].analisis_ia;
+        colorVis = vigData[0].nivel_riesgo === "Alto" ? "text-red-400" : (vigData[0].nivel_riesgo === "Medio" ? "text-yellow-400" : "text-green-400");
+    }
+
+    // 3. Pintar el reporte en Tukur
+    chatBox.innerHTML = `
+        <div class="bg-gray-800/40 p-5 rounded-2xl rounded-tl-none border border-white/5 max-w-[95%] leading-relaxed space-y-3">
+            <p class="text-white font-bold border-b border-white/10 pb-2">📊 Reporte Final del Simulacro</p>
+            <p>Tu puntaje fue de <span class="font-black text-cyan-400">${puntaje}%</span>. ${msj}</p>
+            <p class="mt-2 text-xs text-gray-300">📈 Probabilidad de Ingreso: <span class="font-black ${colorProb}">${probabilidad}</span></p>
+            <div class="mt-4 p-4 bg-black/50 rounded-lg border border-white/5">
+                <p class="text-[10px] uppercase text-gray-500 font-bold mb-1">👁️ Análisis de Vigilancia</p>
+                <p class="text-xs ${colorVis} italic">${reporteVis}</p>
+            </div>
+        </div>
+    `;
+}
+
+// ... (Resto del código intacto: cargarHistorial, cargarNiveles, irAlExamen, cerrarSesion)
 
 async function cargarHistorial(token) {
     const contenedor = document.getElementById('contenedor-historial');
-    
     const { data, error } = await _supabase.from('resultados_examenes')
         .select('*')
         .eq('token_hex', token)
