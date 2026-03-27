@@ -69,15 +69,26 @@
                 const plan = localStorage.getItem('plan_actual');
                 const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
                 let tipos = plan.includes("UNAM") ? ['UNAM_GENERAL', plan.split(' ')[1]] : [plan.split(' ')[0]];
-
-                const { data } = await _supabase.from('reactivos').select('*').in('tipo_examen', tipos).eq('nivel', nivelID).limit(cantQ);
+        
+                const { data, error } = await _supabase.from('reactivos').select('*').in('tipo_examen', tipos).eq('nivel', nivelID).limit(cantQ);
                 
                 if (data && data.length > 0) {
                     reactivos = data.sort(() => Math.random() - 0.5);
-                    if (!esPro) await ejecutarDescuentoIntento();
-                    render(); startTimer();
-                } else { window.location.href = 'dashboard.html'; }
-            } catch (e) { window.location.href = 'dashboard.html'; }
+                    // EJECUCIÓN ASÍNCRONA: No bloqueamos el examen por el descuento
+                    if (!esPro) ejecutarDescuentoIntento(); 
+                    render(); 
+                    startTimer();
+                } else { 
+                    console.error("No se encontraron reactivos:", error);
+                    alert("No hay reactivos cargados para este examen.");
+                    window.location.href = 'dashboard.html'; 
+                }
+            } catch (e) { 
+                console.error("Error crítico en init:", e);
+                // Si fallan los permisos de cámara, avisamos antes de sacar al usuario
+                alert("Asegúrate de permitir el acceso a la cámara y micrófono.");
+                // window.location.href = 'dashboard.html'; // COMENTA ESTA LÍNEA para pruebas si sigue fallando
+            }
         }
 
         function setupAudioMonitor(stream) {
