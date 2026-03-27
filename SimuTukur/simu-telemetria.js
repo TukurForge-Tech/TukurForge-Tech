@@ -40,16 +40,23 @@ async function guardarResultadoFinal(puntajeFinal, nivelFinal) {
 
 // 4. Control de Intentos en usuarios_membresias
 async function ejecutarDescuentoIntento() {
-    const email = localStorage.getItem('session_email');
-    const token = localStorage.getItem('token_hex_hijo');
-    
-    const { data } = await _supabase.from('usuarios_membresias')
-        .select('intentos_simulacro_restantes')
-        .eq('email', email).eq('token_hex', token).single();
+    try {
+        const email = localStorage.getItem('session_email');
+        const token = localStorage.getItem('token_hex_hijo');
+        
+        const { data, error } = await _supabase.from('usuarios_membresias')
+            .select('intentos_simulacro_restantes')
+            .eq('email', email)
+            .eq('token_hex', token)
+            .maybeSingle(); // Usamos maybeSingle para que no truene si hay retraso
 
-    if (data && data.intentos_simulacro_restantes > 0) {
-        await _supabase.from('usuarios_membresias')
-            .update({ intentos_simulacro_restantes: data.intentos_simulacro_restantes - 1 })
-            .eq('email', email).eq('token_hex', token);
+        if (data && data.intentos_simulacro_restantes > 0) {
+            await _supabase.from('usuarios_membresias')
+                .update({ intentos_simulacro_restantes: data.intentos_simulacro_restantes - 1 })
+                .eq('email', email)
+                .eq('token_hex', token);
+        }
+    } catch (e) {
+        console.error("Error silencioso en descuento:", e);
     }
 }
