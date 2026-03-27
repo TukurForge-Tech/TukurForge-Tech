@@ -24,16 +24,17 @@ async function registrarEventoVigilancia(evento) {
     });
 }
 
-// 3. Registro en resultados_examenes
-async function guardarResultadoFinal(puntajeFinal, nivelFinal) {
+// 3. Registro en resultados_examenes (AHORA SÍ RECIBE EL JSON)
+async function guardarResultadoFinal(puntajeFinal, nivelFinal, detallesFallasJSON) {
     const { error } = await _supabase.from('resultados_examenes').insert({
         email: localStorage.getItem('session_email'),
         token_hex: localStorage.getItem('token_hex_hijo'),
         nombre_alumno: localStorage.getItem('nombre_alumno'),
-        tipo_prueba: localStorage.getItem('plan_nombre_completo'), // Guarda "UNAM A4" o "ECOEMS GENERAL"
-        puntaje_obtenido: Math.round(puntajeFinal), // Integer
-        nivel_examen: parseInt(nivelFinal), // Integer
-        fecha_aplicacion: new Date().toISOString() // Timestamp
+        tipo_prueba: localStorage.getItem('plan_nombre_completo'), 
+        puntaje_obtenido: Math.round(puntajeFinal), 
+        nivel_examen: parseInt(nivelFinal), 
+        detalles_fallas: detallesFallasJSON, // Aquí se inyecta el JSON
+        fecha_aplicacion: new Date().toISOString() 
     });
     if (error) console.error("Error en resultados_examenes:", error.message);
 }
