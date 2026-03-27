@@ -75,3 +75,23 @@ async function guardarAnalisisVigilancia(detalles_analisis) {
     });
     if (error) console.error("Error en analisis_vigilancia_ia:", error.message);
 }
+
+// 6. Registro de Progreso y Probabilidad
+async function guardarProgresoIA(puntaje) {
+    // Cálculo lógico de probabilidad
+    let prob = "Baja";
+    if (puntaje >= 50 && puntaje < 80) prob = "Media";
+    if (puntaje >= 80) prob = "Alta";
+
+    // Nota: Asegúrate de tener estas columnas en tu tabla en Supabase
+    const { error } = await _supabase.from('analisis_progreso_ia').insert({
+        email: localStorage.getItem('session_email'),
+        nombre_alumno: localStorage.getItem('nombre_alumno'),
+        materia: localStorage.getItem('plan_nombre_completo'), 
+        // Si no tienes las siguientes columnas, créalas en tu tabla:
+        // puntaje_obtenido: Math.round(puntaje),
+        // probabilidad_ingreso: prob,
+        // fecha_analisis: new Date().toISOString()
+    });
+    if (error) console.error("Error en analisis_progreso_ia:", error.message);
+}
