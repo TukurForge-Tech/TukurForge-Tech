@@ -160,10 +160,10 @@ async function finalizar() {
 
     if (incidenciasVigilancia.length > 5) {
         riesgo = "Alto";
-        veredicto = `Alerta: Se detectaron ${incidenciasVigilancia.length} eventos de ruido fuerte durante la prueba. Posible asistencia externa.`;
+        veredicto = `Alerta: Se detectaron ${incidenciasVigilancia.length} eventos anómalos (ausencias o ruidos) durante la prueba.`;
     } else if (incidenciasVigilancia.length > 0) {
         riesgo = "Medio";
-        veredicto = `Precaución: Se registraron ${incidenciasVigilancia.length} ruidos aislados. Se sugiere advertir al alumno.`;
+        veredicto = `Precaución: Se registraron ${incidenciasVigilancia.length} incidencias leves.`;
     }
 
     // Armamos el JSON con el reporte detallado
@@ -181,6 +181,9 @@ async function finalizar() {
         veredicto: veredicto,
         riesgo: riesgo
     });
+
+    // 3. NUEVO: Calculamos y guardamos el progreso y probabilidad a futuro
+    await guardarProgresoIA(p);
     
     window.location.href = `dashboard.html?res=${Math.round(p)}`;
 }
