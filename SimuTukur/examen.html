@@ -66,50 +66,46 @@
                 document.getElementById('webcam').srcObject = stream;
                 setupAudioMonitor(stream);
                 
-                const planActual = localStorage.getItem('plan_actual'); 
+                // 1. Recuperamos la configuración pura de la BD
+                const inst = localStorage.getItem('plan_institucion'); // "UNAM", "ECOEMS", etc.
+                const area = localStorage.getItem('plan_area'); // "A1", "A4", "GENERAL", etc.
                 const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
 
+                // 2. CONSTRUCCIÓN UNIVERSAL DEL FILTRO (Sin datos en duro)
                 let filtroTipos = [];
-                        
-                        if (planActual.includes("UNAM")) {
-                            // Si es UNAM, extraemos el área (A1, A2, A3, A4) dinámicamente
-                            // Buscamos la palabra que empiece con 'A' seguida de un número
-                            const areaMatch = planActual.match(/A[1-4]/); 
-                            const areaExtraida = areaMatch ? areaMatch[0] : null;
-                            
-                            // Filtramos por las preguntas generales Y las de su área específica
-                            filtroTipos = ['UNAM_GENERAL'];
-                            if (areaExtraida) filtroTipos.push(areaExtraida);
-                        } else {
-                            // Para ECOEMS u otros, simplemente tomamos la primera palabra 
-                            // Esto buscará "ECOEMS" en la columna tipo_examen
-                            filtroTipos = [planActual.split(' ')[0]];
-                        }
-                
-                        // 3. CONSULTA FLEXIBLE
-                        const { data, error } = await _supabase
-                            .from('reactivos')
-                            .select('*')
-                            .in('tipo_examen', filtroTipos) // 'in' permite buscar múltiples valores a la vez
-                            .eq('nivel', nivelID)
-                            .limit(cantQ);
-                
-                        if (data && data.length > 0) {
-                            reactivos = data.sort(() => Math.random() - 0.5);
-                            if (!esPro) ejecutarDescuentoIntento(); 
-                            render(); 
-                            startTimer();
-                        } else { 
-                            console.error("No se encontraron reactivos para:", filtroTipos);
-                            alert(`No hay reactivos para ${planActual} en nivel ${nivelLabel}`);
-                            window.location.href = 'dashboard.html'; 
-                        }
-                    } catch (e) { 
-                        console.error("Error crítico:", e);
-                        alert("Asegúrate de permitir el acceso a la cámara y micrófono.");
-                        window.location.href = 'dashboard.html';
-                    }
+
+                if (inst === "UNAM") {
+                    // Regla UNAM: Transversales (UNAM_GENERAL) + Específicos (A1, A2, etc.)
+                    filtroTipos = ["UNAM_GENERAL", area];
+                } else {
+                    // Regla General (ECOEMS, UAM, IPN): El tipo_examen coincide con la institución
+                    filtroTipos = [inst];
                 }
+
+                // 3. CONSULTA MILIMÉTRICA
+                const { data, error } = await _supabase
+                    .from('reactivos')
+                    .select('*')
+                    .in('tipo_examen', filtroTipos) // Busca reactivos que cumplan cualquiera de los tipos
+                    .eq('nivel', nivelID)
+                    .limit(cantQ);
+
+                if (data && data.length > 0) {
+                    reactivos = data.sort(() => Math.random() - 0.5);
+                    if (!esPro) ejecutarDescuentoIntento(); 
+                    render(); 
+                    startTimer();
+                } else { 
+                    console.error("No se encontraron reactivos para:", filtroTipos);
+                    alert(`No hay reactivos para ${inst} ${area} en nivel ${nivelLabel}`);
+                    window.location.href = 'dashboard.html'; 
+                }
+            } catch (e) { 
+                console.error("Error crítico:", e);
+                alert("Asegúrate de permitir el acceso a la cámara y micrófono.");
+                window.location.href = 'dashboard.html';
+            }
+        }
 
         function setupAudioMonitor(stream) {
             const audioContext = new AudioContext();
@@ -138,7 +134,7 @@
 
         function render() {
             const r = reactivos[index];
-            document.getElementById('label-materia').innerText = `${localStorage.getItem('plan_actual')} | ${r.materia}`;
+            document.getElementById('label-materia').innerText = `${localStorage.getItem('plan_nombre_completo')} | ${r.materia}`;
             document.getElementById('txt-pregunta').innerText = r.pregunta;
             document.getElementById('progreso-txt').innerText = `REACTIVO ${index + 1} DE ${reactivos.length}`;
             
