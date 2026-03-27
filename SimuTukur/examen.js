@@ -18,8 +18,10 @@ let ultimoAvisoRuido = 0;
 async function init() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        document.getElementById('webcam').srcObject = stream;
+        const videoElement = document.getElementById('webcam'); // Guardamos el elemento en variable
+        videoElement.srcObject = stream;
         setupAudioMonitor(stream);
+        setupVideoMonitor(videoElement);
         
         const inst = localStorage.getItem('plan_institucion'); 
         const area = localStorage.getItem('plan_area'); 
@@ -181,6 +183,37 @@ async function finalizar() {
     });
     
     window.location.href = `dashboard.html?res=${Math.round(p)}`;
+}
+
+// --- MOTOR DE VISIÓN IA (Detección de Rostros Local) ---
+async function setupVideoMonitor(videoElement) {
+    try {
+        // 1. Cargamos el modelo matemático desde un repositorio público seguro
+        const MODEL_URL = 'https://vladmandic.github.io/face-api/model/';
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+
+        // 2. Escaneamos la cámara cada 5 segundos (5000 ms)
+        setInterval(async () => {
+            if (videoElement.paused || videoElement.ended) return;
+
+            // La IA cuenta cuántos rostros hay en el fotograma actual
+            const detections = await faceapi.detectAllFaces(videoElement, new faceapi.TinyFaceDetectorOptions());
+            const tiempoActual = document.getElementById('timer').innerText;
+
+            if (detections.length === 0) {
+                // CERO rostros: El alumno no está frente a la cámara
+                registrarEventoVigilancia("Rostro no detectado (Posible abandono)");
+                incidenciasVigilancia.push(`Ausencia detectada en cámara en el minuto ${tiempoActual}`);
+            } else if (detections.length > 1) {
+                // DOS o más rostros: Alguien le está ayudando
+                registrarEventoVigilancia("Múltiples rostros detectados");
+                incidenciasVigilancia.push(`Múltiples personas en cámara en el minuto ${tiempoActual}`);
+            }
+        }, 5000); 
+
+    } catch (error) {
+        console.warn("La vigilancia de video no pudo iniciar:", error);
+    }
 }
 
 // Iniciar el simulador al cargar la página
