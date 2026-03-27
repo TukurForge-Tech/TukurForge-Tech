@@ -3,196 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <title>Simulador Oficial | SimuTukur</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-client.js"></script>
-    <script src="simu-telemetria.js"></script> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body { background-color: #050914; color: white; overflow: hidden; height: 100vh; font-family: sans-serif; }
-        .grid-layout { display: grid; grid-template-columns: 320px 1fr; height: 100vh; }
-        .option-selected { border-color: #00f2ff !important; background: rgba(0, 242, 255, 0.1) !important; }
-        #audio-fill { transition: width 0.1s; background: #00f2ff; height: 100%; width: 0%; }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="master-container" class="grid-layout">
-        <aside class="bg-slate-900 border-r border-slate-800 p-6 flex flex-col gap-6">
-            <div class="bg-black p-4 rounded-xl border border-slate-800 text-center shadow-inner">
-                <p class="text-[9px] text-slate-500 uppercase font-black mb-1 italic">Cronómetro de Sesión</p>
-                <h2 id="timer" class="text-3xl font-mono text-cyan-400 font-bold tracking-tighter">00:00:00</h2>
+        <aside class="bg-slate-900 border-r border-slate-800 p-8 flex flex-col gap-8">
+            <div class="bg-black p-5 rounded-xl border border-slate-800 text-center shadow-inner">
+                <p class="text-xs text-slate-500 uppercase font-black mb-2 italic">Cronómetro de Sesión</p>
+                <h2 id="timer" class="text-4xl font-mono text-cyan-400 font-bold tracking-tighter">00:00:00</h2>
             </div>
             
             <video id="webcam" autoplay muted playsinline class="w-full aspect-video object-cover bg-black rounded-2xl border border-cyan-500/30 scale-x-[-1]"></video>
 
-            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800">
-                <p class="text-[8px] text-slate-600 uppercase font-bold mb-2 italic">Frecuencia de Audio</p>
-                <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div class="p-5 bg-slate-950 rounded-xl border border-slate-800">
+                <p class="text-[10px] sm:text-xs text-slate-600 uppercase font-bold mb-3 italic">Frecuencia de Audio</p>
+                <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
                     <div id="audio-fill"></div>
                 </div>
             </div>
 
             <div class="mt-auto">
-                <button onclick="confirmarAborto()" class="w-full py-3 border border-red-500/30 text-red-500 text-[10px] font-black uppercase rounded-lg hover:bg-red-500 hover:text-white transition-all italic">
+                <button onclick="confirmarAborto()" class="w-full py-4 border border-red-500/30 text-red-500 text-sm font-black uppercase rounded-lg hover:bg-red-500 hover:text-white transition-all italic">
                     Finalizar Sesión
                 </button>
             </div>
         </aside>
 
-        <main class="relative p-12 overflow-y-auto">
-            <div id="quiz-ui" class="max-w-3xl mx-auto">
+        <main class="relative p-12 md:p-16 overflow-y-auto">
+            <div id="quiz-ui" class="max-w-4xl mx-auto">
                 <header class="mb-12">
-                    <span id="label-materia" class="px-3 py-1 bg-cyan-500/10 text-cyan-400 text-[10px] font-black rounded-full border border-cyan-500/20 uppercase italic"></span>
-                    <h1 id="txt-pregunta" class="text-2xl font-bold mt-8 text-slate-100 italic">Preparando reactivos...</h1>
+                    <span id="label-materia" class="px-4 py-2 bg-cyan-500/10 text-cyan-400 text-xs font-black rounded-full border border-cyan-500/20 uppercase italic"></span>
+                    <h1 id="txt-pregunta" class="text-3xl md:text-4xl font-bold mt-8 text-slate-100 italic leading-snug">Preparando reactivos...</h1>
                 </header>
-                <div id="opciones-grid" class="space-y-4"></div>
-                <footer class="mt-16 pt-8 border-t border-slate-800 flex justify-between items-center">
-                    <p id="progreso-txt" class="text-slate-500 text-xs font-bold italic uppercase"></p>
-                    <button id="btn-confirm" onclick="procesarRespuesta()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 px-10 py-4 rounded-xl font-bold uppercase text-[10px] transition-all">Confirmar Respuesta</button>
+                <div id="opciones-grid" class="space-y-5"></div>
+                <footer class="mt-20 pt-8 border-t border-slate-800 flex justify-between items-center">
+                    <p id="progreso-txt" class="text-slate-500 text-sm font-bold italic uppercase"></p>
+                    <button id="btn-confirm" onclick="procesarRespuesta()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 px-12 py-5 rounded-xl font-bold uppercase text-sm transition-all shadow-lg">Confirmar Respuesta</button>
                 </footer>
             </div>
         </main>
     </div>
 
-    <script>
-        const params = new URLSearchParams(window.location.search);
-        const token = params.get('v'), nivelLabel = localStorage.getItem('simu_nivel');
-        const cantQ = parseInt(localStorage.getItem('simu_preguntas')), mins = parseInt(localStorage.getItem('simu_tiempo'));
-        const esPro = localStorage.getItem('es_pro') === "true";
-        let reactivos = [], index = 0, aciertos = 0, seleccionActual = null, tiempoSeg = mins * 60;
-
-        async function init() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('webcam').srcObject = stream;
-                setupAudioMonitor(stream);
-                
-                // 1. Recuperamos la configuración pura de la BD
-                const inst = localStorage.getItem('plan_institucion'); // "UNAM", "ECOEMS", etc.
-                const area = localStorage.getItem('plan_area'); // "A1", "A4", "GENERAL", etc.
-                const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
-
-                // 2. CONSTRUCCIÓN UNIVERSAL DEL FILTRO (Sin datos en duro)
-                let filtroTipos = [];
-
-                if (inst === "UNAM") {
-                    // Regla UNAM: Transversales (UNAM_GENERAL) + Específicos (A1, A2, etc.)
-                    filtroTipos = ["UNAM_GENERAL", area];
-                } else {
-                    // Regla General (ECOEMS, UAM, IPN): El tipo_examen coincide con la institución
-                    filtroTipos = [inst];
-                }
-
-                // 3. CONSULTA MILIMÉTRICA
-                const { data, error } = await _supabase
-                    .from('reactivos')
-                    .select('*')
-                    .in('tipo_examen', filtroTipos) // Busca reactivos que cumplan cualquiera de los tipos
-                    .eq('nivel', nivelID)
-                    .limit(cantQ);
-
-                if (data && data.length > 0) {
-                    reactivos = data.sort(() => Math.random() - 0.5);
-                    if (!esPro) ejecutarDescuentoIntento(); 
-                    render(); 
-                    startTimer();
-                } else { 
-                    console.error("No se encontraron reactivos para:", filtroTipos);
-                    alert(`No hay reactivos para ${inst} ${area} en nivel ${nivelLabel}`);
-                    window.location.href = 'dashboard.html'; 
-                }
-            } catch (e) { 
-                console.error("Error crítico:", e);
-                alert("Asegúrate de permitir el acceso a la cámara y micrófono.");
-                window.location.href = 'dashboard.html';
-            }
-        }
-
-        function setupAudioMonitor(stream) {
-            const audioContext = new AudioContext();
-            const source = audioContext.createMediaStreamSource(stream);
-            const analyser = audioContext.createAnalyser();
-            source.connect(analyser);
-            const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-            function update() {
-                analyser.getByteFrequencyData(dataArray);
-                const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
-                document.getElementById('audio-fill').style.width = Math.min(volume * 4, 100) + "%";
-                if (volume > 60) registrarEventoVigilancia("Ruido excesivo detectado");
-                requestAnimationFrame(update);
-            }
-            update();
-        }
-
-        async function confirmarAborto() {
-            let msg = esPro ? "¿Desea finalizar la sesión? Su progreso no será guardado." : "ATENCIÓN: Tienes un Plan Básico. Si abandonas ahora, se descontará 1 oportunidad. ¿Deseas continuar?";
-            if (confirm(msg)) {
-                await registrarEventoVigilancia("Examen abortado por el alumno");
-                window.location.href = 'dashboard.html';
-            }
-        }
-
-        function render() {
-            const r = reactivos[index];
-            document.getElementById('label-materia').innerText = `${localStorage.getItem('plan_nombre_completo')} | ${r.materia}`;
-            document.getElementById('txt-pregunta').innerText = r.pregunta;
-            document.getElementById('progreso-txt').innerText = `REACTIVO ${index + 1} DE ${reactivos.length}`;
-            
-            const g = document.getElementById('opciones-grid'); g.innerHTML = '';
-            const contenido = [
-                { id: 'a', t: r.opcion_a }, { id: 'b', t: r.opcion_b },
-                { id: 'c', t: r.opcion_c }, { id: 'd', t: r.opcion_d }
-            ].sort(() => Math.random() - 0.5);
-
-            const letras = ['A', 'B', 'C', 'D'];
-            contenido.forEach((op, i) => {
-                const b = document.createElement('button');
-                b.className = "w-full text-left p-5 rounded-xl border border-slate-800 bg-slate-900/50 flex items-center gap-4 transition-all text-sm italic hover:border-cyan-500";
-                b.innerHTML = `<span class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-[11px] font-black text-cyan-400">${letras[i]}</span> <span class="text-slate-200">${op.t}</span>`;
-                b.onclick = () => {
-                    seleccionActual = op.id;
-                    document.querySelectorAll('button').forEach(x => x.classList.remove('option-selected'));
-                    b.classList.add('option-selected');
-                    document.getElementById('btn-confirm').disabled = false;
-                };
-                g.appendChild(b);
-            });
-            document.getElementById('btn-confirm').disabled = true;
-        }
-
-        async function procesarRespuesta() {
-            const r = reactivos[index];
-            const esCorrecto = (seleccionActual === r.respuesta_correcta); // Devuelve true/false
-            
-            // REGISTRO MILIMÉTRICO EN BITÁCORA
-            const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
-            await registrarPasoPorReactivo(r.id, esCorrecto, nivelID);
-        
-            if (esCorrecto) aciertos++;
-            index++; 
-            if (index < reactivos.length) render(); 
-            else finalizar();
-        }
-
-        function startTimer() {
-            setInterval(() => {
-                const h = Math.floor(tiempoSeg / 3600), m = Math.floor((tiempoSeg % 3600) / 60), s = tiempoSeg % 60;
-                document.getElementById('timer').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-                if (tiempoSeg-- <= 0) finalizar();
-            }, 1000);
-        }
-
-        async function finalizar() {
-            const p = (aciertos / reactivos.length) * 100;
-            const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
-            
-            // GUARDADO FINAL CON NOMBRES DE COLUMNAS REALES
-            await guardarResultadoFinal(p, nivelID);
-            
-            // Redirección con el puntaje redondeado para visualización
-            window.location.href = `dashboard.html?res=${Math.round(p)}`;
-        }
-        init();
-    </script>
+    <script src="supabase-client.js"></script>
+    <script src="simu-telemetria.js"></script>
+    <script src="examen.js"></script>
 </body>
 </html>
