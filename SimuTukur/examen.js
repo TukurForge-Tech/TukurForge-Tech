@@ -12,6 +12,8 @@ let index = 0;
 let aciertos = 0;
 let seleccionActual = null;
 let tiempoSeg = mins * 60;
+let incidenciasVigilancia = [];
+let ultimoAvisoRuido = 0;
 
 async function init() {
     try {
@@ -65,7 +67,18 @@ function setupAudioMonitor(stream) {
         analyser.getByteFrequencyData(dataArray);
         const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
         document.getElementById('audio-fill').style.width = Math.min(volume * 4, 100) + "%";
-        if (volume > 60) registrarEventoVigilancia("Ruido excesivo detectado");
+        
+        // CORRECCIÓN: Bajamos la sensibilidad a 40 y ponemos un candado de 5 segundos (5000ms)
+        if (volume > 40 && (Date.now() - ultimoAvisoRuido > 5000)) {
+            ultimoAvisoRuido = Date.now();
+            
+            // 1. Mandamos la bitácora individual
+            registrarEventoVigilancia("Ruido moderado/fuerte detectado");
+            
+            // 2. Guardamos memoria local para el veredicto final
+            const tiempoActual = document.getElementById('timer').innerText;
+            incidenciasVigilancia.push(`Pico de ruido detectado en el minuto ${tiempoActual}`);
+        }
         requestAnimationFrame(update);
     }
     update();
@@ -139,12 +152,34 @@ async function finalizar() {
     const p = (aciertos / reactivos.length) * 100;
     const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
     
+    // --- MOTOR DE VEREDICTO LOCAL (Costo $0) ---
+    let riesgo = "Bajo";
+    let veredicto = "El comportamiento fue adecuado. No se detectaron anomalías significativas.";
+
+    if (incidenciasVigilancia.length > 5) {
+        riesgo = "Alto";
+        veredicto = `Alerta: Se detectaron ${incidenciasVigilancia.length} eventos de ruido fuerte durante la prueba. Posible asistencia externa.`;
+    } else if (incidenciasVigilancia.length > 0) {
+        riesgo = "Medio";
+        veredicto = `Precaución: Se registraron ${incidenciasVigilancia.length} ruidos aislados. Se sugiere advertir al alumno.`;
+    }
+
+    // Armamos el JSON con el reporte detallado
     const detallesJSON = {
         aciertos_totales: aciertos,
-        preguntas_totales: reactivos.length
+        preguntas_totales: reactivos.length,
+        log_vigilancia: incidenciasVigilancia
     };
 
+    // 1. Guardamos el resultado del examen (como ya funciona)
     await guardarResultadoFinal(p, nivelID, detallesJSON);
+    
+    // 2. Guardamos el análisis de la IA simulada
+    await guardarAnalisisVigilancia({
+        veredicto: veredicto,
+        riesgo: riesgo
+    });
+    
     window.location.href = `dashboard.html?res=${Math.round(p)}`;
 }
 
