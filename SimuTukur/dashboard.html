@@ -101,7 +101,9 @@
             document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            const nombrePlan = data.config_examenes.area ? `${data.config_examenes.institucion} ${data.config_examenes.area}` : data.config_examenes.institucion;
+            const conf = data.config_examenes; // Obtenemos el objeto completo de la BD
+            const nombrePlan = conf.area ? `${conf.institucion} ${conf.area}` : conf.institucion;
+
             document.getElementById('saludo-alumno').innerHTML = `Hola, <span class="color-cian italic">${data.nombre_alumno}</span>`;
             localStorage.setItem('nombre_alumno', data.nombre_alumno);
 
@@ -115,8 +117,11 @@
                 </p>
             `;
             
+            // GUARDADO LÓGICO
             localStorage.setItem('token_hex_hijo', data.token_hex);
-            localStorage.setItem('plan_actual', nombrePlan);
+            localStorage.setItem('plan_institucion', conf.institucion); // Ej: "UNAM", "ECOEMS"
+            localStorage.setItem('plan_area', conf.area);               // Ej: "A4", "GENERAL"
+            localStorage.setItem('plan_nombre_completo', nombrePlan);   // Ej: "UNAM A4"
             localStorage.setItem('es_pro', esPro);
 
             cargarHistorial(data.token_hex);
