@@ -15,3 +15,14 @@ function verificarSesion() {
     }
     return token;
 }
+// ESTADO GLOBAL DE LA APP (Ajustado exactamente a tus variables reales)
+const AppState = {
+    usuario: {
+        email: localStorage.getItem('session_email') || null,
+        nombre: localStorage.getItem('nombre_alumno') || 'Aspirante',
+        token_hex: localStorage.getItem('token_hex'), // Solo tu token principal
+        creditos_ia: parseInt(localStorage.getItem('simu_creditos')) || 50 // Vive solo en el navegador
+    },
+    ultimoReporte: null,
+    bloqueoRepaso: false
+};
