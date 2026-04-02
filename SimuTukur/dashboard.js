@@ -1,8 +1,5 @@
-// dashboard.js - Lógica del Panel de Control y Asistente IA
+// dashboard.js - Lógica del Panel de Control
 
-// ==========================================
-// 1. INICIALIZACIÓN Y NAVEGACIÓN DE CURSOS
-// ==========================================
 async function inicializarDashboard() {
     const email = localStorage.getItem('session_email');
     if (!email) { window.location.href = 'index.html'; return; }
@@ -14,7 +11,7 @@ async function inicializarDashboard() {
             .eq('email', email);
 
         if (error || !suscripciones || suscripciones.length === 0) {
-            document.getElementById('pestanas-cursos').innerHTML = "<p class='text-sm text-red-500 font-bold uppercase'>Error de vinculación o sin cursos activos.</p>";
+            document.getElementById('pestanas-cursos').innerHTML = "<p class='text-sm text-red-500 font-bold uppercase'>Error de vinculación.</p>";
             return;
         }
 
@@ -24,65 +21,141 @@ async function inicializarDashboard() {
         suscripciones.forEach((s, index) => {
             const nombreTab = s.config_examenes.area ? `${s.config_examenes.institucion} ${s.config_examenes.area}` : s.config_examenes.institucion;
             const btn = document.createElement('button');
-            btn.className = `btn-tab px-6 py-3 rounded-full text-xs font-black uppercase whitespace-nowrap bg-gray-800 text-gray-400 hover:text-white transition-colors`;
+            btn.className = `btn-tab px-6 py-3 rounded-full text-xs font-black uppercase whitespace-nowrap`;
             btn.innerText = nombreTab;
             btn.onclick = () => seleccionarCurso(s, btn);
             contenedorTabs.appendChild(btn);
-            
-            // Seleccionar el primero por defecto
             if (index === 0) seleccionarCurso(s, btn);
         });
-    } catch (err) { console.error("Error inicializando dashboard:", err); }
+    } catch (err) { console.error(err); }
 }
 
 async function seleccionarCurso(data, btn) {
-    // UI: Resaltar botón activo
-    document.querySelectorAll('.btn-tab').forEach(b => {
-        b.classList.remove('bg-cyan-600', 'text-white');
-        b.classList.add('bg-gray-800', 'text-gray-400');
-    });
-    btn.classList.remove('bg-gray-800', 'text-gray-400');
-    btn.classList.add('bg-cyan-600', 'text-white');
+    document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
 
-    // Memoria local para el simulador
-    localStorage.setItem('plan_institucion', data.config_examenes.institucion);
-    localStorage.setItem('plan_area', data.config_examenes.area || '');
-    localStorage.setItem('plan_nombre_completo', btn.innerText);
+    const conf = data.config_examenes; 
+    const nombrePlan = conf.area ? `${conf.institucion} ${conf.area}` : conf.institucion;
 
-    // Cargar los niveles disponibles
-    await cargarNiveles(data.config_examenes.institucion);
+    document.getElementById('saludo-alumno').innerHTML = `Hola, <span class="color-cian italic">${data.nombre_alumno}</span>`;
+    localStorage.setItem('nombre_alumno', data.nombre_alumno);
 
-    // 🧠 INYECTAR LA INTELIGENCIA ARTIFICIAL
-    obtenerConsejosIA(btn.innerText);
+    const esPro = data.config_examenes.plan === 'PRO';
+    document.getElementById('plan-actual-container').innerHTML = `
+        <p class="text-xs uppercase font-bold text-gray-400 italic tracking-widest">
+            Plan Activo: <span class="text-white">${nombrePlan}</span> 
+            <span class="ml-3 px-3 py-1 rounded ${esPro ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'} font-black">
+                ${esPro ? 'MEMBRESÍA PRO (ILIMITADA)' : `PLAN BÁSICO (${data.intentos_simulacro_restantes} RESTANTES)`}
+            </span>
+        </p>
+    `;
+    
+    localStorage.setItem('token_hex_hijo', data.token_hex);
+    localStorage.setItem('plan_institucion', conf.institucion);
+    localStorage.setItem('plan_area', conf.area);               
+    localStorage.setItem('plan_nombre_completo', nombrePlan);   
+    localStorage.setItem('es_pro', esPro);
+
+    cargarHistorial(data.token_hex);
+    cargarNiveles(nombrePlan);
+
+    // --- NUEVO: REVISAR SI VENIMOS DE UN EXAMEN ---
+    const params = new URLSearchParams(window.location.search);
+    const puntajeReciente = params.get('res');
+    
+    if (puntajeReciente) {
+        mostrarFeedbackIA(puntajeReciente, data.token_hex);
+    } else {
+        document.getElementById('chat-box').innerHTML = `
+            <p class="bg-gray-800/40 p-5 rounded-2xl rounded-tl-none border border-white/5 max-w-[85%] leading-relaxed">
+                Sesión iniciada. Seleccione una pestaña superior para cargar el entrenamiento correspondiente.
+            </p>
+        `;
+    }
 }
 
-// ==========================================
-// 2. CARGA DE NIVELES / SIMULADORES
-// ==========================================
-async function cargarNiveles(plan) {
-    const { data } = await _supabase
-        .from('reglas_simulador')
-        .select('*')
-        .eq('institucion', plan)
-        .order('id', { ascending: true });
-        
-    const contenedor = document.getElementById('contenedor-niveles');
+// --- NUEVO: FUNCIÓN PARA EL CHAT DE IA ---
+async function mostrarFeedbackIA(puntaje, token) {
+    const chatBox = document.getElementById('chat-box');
     
-    if(!data || data.length === 0) {
-        contenedor.innerHTML = "<p class='text-xs text-gray-500'>Niveles en construcción...</p>";
-        return;
+    // 1. Evaluación Académica
+    let probabilidad = ""; let colorProb = ""; let msj = "";
+    if (puntaje < 50) {
+        probabilidad = "BAJA"; colorProb = "text-red-400";
+        msj = "Detecto áreas de oportunidad críticas. Necesitamos reforzar los fundamentos.";
+    } else if (puntaje < 80) {
+        probabilidad = "MEDIA"; colorProb = "text-yellow-400";
+        msj = "Vas por buen camino, pero aún hay conceptos que debemos afinar para asegurar tu lugar.";
+    } else {
+        probabilidad = "ALTA"; colorProb = "text-green-400";
+        msj = "¡Excelente rendimiento! Tienes un dominio sólido de los temas. Mantén este ritmo.";
     }
 
+    // 2. Traer el último veredicto de vigilancia de la BD
+    const { data: vigData } = await _supabase.from('analisis_vigilancia_ia')
+        .select('nivel_riesgo, analisis_ia')
+        .eq('token_hex', token)
+        .order('timestamp', { ascending: false })
+        .limit(1);
+
+    let reporteVis = "Sin reporte de vigilancia reciente.";
+    let colorVis = "text-gray-400";
+    if (vigData && vigData.length > 0) {
+        reporteVis = vigData[0].analisis_ia;
+        colorVis = vigData[0].nivel_riesgo === "Alto" ? "text-red-400" : (vigData[0].nivel_riesgo === "Medio" ? "text-yellow-400" : "text-green-400");
+    }
+
+    // 3. Pintar el reporte en Tukur
+    chatBox.innerHTML = `
+        <div class="bg-gray-800/40 p-5 rounded-2xl rounded-tl-none border border-white/5 max-w-[95%] leading-relaxed space-y-3">
+            <p class="text-white font-bold border-b border-white/10 pb-2">📊 Reporte Final del Simulacro</p>
+            <p>Tu puntaje fue de <span class="font-black text-cyan-400">${puntaje}%</span>. ${msj}</p>
+            <p class="mt-2 text-xs text-gray-300">📈 Probabilidad de Ingreso: <span class="font-black ${colorProb}">${probabilidad}</span></p>
+            <div class="mt-4 p-4 bg-black/50 rounded-lg border border-white/5">
+                <p class="text-[10px] uppercase text-gray-500 font-bold mb-1">👁️ Análisis de Vigilancia</p>
+                <p class="text-xs ${colorVis} italic">${reporteVis}</p>
+            </div>
+        </div>
+    `;
+}
+
+// ... (Resto del código intacto: cargarHistorial, cargarNiveles, irAlExamen, cerrarSesion)
+
+async function cargarHistorial(token) {
+    const contenedor = document.getElementById('contenedor-historial');
+    const { data, error } = await _supabase.from('resultados_examenes')
+        .select('*')
+        .eq('token_hex', token)
+        .order('fecha_aplicacion', { ascending: false });
+
+    if (error || !data || data.length === 0) {
+        contenedor.innerHTML = `<div class="card-glass p-6 text-xs text-gray-500 italic border-dashed text-center">Sin actividad registrada.</div>`;
+        return;
+    }
+    
+    contenedor.innerHTML = data.map(reg => `
+        <div class="card-glass p-4 border-l-4 border-cyan-500 bg-white/5 transition-all hover:bg-white/10">
+            <div class="flex justify-between items-center text-[10px] sm:text-xs mb-2">
+                <span class="text-cyan-400 font-black uppercase tracking-tighter">${reg.tipo_prueba}</span>
+                <span class="text-gray-500">${new Date(reg.fecha_aplicacion).toLocaleDateString()}</span>
+            </div>
+            <p class="text-2xl font-black text-white">${reg.puntaje_obtenido}% <span class="text-xs text-gray-500 font-normal italic">Aciertos</span></p>
+        </div>
+    `).join('');
+}
+
+async function cargarNiveles(plan) {
+    const { data } = await _supabase.from('reglas_simulador').select('*').eq('institucion', plan).order('id', { ascending: true });
+    const contenedor = document.getElementById('contenedor-niveles');
     contenedor.innerHTML = data.map(n => {
-        const isLocked = n.nivel !== 'Principiante'; 
-        
+        const isLocked = n.nivel !== 'Principiante';
         return `
-            <div class="bg-gray-900/50 p-5 rounded-2xl border ${isLocked ? 'border-gray-800 opacity-50 cursor-not-allowed' : 'border-cyan-500/30 hover:border-cyan-500/80 cursor-pointer hover:-translate-y-1 transition-all'} " onclick="${isLocked ? '' : `irAlExamen('${n.nivel}', ${n.cantidad_preguntas}, ${n.tiempo_minutos})`}">
+            <div class="card-glass p-5 nivel-card ${isLocked ? 'locked' : ''}" onclick="${isLocked ? '' : `irAlExamen('${n.nivel}', ${n.cantidad_preguntas}, ${n.tiempo_minutos})`}">
                 <div class="flex justify-between items-center mb-2">
-                    <h4 class="text-cyan-400 font-bold text-xs uppercase italic tracking-tighter">${n.nivel}</h4>
-                    <i class="fa-solid ${isLocked ? 'fa-lock text-gray-700' : 'fa-play text-cyan-400'} text-sm"></i>
+                    <h4 class="color-cian font-bold text-xs uppercase italic tracking-tighter">${n.nivel}</h4>
+                    <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'} text-sm text-gray-700"></i>
                 </div>
-                <p class="text-base font-black text-white">${n.cantidad_preguntas} Reactivos <span class="text-gray-500 font-normal">| ${n.tiempo_minutos} Min</span></p>
+                <p class="text-base font-black text-white">${n.cantidad_preguntas} Reactivos | ${n.tiempo_minutos} Min</p>
             </div>`;
     }).join('');
 }
@@ -91,154 +164,9 @@ function irAlExamen(nivel, q, t) {
     localStorage.setItem('simu_nivel', nivel);
     localStorage.setItem('simu_preguntas', q);
     localStorage.setItem('simu_tiempo', t);
-    window.location.href = 'examen.html'; 
+    window.location.href = `examen.html?v=${localStorage.getItem('token_hex_hijo')}`; 
 }
 
-function cerrarSesion() {
-    localStorage.clear();
-    window.location.href = 'index.html';
-}
+function cerrarSesion() { localStorage.clear(); window.location.href = 'index.html'; }
 
-// ==========================================
-// 3. 🧠 MOTOR DEL CHAT DE INTELIGENCIA ARTIFICIAL (SIMU)
-// ==========================================
-
-async function obtenerConsejosIA(nombreCurso) {
-    const email = localStorage.getItem('session_email');
-    const params = new URLSearchParams(window.location.search);
-    const recienTerminado = params.has('res'); // ¿Viene regresando de un examen?
-
-    document.getElementById('chat-box').innerHTML = ''; // Limpiar chat anterior
-    agregarMensajeChat("Simu", `Analizando tu telemetría y desempeño en **${nombreCurso}**... ⏳`);
-
-    try {
-        if (recienTerminado) {
-            // LIMPIAR URL: Quitamos el ?res= para que no se repita si recarga la página
-            window.history.replaceState({}, document.title, window.location.pathname);
-
-            // Buscar en BD los resultados exactos del examen que acaba de terminar
-            const [{ data: examenes }, { data: vigilancia }] = await Promise.all([
-                _supabase.from('resultados_examenes').select('*').eq('email', email).order('created_at', { ascending: false }).limit(1),
-                _supabase.from('analisis_vigilancia_ia').select('*').eq('email', email).order('timestamp', { ascending: false }).limit(1)
-            ]);
-
-            document.getElementById('chat-box').innerHTML = '';
-
-            if (examenes && examenes.length > 0) {
-                const ultimoExamen = examenes[0];
-                const jsonDetalles = ultimoExamen.detalles || {};
-                const puntaje = ultimoExamen.puntaje_obtenido || params.get('res');
-                
-                // Cálculo de probabilidad
-                let prob = "Baja 🔴";
-                if (puntaje >= 50 && puntaje < 80) prob = "Media 🟡";
-                if (puntaje >= 80) prob = "Alta 🟢";
-
-                // 1. REPORTE GENERAL INMEDIATO
-                let msgAnalisis = `¡Bienvenido de vuelta! Terminaste tu simulacro de **${nombreCurso}**.<br><br>`;
-                msgAnalisis += `🎯 **Puntaje:** ${Math.round(puntaje)}%<br>`;
-                msgAnalisis += `📈 **Probabilidad de Ingreso:** ${prob}<br>`;
-                
-                if (vigilancia && vigilancia.length > 0) {
-                    msgAnalisis += `👁️ **Vigilancia:** <span class="text-gray-400">${vigilancia[0].analisis_ia}</span><br>`;
-                }
-                agregarMensajeChat("Simu", msgAnalisis);
-
-                // 2. RETOS RÁPIDOS (FALLAS ESPECÍFICAS)
-                if (jsonDetalles.consejos_ia && jsonDetalles.consejos_ia.length > 0) {
-                    agregarMensajeChat("Simu", `🔥 **Aquí tienes tus Retos Rápidos basados en las preguntas que fallaste en esta sesión:**`);
-                    jsonDetalles.consejos_ia.forEach(consejo => {
-                        agregarMensajeChat("Simu", consejo);
-                    });
-                } else if (puntaje >= 90) {
-                    agregarMensajeChat("Simu", `¡Excelente trabajo! No detecté fallas críticas. Tienes un dominio casi perfecto. 🏆`);
-                } else {
-                    // Si no hubo consejos guardados, llamamos al historial general
-                    fetchFallosGenerales(email, nombreCurso);
-                }
-            }
-        } else {
-            // Lógica normal de cuando entra al dashboard (Historial General)
-            fetchFallosGenerales(email, nombreCurso);
-        }
-
-    } catch (error) {
-        console.error("Error al cargar IA:", error);
-        document.getElementById('chat-box').innerHTML = ''; 
-        agregarMensajeChat("Simu", "Hubo un pequeño error al cargar tu telemetría, pero el simulador está listo para ti.");
-    }
-}
-
-// Función auxiliar para leer los últimos 5 fallos históricos si no viene de un examen
-async function fetchFallosGenerales(email, nombreCurso) {
-    const { data: errores } = await _supabase
-        .from('bitacora_reactivos_vistos')
-        .select('reactivo_id')
-        .eq('email', email)
-        .eq('es_correcto', false)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-    document.getElementById('chat-box').innerHTML = ''; 
-
-    if (!errores || errores.length === 0) {
-        agregarMensajeChat("Simu", `¡Hola! Veo que vas perfecto o aún no has hecho simulacros de **${nombreCurso}**. <br><br>💡 **Mi sugerencia:** Elige un nivel en el panel derecho para empezar tu entrenamiento. Mientras respondas, yo detectaré tus áreas débiles y te daré 'Retos Rápidos' para mejorar.`);
-        return;
-    }
-
-    const ids = errores.map(e => e.reactivo_id);
-    const { data: reactivos_fallados } = await _supabase
-        .from('reactivos')
-        .select('materia, explicacion_ia')
-        .in('id', ids);
-
-    agregarMensajeChat("Simu", `¡Hola de nuevo! Analicé tu historial de simulacros. Noté algunas áreas de oportunidad en las que podemos trabajar. <br><br>🔥 **Aquí tienes Retos Rápidos para repasar:**`);
-
-    let materiasMostradas = new Set();
-    reactivos_fallados.forEach(r => {
-        if (r.explicacion_ia && !materiasMostradas.has(r.materia)) {
-            materiasMostradas.add(r.materia);
-            agregarMensajeChat("Simu", `📌 **En ${r.materia}:**<br><span class="text-gray-300">${r.explicacion_ia}</span>`);
-        }
-    });
-
-    if(materiasMostradas.size === 0) {
-         agregarMensajeChat("Simu", "Te sugiero repasar tus apuntes generales. ¡Sigue practicando, cada intento cuenta!");
-    }
-}
-
-// Lógica Visual del Chat (Burbujas)
-function agregarMensajeChat(remitente, mensaje) {
-    const chatBox = document.getElementById('chat-box');
-    const div = document.createElement('div');
-    
-    // Formato de texto simple (convierte **negritas** a <b>negritas</b> para que se vea bonito)
-    const msjFormateado = mensaje.replace(/\*\*(.*?)\*\*/g, '<strong class="text-cyan-400">$1</strong>');
-
-    if (remitente === "Simu") {
-        div.className = "bg-gray-800/60 p-5 rounded-2xl rounded-tl-none border border-white/5 max-w-[90%] leading-relaxed text-gray-200 shadow-md";
-        div.innerHTML = `<strong class="text-cyan-400 font-black italic text-xs uppercase mb-2 flex items-center gap-2"><i class="fa-solid fa-robot"></i> SIMU IA</strong> ${msjFormateado}`;
-    } else {
-        div.className = "bg-cyan-900/60 p-5 rounded-2xl rounded-tr-none border border-cyan-500/30 max-w-[85%] leading-relaxed text-white ml-auto shadow-md";
-        div.innerHTML = `<strong class="text-cyan-200 font-black italic text-xs uppercase mb-2 flex items-center justify-end gap-2">TÚ <i class="fa-solid fa-user"></i></strong> ${msjFormateado}`;
-    }
-    
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll hacia abajo
-}
-
-// Cuando el usuario escribe algo manual en la caja de texto
-function enviarMensajeUsuario() {
-    const input = document.getElementById('user-input');
-    const msj = input.value.trim();
-    if(!msj) return;
-
-    // Pintar mensaje del usuario
-    agregarMensajeChat("Tú", msj);
-    input.value = '';
-
-    // Respuesta programada del bot
-    setTimeout(() => {
-        agregarMensajeChat("Simu", "Por ahora mi red neuronal está concentrada 100% en analizar tu telemetría de fallos. Realiza un simulacro y regresaré aquí con consejos automáticos basados en tus errores. ¡A trabajar!");
-    }, 800);
-}
+window.onload = inicializarDashboard;
