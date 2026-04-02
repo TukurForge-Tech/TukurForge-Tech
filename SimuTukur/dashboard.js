@@ -47,15 +47,14 @@ async function seleccionarCurso(data, btn) {
 
     document.getElementById('saludo-alumno').innerHTML = `Hola, <span class="color-cian italic">${data.nombre_alumno}</span>`;
     
-    const esPro = data.config_examenes.plan === 'PRO';
+    // Eliminada la etiqueta de membresía. El texto ahora es más limpio y compacto.
     document.getElementById('plan-actual-container').innerHTML = `
-        <p class="text-xs uppercase font-bold text-gray-400 italic tracking-widest">
-            Plan Activo: <span class="text-white">${nombrePlan}</span> 
-            <span class="ml-3 px-3 py-1 rounded ${esPro ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'} font-black">
-                ${esPro ? 'MEMBRESÍA PRO (ILIMITADA)' : `PLAN BÁSICO (${data.intentos_simulacro_restantes} RESTANTES)`}
-            </span>
+        <p class="text-[10px] uppercase font-bold text-gray-500 italic tracking-widest leading-none">
+            Plan Activo: <span class="text-white">${nombrePlan}</span>
         </p>
     `;
+    
+    const esPro = data.config_examenes.plan === 'PRO';
     
     localStorage.setItem('nombre_alumno', data.nombre_alumno);
     localStorage.setItem('token_hex_hijo', data.token_hex);
@@ -69,8 +68,6 @@ async function seleccionarCurso(data, btn) {
 
     cargarHistorial(data.token_hex);
     
-    // ---> LECTURA HISTÓRICA PARA BLOQUEOS AUTOMÁTICOS <---
-    // Vamos a buscar el último examen de este plan para saber si reprobó en el pasado
     const { data: historialBD } = await _supabase.from('resultados_examenes')
         .select('puntaje_obtenido')
         .eq('token_hex', data.token_hex)
@@ -80,35 +77,26 @@ async function seleccionarCurso(data, btn) {
 
     const ultimoPuntajeBD = (historialBD && historialBD.length > 0) ? historialBD[0].puntaje_obtenido : null;
     
-    // Revisamos si acaba de regresar de hacer un examen ahorita
     const params = new URLSearchParams(window.location.search);
     const puntajeReciente = params.get('res');
 
-    // Decidimos cuál es el puntaje real: el que acaba de sacar, o el último guardado en BD. Si no hay ninguno, asume 100.
     const puntajeFinal = puntajeReciente ? parseInt(puntajeReciente) : (ultimoPuntajeBD !== null ? ultimoPuntajeBD : 100);
 
-    // Mandamos "ECOEMS" limpio si es de esa institución
     const palabraBusqueda = conf.institucion.includes('ECOEMS') ? 'ECOEMS' : nombrePlan;
     
-    // Cargamos los niveles con el puntaje histórico
     cargarNiveles(palabraBusqueda, puntajeFinal);
 
-    // Lógica inteligente del chat
     if (puntajeReciente) {
-        // Viene fresco de hacer el examen
         mostrarFeedbackIA(parseInt(puntajeReciente), data.token_hex, "reciente");
     } else if (ultimoPuntajeBD !== null && ultimoPuntajeBD < 70) {
-        // Inició sesión pero tiene un examen reprobado colgando
         mostrarFeedbackIA(ultimoPuntajeBD, data.token_hex, "historico_reprobado");
     } else if (ultimoPuntajeBD !== null) {
-        // Inició sesión y está aprobado
         document.getElementById('chat-box').innerHTML = `
             <div class="bg-gray-800/40 p-4 rounded-xl rounded-tl-none border border-white/5 max-w-[85%] shadow-sm">
                 <p class="leading-relaxed">Bienvenido de vuelta. Tu último simulacro de ${nombrePlan} fue de <span class="text-cyan-400 font-bold">${ultimoPuntajeBD}%</span>. Selecciona un nivel a la derecha para continuar tu entrenamiento.</p>
             </div>
         `;
     } else {
-        // Es nuevo totalmente
         document.getElementById('chat-box').innerHTML = `
             <div class="bg-gray-800/40 p-4 rounded-xl rounded-tl-none border border-white/5 max-w-[85%] shadow-sm">
                 <p class="leading-relaxed">Expediente limpio. Seleccione un nivel en el panel derecho para iniciar su primer simulacro y calibrar la red neuronal.</p>
@@ -117,7 +105,6 @@ async function seleccionarCurso(data, btn) {
     }
 }
 
-// Recibe el puntaje real (histórico o reciente) para bloquear
 async function cargarNiveles(institucion, puntajeReal) {
     const contenedor = document.getElementById('contenedor-niveles');
     const { data } = await _supabase.from('reglas_simulador').select('*').eq('institucion', institucion).order('id', { ascending: true });
@@ -225,7 +212,6 @@ async function mostrarFeedbackIA(puntaje, token, contexto) {
     if (puntaje < 50) probabilidad = "BAJA";
     else if (puntaje < 80) probabilidad = "MEDIA";
 
-    // Prompt dinámico según si acaba de reprobar o si inició sesión estando reprobado
     let promptInvisible = "";
     if (contexto === "reciente") {
         promptInvisible = `Eres el tutor de SimuTukur. El estudiante acaba de terminar su examen de ${localStorage.getItem('plan_nombre_completo')}. Su calificación fue ${puntaje}% (Probabilidad de ingreso: ${probabilidad}). Su nivel es Principiante. Salúdalo por su nombre (${localStorage.getItem('nombre_alumno')}), dile brevemente tu evaluación de su puntaje, anímalo y pregúntale en qué reactivo tiene dudas. REGLA ESTRICTA: Tu respuesta no debe superar las 3 líneas. Sé claro, concreto y no te salgas del tema.`;
@@ -294,7 +280,6 @@ async function procesarEnvioChat() {
     }
 }
 
-// Diseño compacto de burbujas (text-xs y p-3)
 function printChat(quien, texto, isLoader = false) {
     const box = document.getElementById('chat-box');
     const div = document.createElement('div');
