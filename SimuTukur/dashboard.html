@@ -14,12 +14,14 @@
 <body>
 
     <header class="p-6 flex flex-col gap-4 border-b border-gray-800 bg-[#050a14]">
-        <div class="flex justify-between items-start">
-            <div>
-                <h1 class="text-3xl font-black italic color-cian tracking-tighter mb-4">SIMUTUKUR</h1>
-                <div id="info-usuario">
-                    <h2 id="saludo-alumno" class="text-2xl font-black italic tracking-tighter text-white">Hola, <span class="color-cian italic">Cargando...</span></h2>
-                    <div id="plan-actual-container" class="mt-2"></div>
+        <div class="flex justify-between items-center">
+            
+            <div class="flex items-center gap-6">
+                <h1 class="text-3xl font-black italic color-cian tracking-tighter">SIMUTUKUR</h1>
+                
+                <div id="info-usuario" class="border-l border-gray-800 pl-6">
+                    <h2 id="saludo-alumno" class="text-xl font-black italic tracking-tighter text-white leading-none mb-1">Hola, <span class="color-cian italic">Cargando...</span></h2>
+                    <div id="plan-actual-container"></div>
                 </div>
             </div>
             
@@ -36,10 +38,10 @@
             </div>
         </div>
         
-        <div id="pestanas-cursos" class="flex flex-wrap gap-3 mt-2"></div>
+        <div id="pestanas-cursos" class="flex flex-wrap gap-3 mt-1"></div>
     </header>
 
-    <main class="grid grid-cols-12 h-[calc(100vh-175px)]">
+    <main class="grid grid-cols-12 h-[calc(100vh-140px)]">
         
         <aside class="col-span-3 border-r border-gray-800 p-6 flex flex-col bg-black/20 overflow-hidden">
             <h3 class="text-gray-500 font-bold text-xs uppercase tracking-widest mb-6 italic shrink-0">Línea del Tiempo</h3>
