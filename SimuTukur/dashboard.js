@@ -4,7 +4,6 @@ async function inicializarDashboard() {
     const email = localStorage.getItem('session_email');
     if (!email) { window.location.href = 'index.html'; return; }
     
-    // Mostrar los créditos almacenados (o 0 temporalmente)
     actualizarDisplayCreditos();
 
     try {
@@ -26,7 +25,6 @@ async function inicializarDashboard() {
 
         suscripciones.forEach((s, index) => {
             const nombreTab = s.config_examenes.area ? `${s.config_examenes.institucion} ${s.config_examenes.area}` : s.config_examenes.institucion;
-            
             if (s.config_examenes.institucion === cursoPrevio) indexSeleccionado = index;
 
             const btn = document.createElement('button');
@@ -59,7 +57,6 @@ async function seleccionarCurso(data, btn) {
         </p>
     `;
     
-    // Variables de sesión intocables
     localStorage.setItem('nombre_alumno', data.nombre_alumno);
     localStorage.setItem('token_hex_hijo', data.token_hex);
     localStorage.setItem('plan_institucion', conf.institucion);
@@ -67,45 +64,72 @@ async function seleccionarCurso(data, btn) {
     localStorage.setItem('plan_nombre_completo', nombrePlan);   
     localStorage.setItem('es_pro', esPro);
 
-    // Sincronización de créditos IA con BD
     localStorage.setItem('simu_creditos', data.intentos_simulacro_restantes || 0);
     actualizarDisplayCreditos();
 
     cargarHistorial(data.token_hex);
     
-    // ---> CORRECCIÓN ECOEMS Y UNAM <---
-    // Mandamos "ECOEMS" limpio si es de esa institución, sino mandamos el nombre completo (UNAM A4)
-    cargarNiveles(conf.institucion.includes('ECOEMS') ? 'ECOEMS' : nombrePlan);
+    // ---> LECTURA HISTÓRICA PARA BLOQUEOS AUTOMÁTICOS <---
+    // Vamos a buscar el último examen de este plan para saber si reprobó en el pasado
+    const { data: historialBD } = await _supabase.from('resultados_examenes')
+        .select('puntaje_obtenido')
+        .eq('token_hex', data.token_hex)
+        .eq('tipo_prueba', nombrePlan)
+        .order('fecha_aplicacion', { ascending: false })
+        .limit(1);
 
+    const ultimoPuntajeBD = (historialBD && historialBD.length > 0) ? historialBD[0].puntaje_obtenido : null;
+    
+    // Revisamos si acaba de regresar de hacer un examen ahorita
     const params = new URLSearchParams(window.location.search);
     const puntajeReciente = params.get('res');
+
+    // Decidimos cuál es el puntaje real: el que acaba de sacar, o el último guardado en BD. Si no hay ninguno, asume 100.
+    const puntajeFinal = puntajeReciente ? parseInt(puntajeReciente) : (ultimoPuntajeBD !== null ? ultimoPuntajeBD : 100);
+
+    // Mandamos "ECOEMS" limpio si es de esa institución
+    const palabraBusqueda = conf.institucion.includes('ECOEMS') ? 'ECOEMS' : nombrePlan;
     
+    // Cargamos los niveles con el puntaje histórico
+    cargarNiveles(palabraBusqueda, puntajeFinal);
+
+    // Lógica inteligente del chat
     if (puntajeReciente) {
-        mostrarFeedbackIA(puntajeReciente, data.token_hex);
-    } else {
+        // Viene fresco de hacer el examen
+        mostrarFeedbackIA(parseInt(puntajeReciente), data.token_hex, "reciente");
+    } else if (ultimoPuntajeBD !== null && ultimoPuntajeBD < 70) {
+        // Inició sesión pero tiene un examen reprobado colgando
+        mostrarFeedbackIA(ultimoPuntajeBD, data.token_hex, "historico_reprobado");
+    } else if (ultimoPuntajeBD !== null) {
+        // Inició sesión y está aprobado
         document.getElementById('chat-box').innerHTML = `
-            <p class="bg-gray-800/40 p-5 rounded-2xl rounded-tl-none border border-white/5 max-w-[85%] leading-relaxed">
-                Sesión iniciada. Seleccione una pestaña superior para cargar el entrenamiento correspondiente.
-            </p>
+            <div class="bg-gray-800/40 p-4 rounded-xl rounded-tl-none border border-white/5 max-w-[85%] shadow-sm">
+                <p class="leading-relaxed">Bienvenido de vuelta. Tu último simulacro de ${nombrePlan} fue de <span class="text-cyan-400 font-bold">${ultimoPuntajeBD}%</span>. Selecciona un nivel a la derecha para continuar tu entrenamiento.</p>
+            </div>
+        `;
+    } else {
+        // Es nuevo totalmente
+        document.getElementById('chat-box').innerHTML = `
+            <div class="bg-gray-800/40 p-4 rounded-xl rounded-tl-none border border-white/5 max-w-[85%] shadow-sm">
+                <p class="leading-relaxed">Expediente limpio. Seleccione un nivel en el panel derecho para iniciar su primer simulacro y calibrar la red neuronal.</p>
+            </div>
         `;
     }
 }
 
-async function cargarNiveles(institucion) {
+// Recibe el puntaje real (histórico o reciente) para bloquear
+async function cargarNiveles(institucion, puntajeReal) {
     const contenedor = document.getElementById('contenedor-niveles');
     const { data } = await _supabase.from('reglas_simulador').select('*').eq('institucion', institucion).order('id', { ascending: true });
     
-    const params = new URLSearchParams(window.location.search);
-    const puntaje = parseInt(params.get('res')) || 100; 
-    const estaBloqueado = puntaje < 70;
-
+    const estaBloqueado = puntajeReal < 70;
     let html = '';
 
     if (estaBloqueado) {
         html += `
-            <div class="bg-red-900/20 border border-red-500/50 p-4 rounded-xl mb-5 text-center">
+            <div class="bg-red-900/20 border border-red-500/50 p-4 rounded-xl mb-4 text-center">
                 <h4 class="text-red-400 font-bold text-sm uppercase mb-1">Entrenamiento Bloqueado (< 70%)</h4>
-                <p class="text-xs text-gray-400">Aprueba el Reto de Repaso para avanzar.</p>
+                <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Aprueba el Reto de Repaso para avanzar.</p>
             </div>
             <div class="card-glass p-5 nivel-card border-red-500/50 hover:border-red-400" onclick="irAlExamen('Repaso', 10, 15)">
                 <h4 class="text-red-400 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-fire mr-1"></i> Reto de Repaso</h4>
@@ -171,7 +195,6 @@ function actualizarDisplayCreditos() {
     document.getElementById('creditos-display').innerText = parseInt(localStorage.getItem('simu_creditos')) || 0; 
 }
 
-// ---> FUNCIÓN PARA GUARDAR EN TU COLUMNA ORIGINAL DE SUPABASE <---
 async function guardarCreditosEnBD(creditosNuevos) {
     const email = localStorage.getItem('session_email');
     const token = localStorage.getItem('token_hex_hijo');
@@ -189,12 +212,12 @@ async function simularCompra() {
     creditos += 100;
     localStorage.setItem('simu_creditos', creditos);
     actualizarDisplayCreditos();
-    await guardarCreditosEnBD(creditos); // Dispara el guardado en SQL
+    await guardarCreditosEnBD(creditos); 
     document.getElementById('chat-box').innerHTML = '';
     printChat("Simu", "¡Energía IA restablecida al 100%! Puedes continuar preguntando.");
 }
 
-async function mostrarFeedbackIA(puntaje, token) {
+async function mostrarFeedbackIA(puntaje, token, contexto) {
     const chatBox = document.getElementById('chat-box');
     chatBox.innerHTML = ''; 
     
@@ -202,9 +225,15 @@ async function mostrarFeedbackIA(puntaje, token) {
     if (puntaje < 50) probabilidad = "BAJA";
     else if (puntaje < 80) probabilidad = "MEDIA";
 
-    const promptInvisible = `Eres el tutor de SimuTukur. El estudiante acaba de terminar su examen de ${localStorage.getItem('plan_nombre_completo')}. Su calificación fue ${puntaje}% (Probabilidad de ingreso: ${probabilidad}). Su nivel es Principiante. Salúdalo por su nombre (${localStorage.getItem('nombre_alumno')}), dile brevemente tu evaluación de su puntaje, anímalo y pregúntale en qué reactivo tiene dudas. REGLA ESTRICTA: Tu respuesta no debe superar las 3 líneas. Sé claro, concreto y no te salgas del tema.`;
+    // Prompt dinámico según si acaba de reprobar o si inició sesión estando reprobado
+    let promptInvisible = "";
+    if (contexto === "reciente") {
+        promptInvisible = `Eres el tutor de SimuTukur. El estudiante acaba de terminar su examen de ${localStorage.getItem('plan_nombre_completo')}. Su calificación fue ${puntaje}% (Probabilidad de ingreso: ${probabilidad}). Su nivel es Principiante. Salúdalo por su nombre (${localStorage.getItem('nombre_alumno')}), dile brevemente tu evaluación de su puntaje, anímalo y pregúntale en qué reactivo tiene dudas. REGLA ESTRICTA: Tu respuesta no debe superar las 3 líneas. Sé claro, concreto y no te salgas del tema.`;
+    } else {
+        promptInvisible = `Eres el tutor de SimuTukur. El estudiante acaba de iniciar sesión. Detectaste en su historial que reprobó su último simulacro de ${localStorage.getItem('plan_nombre_completo')} con ${puntaje}%. Salúdalo por su nombre (${localStorage.getItem('nombre_alumno')}), infórmale con firmeza pero de forma constructiva que su Entrenamiento está Bloqueado y debe superar el "Reto de Repaso" (panel derecho) para poder avanzar. REGLA ESTRICTA: Tu respuesta no debe superar las 3 líneas.`;
+    }
 
-    const idLoader = printChat("Simu", "Analizando tus resultados y telemetría...", true);
+    const idLoader = printChat("Simu", "Analizando telemetría...", true);
 
     try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
@@ -219,7 +248,7 @@ async function mostrarFeedbackIA(puntaje, token) {
         const data = await response.json();
         actualizarLoader(idLoader, data.candidates[0].content.parts[0].text);
     } catch (e) {
-        actualizarLoader(idLoader, `Análisis guardado. Puntaje: ${puntaje}%. ¿En qué puedo ayudarte?`);
+        actualizarLoader(idLoader, `Análisis guardado. Puntaje: ${puntaje}%. Tienes un repaso pendiente.`);
     }
 }
 
@@ -234,11 +263,10 @@ async function procesarEnvioChat() {
         return; 
     }
 
-    // Cobramos el intento
     creditos -= 1;
     localStorage.setItem('simu_creditos', creditos);
     actualizarDisplayCreditos();
-    await guardarCreditosEnBD(creditos); // Dispara el guardado en SQL
+    await guardarCreditosEnBD(creditos);
 
     printChat("Tú", msg);
     input.value = '';
@@ -259,7 +287,6 @@ async function procesarEnvioChat() {
         actualizarLoader(idLoader, data.candidates[0].content.parts[0].text);
     } catch (e) {
         actualizarLoader(idLoader, e.message, true);
-        // Devolución si algo falló
         creditos += 1;
         localStorage.setItem('simu_creditos', creditos);
         actualizarDisplayCreditos();
@@ -267,6 +294,7 @@ async function procesarEnvioChat() {
     }
 }
 
+// Diseño compacto de burbujas (text-xs y p-3)
 function printChat(quien, texto, isLoader = false) {
     const box = document.getElementById('chat-box');
     const div = document.createElement('div');
@@ -276,9 +304,9 @@ function printChat(quien, texto, isLoader = false) {
     
     if (quien === 'Tú') {
         div.className = "flex justify-end";
-        div.innerHTML = `<p class="bg-cyan-900/40 p-4 rounded-2xl rounded-tr-none border border-cyan-500/30 text-white max-w-[85%]">${textoFormat}</p>`;
+        div.innerHTML = `<div class="bg-cyan-900/40 p-3 rounded-xl rounded-tr-none border border-cyan-500/30 text-white max-w-[85%] shadow-sm"><p class="leading-relaxed">${textoFormat}</p></div>`;
     } else {
-        div.innerHTML = isLoader ? `<p class="text-xs text-cyan-500 animate-pulse italic">${texto}</p>` : `<div class="bg-gray-800/60 p-5 rounded-2xl rounded-tl-none border border-white/5"><strong class="color-cian font-black italic text-[10px] uppercase flex items-center gap-2 mb-2"><i class="fa-solid fa-brain"></i> Tutor Simu</strong><p class="text-gray-200 leading-relaxed">${textoFormat}</p></div>`;
+        div.innerHTML = isLoader ? `<p class="text-cyan-500 animate-pulse italic">${texto}</p>` : `<div class="bg-gray-800/60 p-3 rounded-xl rounded-tl-none border border-white/5 shadow-sm max-w-[90%]"><strong class="color-cian font-black italic text-[10px] uppercase flex items-center gap-2 mb-1"><i class="fa-solid fa-brain"></i> Tutor Simu</strong><p class="text-gray-200 leading-relaxed">${textoFormat}</p></div>`;
     }
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;
@@ -288,7 +316,7 @@ function printChat(quien, texto, isLoader = false) {
 function actualizarLoader(id, texto, error = false) {
     const div = document.getElementById(id);
     const textoFormat = texto.replace(/\*\*(.*?)\*\*/g, '<strong class="color-cian">$1</strong>');
-    div.innerHTML = error ? `<p class="text-xs text-red-500">${textoFormat}</p>` : `<div class="bg-gray-800/60 p-5 rounded-2xl rounded-tl-none border border-white/5"><strong class="color-cian font-black italic text-[10px] uppercase flex items-center gap-2 mb-2"><i class="fa-solid fa-brain"></i> Tutor Simu</strong><p class="text-gray-200 leading-relaxed">${textoFormat}</p></div>`;
+    div.innerHTML = error ? `<p class="text-red-500">${textoFormat}</p>` : `<div class="bg-gray-800/60 p-3 rounded-xl rounded-tl-none border border-white/5 shadow-sm max-w-[90%]"><strong class="color-cian font-black italic text-[10px] uppercase flex items-center gap-2 mb-1"><i class="fa-solid fa-brain"></i> Tutor Simu</strong><p class="text-gray-200 leading-relaxed">${textoFormat}</p></div>`;
 }
 
 window.onload = inicializarDashboard;
