@@ -67,16 +67,15 @@ async function seleccionarCurso(data, btn) {
     localStorage.setItem('plan_nombre_completo', nombrePlan);   
     localStorage.setItem('es_pro', esPro);
 
-    // ---> SINCRONIZACIÓN DE CRÉDITOS IA CON BD <---
-    // Guardamos en el navegador los intentos_simulacro_restantes que vienen de la BD
+    // Sincronización de créditos IA con BD
     localStorage.setItem('simu_creditos', data.intentos_simulacro_restantes || 0);
     actualizarDisplayCreditos();
 
     cargarHistorial(data.token_hex);
     
-    // ---> CORRECCIÓN ECOEMS <---
-    // Pasamos conf.institucion limpio a cargarNiveles
-    cargarNiveles(conf.institucion);
+    // ---> CORRECCIÓN ECOEMS Y UNAM <---
+    // Mandamos "ECOEMS" limpio si es de esa institución, sino mandamos el nombre completo (UNAM A4)
+    cargarNiveles(conf.institucion.includes('ECOEMS') ? 'ECOEMS' : nombrePlan);
 
     const params = new URLSearchParams(window.location.search);
     const puntajeReciente = params.get('res');
