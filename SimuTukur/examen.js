@@ -41,12 +41,12 @@ async function init() {
             reactivos = reactivos.sort(() => Math.random() - 0.5);
             render();
             startTimer();
-            return; // Termina la inicialización aquí
+            return; 
         }
 
         // --- FASE 2: COSECHA DEL COLCHÓN ADAPTATIVO ---
         const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
-        const nivelColchonID = nivelID < 3 ? nivelID + 1 : 3; // El colchón es el nivel que sigue
+        const nivelColchonID = nivelID < 3 ? nivelID + 1 : 3;
         
         const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : inst;
 
@@ -62,17 +62,14 @@ async function init() {
             return;
         }
 
-        const distribucion = regla.distribucion_materias; // Tu JSON de la base de datos
+        const distribucion = regla.distribucion_materias;
         
-        // Cosechamos materia por materia
         for (const [materia, cantidad] of Object.entries(distribucion)) {
-            // 1. Preguntas Base
             const { data: base } = await _supabase.from('reactivos')
                 .select('*').in('tipo_examen', filtroTipos).eq('nivel', nivelID).eq('materia', materia)
                 .limit(cantidad);
             if (base) reactivos.push(...base);
 
-            // 2. Preguntas del Colchón (50% extra del nivel superior, solo si no es Avanzado)
             if (nivelID < 3) {
                 const cantColchon = Math.ceil(cantidad * 0.5);
                 const { data: colchon } = await _supabase.from('reactivos')
@@ -82,7 +79,6 @@ async function init() {
             }
         }
 
-        // Revolvemos las cartas
         reactivos = reactivos.sort(() => Math.random() - 0.5);
         colchonReactivos = colchonReactivos.sort(() => Math.random() - 0.5);
 
@@ -96,12 +92,11 @@ async function init() {
         }
     } catch (e) { 
         console.error("Error crítico:", e);
-        alert("Asegúrate de permitir el acceso a la cámara y micrófono.");
+        alert("Asegúrate de permitir el acceso a la cámara y micrófono para iniciar el simulador.");
         window.location.href = 'dashboard.html';
     }
 }
 
-// ... (setupAudioMonitor intacto)
 function setupAudioMonitor(stream) {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioContext.createMediaStreamSource(stream);
@@ -126,7 +121,7 @@ function setupAudioMonitor(stream) {
 }
 
 async function confirmarAborto() {
-    let msg = esPro ? "¿Desea finalizar la sesión? Su progreso no será guardado." : "ATENCIÓN: Cuenta con un Plan Básico. Si abandona ahora, se descontará 1 oportunidad. ¿Desea continuar?";
+    let msg = esPro ? "¿Desea finalizar la sesión? Su progreso no será guardado." : "ATENCIÓN: Cuenta con un Plan Básico. Si abandona ahora, se descontará 1 oportunidad. ¿Desea finalizar?";
     if (confirm(msg)) {
         await registrarEventoVigilancia("Examen abortado por el alumno");
         window.location.href = 'dashboard.html';
@@ -139,14 +134,13 @@ function render() {
     const panelLectura = document.getElementById('panel-lectura');
     const panelPreguntas = document.getElementById('panel-preguntas');
 
-    // Detector de Lectura de Comprensión
     if (r.texto_lectura && r.texto_lectura.trim() !== "") {
         panelLectura.classList.remove('hidden');
-        panelPreguntas.classList.replace('w-full', 'md:w-1/2'); // Encoge las preguntas
+        panelPreguntas.classList.replace('w-full', 'md:w-1/2'); 
         document.getElementById('texto-lectura-content').innerText = r.texto_lectura;
     } else {
         panelLectura.classList.add('hidden');
-        panelPreguntas.classList.replace('md:w-1/2', 'w-full'); // Expande las preguntas
+        panelPreguntas.classList.replace('md:w-1/2', 'w-full');
     }
 
     document.getElementById('label-materia').innerText = `${localStorage.getItem('plan_nombre_completo')} | ${r.materia}`;
@@ -164,25 +158,26 @@ function render() {
     const letras = ['A', 'B', 'C', 'D'];
     contenido.forEach((op, i) => {
         const b = document.createElement('button');
-        b.className = "w-full text-left p-5 md:p-6 rounded-xl border border-slate-800 bg-slate-900/50 flex items-center gap-4 transition-all text-sm md:text-base italic hover:border-cyan-500 hover:bg-slate-800/80 shadow-sm";
-        b.innerHTML = `<span class="min-w-[2.5rem] w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-sm font-black text-cyan-400 shrink-0">${letras[i]}</span> <span class="text-slate-200 leading-relaxed">${op.t}</span>`;
+        // AJUSTE: El tamaño de letra ahora es text-base md:text-lg para igualar con la lectura
+        b.className = "w-full text-left p-5 md:p-6 rounded-2xl border border-slate-800 bg-black/20 flex items-center gap-4 transition-all text-base md:text-lg italic hover:border-cyan-500 hover:bg-slate-800/80 shadow-inner group";
+        b.innerHTML = `<span class="min-w-[2.5rem] w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-sm font-black text-cyan-400 shrink-0 group-hover:scale-110 transition-transform">${letras[i]}</span> <span class="text-slate-200 leading-relaxed">${op.t}</span>`;
         
         b.onclick = () => {
             seleccionActual = op.id;
             document.querySelectorAll('#opciones-grid button').forEach(x => {
                 x.classList.remove('border-cyan-400', 'bg-cyan-900/30');
-                x.classList.add('border-slate-800', 'bg-slate-900/50');
+                x.classList.add('border-slate-800', 'bg-black/20');
             });
-            b.classList.remove('border-slate-800', 'bg-slate-900/50');
+            b.classList.remove('border-slate-800', 'bg-black/20');
             b.classList.add('border-cyan-400', 'bg-cyan-900/30');
             document.getElementById('btn-confirm').disabled = false;
         };
         g.appendChild(b);
     });
     document.getElementById('btn-confirm').disabled = true;
+    document.getElementById('panel-preguntas').scrollTop = 0; // Reinicia el scroll al inicio de la pregunta
 }
 
-// --- FASE 3: EL GATILLO DE LA RACHA ---
 async function procesarRespuesta() {
     const r = reactivos[index];
     const respuestaBD = String(r.respuesta_correcta).trim().toLowerCase();
@@ -196,24 +191,19 @@ async function procesarRespuesta() {
         aciertos++;
         rachaAciertos++;
         
-        // ¡Se activó la Inteligencia Adaptativa!
         if (rachaAciertos >= 3 && colchonReactivos.length > 0) {
-            // Buscamos la siguiente pregunta en el examen que sea de la misma materia
             const idxReemplazo = reactivos.findIndex((re, i) => i > index && re.materia === r.materia);
-            // Buscamos una pregunta dura del colchón de la misma materia
             const idxColchon = colchonReactivos.findIndex(c => c.materia === r.materia);
             
             if (idxReemplazo !== -1 && idxColchon !== -1) {
-                // Hacemos el cambiazo en el array futuro
                 const preguntaDura = colchonReactivos.splice(idxColchon, 1)[0];
                 reactivos[idxReemplazo] = preguntaDura;
                 console.log("🔥 Racha perfecta: Inyectando reactivo de nivel superior.");
             }
-            rachaAciertos = 0; // Reseteamos el arma para que tenga que volver a juntar 3
+            rachaAciertos = 0; 
         }
     } else {
-        rachaAciertos = 0; // Falla y se apaga la racha
-        // Guardamos los datos puros para el reporte final de la IA
+        rachaAciertos = 0; 
         reactivosFallados.push({
             materia: r.materia,
             tema: r.tema_guia || "General",
@@ -255,7 +245,7 @@ async function finalizar() {
         aciertos_totales: aciertos,
         preguntas_totales: reactivos.length,
         log_vigilancia: incidenciasVigilancia,
-        fallas_academicas: reactivosFallados // Ahora esto se va directo a tu BD
+        fallas_academicas: reactivosFallados
     };
 
     await guardarResultadoFinal(p, nivelID, detallesJSON);
@@ -265,7 +255,6 @@ async function finalizar() {
     window.location.href = `dashboard.html?res=${Math.round(p)}`;
 }
 
-// ... (setupVideoMonitor intacto)
 async function setupVideoMonitor(videoElement) {
     try {
         const MODEL_URL = 'https://vladmandic.github.io/face-api/model/';
