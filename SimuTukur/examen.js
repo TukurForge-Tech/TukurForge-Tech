@@ -1,4 +1,4 @@
-// examen.js - Lógica del Simulador de Exámenes
+// examen.js - Motor Adaptativo e IA del Simulador
 
 const params = new URLSearchParams(window.location.search);
 const token = params.get('v');
@@ -7,9 +7,12 @@ const cantQ = parseInt(localStorage.getItem('simu_preguntas'));
 const mins = parseInt(localStorage.getItem('simu_tiempo'));
 const esPro = localStorage.getItem('es_pro') === "true";
 
-let reactivos = [];
+let reactivos = [];         // El examen activo
+let colchonReactivos = [];  // Las preguntas de nivel superior ocultas
+let reactivosFallados = []; // Memoria para la IA
 let index = 0;
 let aciertos = 0;
+let rachaAciertos = 0;      // Gatillo de adrenalina
 let seleccionActual = null;
 let tiempoSeg = mins * 60;
 let incidenciasVigilancia = [];
@@ -18,37 +21,77 @@ let ultimoAvisoRuido = 0;
 async function init() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        const videoElement = document.getElementById('webcam'); // Guardamos el elemento en variable
+        const videoElement = document.getElementById('webcam'); 
         videoElement.srcObject = stream;
         setupAudioMonitor(stream);
         setupVideoMonitor(videoElement);
         
         const inst = localStorage.getItem('plan_institucion'); 
         const area = localStorage.getItem('plan_area'); 
-        const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
+        let filtroTipos = inst === "UNAM" ? ["UNAM_GENERAL", area] : [inst];
 
-        let filtroTipos = [];
-        if (inst === "UNAM") {
-            filtroTipos = ["UNAM_GENERAL", area];
-        } else {
-            filtroTipos = [inst];
+        // --- FASE 1: DESVÍO DE REPASO ---
+        if (nivelLabel === "Repaso") {
+            reactivos = await obtenerReactivosRepaso(cantQ); 
+            if (!reactivos || reactivos.length === 0) {
+                alert("¡Expediente limpio! No tienes suficientes errores registrados para armar un repaso. Sigue entrenando niveles normales.");
+                window.location.href = 'dashboard.html';
+                return;
+            }
+            reactivos = reactivos.sort(() => Math.random() - 0.5);
+            render();
+            startTimer();
+            return; // Termina la inicialización aquí
         }
 
-        const { data, error } = await _supabase
-            .from('reactivos')
-            .select('*')
-            .in('tipo_examen', filtroTipos)
-            .eq('nivel', nivelID)
-            .limit(cantQ);
+        // --- FASE 2: COSECHA DEL COLCHÓN ADAPTATIVO ---
+        const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
+        const nivelColchonID = nivelID < 3 ? nivelID + 1 : 3; // El colchón es el nivel que sigue
+        
+        const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : inst;
 
-        if (data && data.length > 0) {
-            reactivos = data.sort(() => Math.random() - 0.5);
+        const { data: regla } = await _supabase.from('reglas_simulador')
+            .select('distribucion_materias')
+            .eq('institucion', institucionRegla)
+            .eq('nivel', nivelLabel)
+            .single();
+
+        if (!regla || !regla.distribucion_materias) {
+            alert(`No hay distribución configurada para ${institucionRegla} en ${nivelLabel}. Consulta a TukurForge.`);
+            window.location.href = 'dashboard.html';
+            return;
+        }
+
+        const distribucion = regla.distribucion_materias; // Tu JSON de la base de datos
+        
+        // Cosechamos materia por materia
+        for (const [materia, cantidad] of Object.entries(distribucion)) {
+            // 1. Preguntas Base
+            const { data: base } = await _supabase.from('reactivos')
+                .select('*').in('tipo_examen', filtroTipos).eq('nivel', nivelID).eq('materia', materia)
+                .limit(cantidad);
+            if (base) reactivos.push(...base);
+
+            // 2. Preguntas del Colchón (50% extra del nivel superior, solo si no es Avanzado)
+            if (nivelID < 3) {
+                const cantColchon = Math.ceil(cantidad * 0.5);
+                const { data: colchon } = await _supabase.from('reactivos')
+                    .select('*').in('tipo_examen', filtroTipos).eq('nivel', nivelColchonID).eq('materia', materia)
+                    .limit(cantColchon);
+                if (colchon) colchonReactivos.push(...colchon);
+            }
+        }
+
+        // Revolvemos las cartas
+        reactivos = reactivos.sort(() => Math.random() - 0.5);
+        colchonReactivos = colchonReactivos.sort(() => Math.random() - 0.5);
+
+        if (reactivos.length > 0) {
             if (!esPro) ejecutarDescuentoIntento(); 
             render(); 
             startTimer();
         } else { 
-            console.error("No se encontraron reactivos para:", filtroTipos);
-            alert(`No hay reactivos para ${inst} ${area} en nivel ${nivelLabel}`);
+            alert(`Base de datos vacía para estos filtros.`);
             window.location.href = 'dashboard.html'; 
         }
     } catch (e) { 
@@ -58,6 +101,7 @@ async function init() {
     }
 }
 
+// ... (setupAudioMonitor intacto)
 function setupAudioMonitor(stream) {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioContext.createMediaStreamSource(stream);
@@ -70,14 +114,9 @@ function setupAudioMonitor(stream) {
         const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
         document.getElementById('audio-fill').style.width = Math.min(volume * 4, 100) + "%";
         
-        // CORRECCIÓN: Bajamos la sensibilidad a 40 y ponemos un candado de 5 segundos (5000ms)
         if (volume > 40 && (Date.now() - ultimoAvisoRuido > 5000)) {
             ultimoAvisoRuido = Date.now();
-            
-            // 1. Mandamos la bitácora individual
             registrarEventoVigilancia("Ruido moderado/fuerte detectado");
-            
-            // 2. Guardamos memoria local para el veredicto final
             const tiempoActual = document.getElementById('timer').innerText;
             incidenciasVigilancia.push(`Pico de ruido detectado en el minuto ${tiempoActual}`);
         }
@@ -94,8 +133,22 @@ async function confirmarAborto() {
     }
 }
 
+// --- FASE 4: PANTALLA DIVIDIDA DINÁMICA ---
 function render() {
     const r = reactivos[index];
+    const panelLectura = document.getElementById('panel-lectura');
+    const panelPreguntas = document.getElementById('panel-preguntas');
+
+    // Detector de Lectura de Comprensión
+    if (r.texto_lectura && r.texto_lectura.trim() !== "") {
+        panelLectura.classList.remove('hidden');
+        panelPreguntas.classList.replace('w-full', 'md:w-1/2'); // Encoge las preguntas
+        document.getElementById('texto-lectura-content').innerText = r.texto_lectura;
+    } else {
+        panelLectura.classList.add('hidden');
+        panelPreguntas.classList.replace('md:w-1/2', 'w-full'); // Expande las preguntas
+    }
+
     document.getElementById('label-materia').innerText = `${localStorage.getItem('plan_nombre_completo')} | ${r.materia}`;
     document.getElementById('txt-pregunta').innerText = r.pregunta;
     document.getElementById('progreso-txt').innerText = `REACTIVO ${index + 1} DE ${reactivos.length}`;
@@ -111,13 +164,17 @@ function render() {
     const letras = ['A', 'B', 'C', 'D'];
     contenido.forEach((op, i) => {
         const b = document.createElement('button');
-        b.className = "w-full text-left p-6 rounded-xl border border-slate-800 bg-slate-900/50 flex items-center gap-5 transition-all text-lg italic hover:border-cyan-500 shadow-sm";
-        b.innerHTML = `<span class="min-w-[2.5rem] w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-sm font-black text-cyan-400">${letras[i]}</span> <span class="text-slate-200 leading-relaxed">${op.t}</span>`;
+        b.className = "w-full text-left p-5 md:p-6 rounded-xl border border-slate-800 bg-slate-900/50 flex items-center gap-4 transition-all text-sm md:text-base italic hover:border-cyan-500 hover:bg-slate-800/80 shadow-sm";
+        b.innerHTML = `<span class="min-w-[2.5rem] w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-sm font-black text-cyan-400 shrink-0">${letras[i]}</span> <span class="text-slate-200 leading-relaxed">${op.t}</span>`;
         
         b.onclick = () => {
             seleccionActual = op.id;
-            document.querySelectorAll('button').forEach(x => x.classList.remove('option-selected'));
-            b.classList.add('option-selected');
+            document.querySelectorAll('#opciones-grid button').forEach(x => {
+                x.classList.remove('border-cyan-400', 'bg-cyan-900/30');
+                x.classList.add('border-slate-800', 'bg-slate-900/50');
+            });
+            b.classList.remove('border-slate-800', 'bg-slate-900/50');
+            b.classList.add('border-cyan-400', 'bg-cyan-900/30');
             document.getElementById('btn-confirm').disabled = false;
         };
         g.appendChild(b);
@@ -125,6 +182,7 @@ function render() {
     document.getElementById('btn-confirm').disabled = true;
 }
 
+// --- FASE 3: EL GATILLO DE LA RACHA ---
 async function procesarRespuesta() {
     const r = reactivos[index];
     const respuestaBD = String(r.respuesta_correcta).trim().toLowerCase();
@@ -134,7 +192,35 @@ async function procesarRespuesta() {
     const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
     await registrarPasoPorReactivo(r.id, esCorrecto, nivelID);
 
-    if (esCorrecto) aciertos++;
+    if (esCorrecto) {
+        aciertos++;
+        rachaAciertos++;
+        
+        // ¡Se activó la Inteligencia Adaptativa!
+        if (rachaAciertos >= 3 && colchonReactivos.length > 0) {
+            // Buscamos la siguiente pregunta en el examen que sea de la misma materia
+            const idxReemplazo = reactivos.findIndex((re, i) => i > index && re.materia === r.materia);
+            // Buscamos una pregunta dura del colchón de la misma materia
+            const idxColchon = colchonReactivos.findIndex(c => c.materia === r.materia);
+            
+            if (idxReemplazo !== -1 && idxColchon !== -1) {
+                // Hacemos el cambiazo en el array futuro
+                const preguntaDura = colchonReactivos.splice(idxColchon, 1)[0];
+                reactivos[idxReemplazo] = preguntaDura;
+                console.log("🔥 Racha perfecta: Inyectando reactivo de nivel superior.");
+            }
+            rachaAciertos = 0; // Reseteamos el arma para que tenga que volver a juntar 3
+        }
+    } else {
+        rachaAciertos = 0; // Falla y se apaga la racha
+        // Guardamos los datos puros para el reporte final de la IA
+        reactivosFallados.push({
+            materia: r.materia,
+            tema: r.tema_guia || "General",
+            pregunta_id: r.id
+        });
+    }
+    
     index++; 
     if (index < reactivos.length) render(); 
     else finalizar();
@@ -154,7 +240,6 @@ async function finalizar() {
     const p = (aciertos / reactivos.length) * 100;
     const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
     
-    // --- MOTOR DE VEREDICTO LOCAL (Costo $0) ---
     let riesgo = "Bajo";
     let veredicto = "El comportamiento fue adecuado. No se detectaron anomalías significativas.";
 
@@ -166,49 +251,36 @@ async function finalizar() {
         veredicto = `Precaución: Se registraron ${incidenciasVigilancia.length} incidencias leves.`;
     }
 
-    // Armamos el JSON con el reporte detallado
     const detallesJSON = {
         aciertos_totales: aciertos,
         preguntas_totales: reactivos.length,
-        log_vigilancia: incidenciasVigilancia
+        log_vigilancia: incidenciasVigilancia,
+        fallas_academicas: reactivosFallados // Ahora esto se va directo a tu BD
     };
 
-    // 1. Guardamos el resultado del examen (como ya funciona)
     await guardarResultadoFinal(p, nivelID, detallesJSON);
-    
-    // 2. Guardamos el análisis de la IA simulada
-    await guardarAnalisisVigilancia({
-        veredicto: veredicto,
-        riesgo: riesgo
-    });
-
-    // 3. NUEVO: Calculamos y guardamos el progreso y probabilidad a futuro
+    await guardarAnalisisVigilancia({ veredicto: veredicto, riesgo: riesgo });
     await guardarProgresoIA(p);
     
     window.location.href = `dashboard.html?res=${Math.round(p)}`;
 }
 
-// --- MOTOR DE VISIÓN IA (Detección de Rostros Local) ---
+// ... (setupVideoMonitor intacto)
 async function setupVideoMonitor(videoElement) {
     try {
-        // 1. Cargamos el modelo matemático desde un repositorio público seguro
         const MODEL_URL = 'https://vladmandic.github.io/face-api/model/';
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
 
-        // 2. Escaneamos la cámara cada 5 segundos (5000 ms)
         setInterval(async () => {
             if (videoElement.paused || videoElement.ended) return;
 
-            // La IA cuenta cuántos rostros hay en el fotograma actual
             const detections = await faceapi.detectAllFaces(videoElement, new faceapi.TinyFaceDetectorOptions());
             const tiempoActual = document.getElementById('timer').innerText;
 
             if (detections.length === 0) {
-                // CERO rostros: El alumno no está frente a la cámara
                 registrarEventoVigilancia("Rostro no detectado (Posible abandono)");
                 incidenciasVigilancia.push(`Ausencia detectada en cámara en el minuto ${tiempoActual}`);
             } else if (detections.length > 1) {
-                // DOS o más rostros: Alguien le está ayudando
                 registrarEventoVigilancia("Múltiples rostros detectados");
                 incidenciasVigilancia.push(`Múltiples personas en cámara en el minuto ${tiempoActual}`);
             }
@@ -219,5 +291,4 @@ async function setupVideoMonitor(videoElement) {
     }
 }
 
-// Iniciar el simulador al cargar la página
 window.onload = init;
