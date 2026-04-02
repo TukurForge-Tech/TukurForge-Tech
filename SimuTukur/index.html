@@ -6,7 +6,10 @@
     <title>Acceso Unificado | TukurForge Tech</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Llamado al JS de configuración de la Base de Datos -->
     <script src="supabase-client.js"></script>
+    
     <style>
         #splash-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; }
         .hidden { display: none !important; }
@@ -52,7 +55,14 @@
     </div>
 
     <script>
-        // La variable "_supabase" ya viene de supabase-client.js
+        // Auto-redirección si el usuario ya tiene sesión abierta
+        window.onload = () => {
+            const tokenGuardado = localStorage.getItem('token_hex');
+            if (tokenGuardado && tokenGuardado !== 'null') {
+                window.location.href = 'dashboard.html';
+            }
+        };
+
         const togglePassword = document.getElementById('togglePassword');
         const passwordInput = document.getElementById('pass');
 
@@ -72,7 +82,7 @@
             msg.style.color = "#22d3ee";
 
             try {
-                // Consultamos al usuario
+                // Consultamos al usuario en la BD mediante el cliente global _supabase
                 const { data, error } = await _supabase
                     .from('usuarios_membresias')
                     .select('*')
@@ -85,10 +95,10 @@
                     const match = data.find(u => u.password_hijo === passValue || u.password_padre === passValue);
 
                     if (match) {
-                        // 🛡️ CORRECCIÓN CLAVE: Guardar las variables que el Dashboard espera
+                        // Guardado estricto de las variables necesarias en Memoria
                         localStorage.setItem('token_hex', match.token_hex);
                         localStorage.setItem('nombre_alumno', match.nombre_alumno);
-                        localStorage.setItem('session_email', emailValue); // Por si se ocupa
+                        localStorage.setItem('session_email', emailValue); 
                         
                         // EFECTO SPLASH
                         document.getElementById('login-box').classList.add('hidden');
