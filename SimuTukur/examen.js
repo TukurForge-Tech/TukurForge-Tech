@@ -128,19 +128,17 @@ async function confirmarAborto() {
     }
 }
 
-// --- FASE 4: PANTALLA DIVIDIDA DINÁMICA ---
+// --- FASE 4: PANTALLA ADAPTATIVA (División Horizontal) ---
 function render() {
     const r = reactivos[index];
     const panelLectura = document.getElementById('panel-lectura');
-    const panelPreguntas = document.getElementById('panel-preguntas');
 
+    // AJUSTE: Lógica simplificada. Si hay lectura, mostramos el panel superior.
     if (r.texto_lectura && r.texto_lectura.trim() !== "") {
         panelLectura.classList.remove('hidden');
-        panelPreguntas.classList.replace('w-full', 'md:w-1/2'); 
         document.getElementById('texto-lectura-content').innerText = r.texto_lectura;
     } else {
         panelLectura.classList.add('hidden');
-        panelPreguntas.classList.replace('md:w-1/2', 'w-full');
     }
 
     document.getElementById('label-materia').innerText = `${localStorage.getItem('plan_nombre_completo')} | ${r.materia}`;
@@ -158,7 +156,7 @@ function render() {
     const letras = ['A', 'B', 'C', 'D'];
     contenido.forEach((op, i) => {
         const b = document.createElement('button');
-        // AJUSTE: El tamaño de letra ahora es text-base md:text-lg para igualar con la lectura
+        // El tamaño de letra ya estaba unificado a text-base md:text-lg, perfecto.
         b.className = "w-full text-left p-5 md:p-6 rounded-2xl border border-slate-800 bg-black/20 flex items-center gap-4 transition-all text-base md:text-lg italic hover:border-cyan-500 hover:bg-slate-800/80 shadow-inner group";
         b.innerHTML = `<span class="min-w-[2.5rem] w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-sm font-black text-cyan-400 shrink-0 group-hover:scale-110 transition-transform">${letras[i]}</span> <span class="text-slate-200 leading-relaxed">${op.t}</span>`;
         
@@ -178,6 +176,7 @@ function render() {
     document.getElementById('panel-preguntas').scrollTop = 0; // Reinicia el scroll al inicio de la pregunta
 }
 
+// ... (Resto del código intacto)
 async function procesarRespuesta() {
     const r = reactivos[index];
     const respuestaBD = String(r.respuesta_correcta).trim().toLowerCase();
