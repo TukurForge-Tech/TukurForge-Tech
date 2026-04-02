@@ -11,63 +11,55 @@
     
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-[#050a14] text-white font-sans h-screen overflow-hidden">
+<body>
 
-    <!-- Header / Selector de Cursos -->
     <header class="p-6 flex flex-col gap-4 border-b border-gray-800 bg-[#050a14]">
         <div class="flex justify-between items-center">
-            <h1 class="text-3xl font-black italic text-cyan-500 tracking-tighter">SIMUTUKUR</h1>
-            <button onclick="cerrarSesion()" class="text-red-500 font-bold hover:text-red-400 text-xs uppercase tracking-widest transition-colors">Cerrar Sesión</button>
+            <h1 class="text-3xl font-black italic color-cian tracking-tighter">SIMUTUKUR</h1>
+            <button onclick="cerrarSesion()" class="text-red-500 font-bold hover:text-red-400 text-xs uppercase tracking-widest">Cerrar Sesión</button>
         </div>
-        <div id="pestanas-cursos" class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-            <!-- Se llenará con JS -->
-        </div>
+        <div id="pestanas-cursos" class="flex gap-3 overflow-x-auto pb-2"></div>
     </header>
 
-    <main class="grid grid-cols-1 md:grid-cols-12 h-[calc(100vh-140px)]">
-        
-        <!-- Área Izquierda: Asistente IA (Simu) -->
-        <section class="col-span-1 md:col-span-9 flex flex-col h-full bg-[#0a1120]">
-            <div class="flex-grow flex flex-col h-full">
-                <div class="p-5 border-b border-white/5 flex items-center gap-3 bg-black/20">
-                    <div class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
-                    <span class="text-xs font-black uppercase text-cyan-500 italic tracking-widest">Asistente IA Simu</span>
-                </div>
-                
-                <!-- Caja de Chat -->
-                <div id="chat-box" class="flex-grow p-6 overflow-y-auto text-sm text-gray-300 space-y-6 scroll-smooth">
-                    <!-- Los mensajes se inyectan por JS -->
-                </div>
+    <main class="grid grid-cols-12 h-[calc(100vh-140px)]">
+        <aside class="col-span-3 border-r border-gray-800 p-6 flex flex-col bg-black/20">
+            <h3 class="text-gray-500 font-bold text-xs uppercase tracking-widest mb-6 italic">Línea del Tiempo</h3>
+            <div id="contenedor-historial" class="flex-grow overflow-y-auto space-y-4 pr-2"></div>
+        </aside>
 
-                <!-- Input de Chat -->
+        <section class="col-span-6 p-8 flex flex-col h-full bg-[#050a14]">
+            <div id="info-usuario" class="mb-6">
+                <h2 id="saludo-alumno" class="text-4xl font-black italic tracking-tighter">Hola, <span class="color-cian italic">Cargando...</span></h2>
+                <div id="plan-actual-container" class="mt-3"></div>
+            </div>
+
+            <div class="card-glass flex-grow flex flex-col overflow-hidden">
+                <div class="p-4 border-b border-white/5 bg-white/5 flex items-center gap-3">
+                    <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur2.jpeg" class="w-20 h-20 rounded" alt="Simu">
+                    <span class="text-xs font-black uppercase color-cian italic">Asistente IA Simu</span>
+                </div>
+                <div id="chat-box" class="flex-grow p-6 overflow-y-auto text-sm text-gray-300 space-y-4">
+                    <p class="bg-gray-800/40 p-5 rounded-2xl rounded-tl-none border border-white/5 max-w-[85%] leading-relaxed">
+                        Sesión iniciada. Seleccione una pestaña superior para cargar el entrenamiento correspondiente.
+                    </p>
+                </div>
                 <div class="p-5 border-t border-white/5 bg-black/40">
-                    <div class="flex gap-3 bg-gray-900 border border-white/10 rounded-xl p-3 focus-within:border-cyan-500/50 transition-colors">
-                        <input type="text" id="user-input" onkeypress="if(event.key === 'Enter') enviarMensajeUsuario()" placeholder="Pregunte algo a Simu sobre su desempeño..." class="bg-transparent flex-grow text-sm p-2 outline-none text-white placeholder-gray-600">
-                        <button onclick="enviarMensajeUsuario()" class="bg-cyan-600 p-3 px-8 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-cyan-500 transition-colors shadow-lg shadow-cyan-900/50">Enviar</button>
+                    <div class="flex gap-3 bg-gray-900 border border-white/10 rounded-xl p-3">
+                        <input type="text" id="user-input" placeholder="Pregunte algo a Simu..." class="bg-transparent flex-grow text-sm p-2 outline-none">
+                        <button class="bg-cyan-600 p-3 px-6 rounded-lg text-xs font-bold uppercase hover:bg-cyan-500 transition-colors">Enviar</button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Área Derecha: Entrenamientos / Niveles -->
-        <aside class="col-span-1 md:col-span-3 p-6 border-l border-gray-800 bg-black/20 overflow-y-auto">
+        <aside class="col-span-3 p-6 border-l border-gray-800 bg-black/20 overflow-y-auto">
             <h3 class="text-gray-500 font-bold text-xs uppercase tracking-widest mb-6 italic">Entrenamientos</h3>
-            <div id="contenedor-niveles" class="space-y-5">
-                <!-- Se llenará con JS -->
-            </div>
+            <div id="contenedor-niveles" class="space-y-5"></div>
         </aside>
     </main>
 
-    <!-- Supabase Client Setup -->
-    <script src="supabase-client.js"></script> 
+    <script src="supabase-client.js"></script>
     <script src="simu-telemetria.js"></script>
-    <!-- Lógica del Dashboard -->
     <script src="dashboard.js"></script>
-    
-    <script>
-        // Si no tienes supa-config.js separado, asegúrate de inicializar window._supabase aquí
-        // window._supabase = supabase.createClient("TU_URL", "TU_ANON_KEY");
-        window.onload = inicializarDashboard;
-    </script>
 </body>
 </html>
