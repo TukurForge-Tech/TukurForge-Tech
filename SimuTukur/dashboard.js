@@ -70,49 +70,7 @@ async function seleccionarCurso(data, btn) {
     localStorage.setItem('es_pro', esPro);
 
     cargarHistorial(data.token_hex);
-    async function cargarNiveles(plan) {
-        const contenedor = document.getElementById('contenedor-niveles');
-        const { data } = await _supabase.from('reglas_simulador').select('*').eq('institucion', plan).order('id', { ascending: true });
-        
-        // NUEVO: Leemos el puntaje reciente (si acaba de hacer examen)
-        const params = new URLSearchParams(window.location.search);
-        const puntaje = parseInt(params.get('res')) || 100; // Si no hay puntaje, asume 100 para no bloquear
-        const estaBloqueado = puntaje < 70;
-
-        let html = '';
-
-        // Si sacó menos de 70, pintamos el botón de Repaso
-        if (estaBloqueado) {
-            html += `
-                <div class="bg-red-900/20 border border-red-500/50 p-4 rounded-xl mb-5 text-center">
-                    <h4 class="text-red-400 font-bold text-sm uppercase mb-1">Entrenamiento Bloqueado (< 70%)</h4>
-                    <p class="text-xs text-gray-400">Aprueba el Reto de Repaso para avanzar.</p>
-                </div>
-                <div class="card-glass p-5 nivel-card border-red-500/50 hover:border-red-400" onclick="irAlExamen('Repaso', 10, 15)">
-                    <h4 class="text-red-400 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-fire mr-1"></i> Reto de Repaso</h4>
-                    <p class="text-sm font-black text-white">10 Reactivos de tus errores</p>
-                </div>
-            `;
-        }
-
-        // Pintamos los botones normales (Bloqueados si aplica)
-        if (data) {
-            html += data.map(n => {
-                // Se bloquea si sacó < 70, o si la BD dice que no es Principiante
-                const isLocked = estaBloqueado || n.nivel !== 'Principiante'; 
-                return `
-                    <div class="card-glass p-5 nivel-card ${isLocked ? 'locked' : ''}" onclick="${isLocked ? '' : `irAlExamen('${n.nivel}', ${n.cantidad_preguntas}, ${n.tiempo_minutos})`}">
-                        <div class="flex justify-between items-center mb-2">
-                            <h4 class="color-cian font-bold text-xs uppercase italic tracking-tighter">${n.nivel}</h4>
-                            <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'} text-sm text-gray-700"></i>
-                        </div>
-                        <p class="text-base font-black text-white">${n.cantidad_preguntas} Reactivos | ${n.tiempo_minutos} Min</p>
-                    </div>`;
-            }).join('');
-        }
-        
-        contenedor.innerHTML = html;
-    }
+    cargarNiveles(nombrePlan);
 
     // --- NUEVO: REVISAR SI VENIMOS DE UN EXAMEN ---
     const params = new URLSearchParams(window.location.search);
@@ -200,20 +158,49 @@ async function cargarHistorial(token) {
 }
 
 async function cargarNiveles(plan) {
-    const { data } = await _supabase.from('reglas_simulador').select('*').eq('institucion', plan).order('id', { ascending: true });
     const contenedor = document.getElementById('contenedor-niveles');
-    contenedor.innerHTML = data.map(n => {
-        const isLocked = n.nivel !== 'Principiante';
-        return `
-            <div class="card-glass p-5 nivel-card ${isLocked ? 'locked' : ''}" onclick="${isLocked ? '' : `irAlExamen('${n.nivel}', ${n.cantidad_preguntas}, ${n.tiempo_minutos})`}">
-                <div class="flex justify-between items-center mb-2">
-                    <h4 class="color-cian font-bold text-xs uppercase italic tracking-tighter">${n.nivel}</h4>
-                    <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'} text-sm text-gray-700"></i>
-                </div>
-                <p class="text-base font-black text-white">${n.cantidad_preguntas} Reactivos | ${n.tiempo_minutos} Min</p>
-            </div>`;
-    }).join('');
+    const { data } = await _supabase.from('reglas_simulador').select('*').eq('institucion', plan).order('id', { ascending: true });
+    
+    // NUEVO: Leemos el puntaje reciente (si acaba de hacer examen)
+    const params = new URLSearchParams(window.location.search);
+    const puntaje = parseInt(params.get('res')) || 100; // Si no hay puntaje, asume 100 para no bloquear
+    const estaBloqueado = puntaje < 70;
+
+    let html = '';
+
+    // Si sacó menos de 70, pintamos el botón de Repaso
+    if (estaBloqueado) {
+        html += `
+            <div class="bg-red-900/20 border border-red-500/50 p-4 rounded-xl mb-5 text-center">
+                <h4 class="text-red-400 font-bold text-sm uppercase mb-1">Entrenamiento Bloqueado (< 70%)</h4>
+                <p class="text-xs text-gray-400">Aprueba el Reto de Repaso para avanzar.</p>
+            </div>
+            <div class="card-glass p-5 nivel-card border-red-500/50 hover:border-red-400" onclick="irAlExamen('Repaso', 10, 15)">
+                <h4 class="text-red-400 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-fire mr-1"></i> Reto de Repaso</h4>
+                <p class="text-sm font-black text-white">10 Reactivos de tus errores</p>
+            </div>
+        `;
+    }
+
+    // Pintamos los botones normales (Bloqueados si aplica)
+    if (data) {
+        html += data.map(n => {
+            // Se bloquea si sacó < 70, o si la BD dice que no es Principiante
+            const isLocked = estaBloqueado || n.nivel !== 'Principiante'; 
+            return `
+                <div class="card-glass p-5 nivel-card ${isLocked ? 'locked' : ''}" onclick="${isLocked ? '' : `irAlExamen('${n.nivel}', ${n.cantidad_preguntas}, ${n.tiempo_minutos})`}">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="color-cian font-bold text-xs uppercase italic tracking-tighter">${n.nivel}</h4>
+                        <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'} text-sm text-gray-700"></i>
+                    </div>
+                    <p class="text-base font-black text-white">${n.cantidad_preguntas} Reactivos | ${n.tiempo_minutos} Min</p>
+                </div>`;
+        }).join('');
+    }
+    
+    contenedor.innerHTML = html;
 }
+
 
 function irAlExamen(nivel, q, t) {
     localStorage.setItem('simu_nivel', nivel);
