@@ -28,7 +28,18 @@ async function init() {
         
         const inst = localStorage.getItem('plan_institucion'); 
         const area = localStorage.getItem('plan_area'); 
-        let filtroTipos = inst === "UNAM" ? ["UNAM_GENERAL", area] : [inst];
+        
+        // 🔥 CORRECCIÓN VITAL: Limpiamos los términos para que empaten exacto con Supabase
+        const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : (inst.includes('UNAM') ? 'UNAM A4' : inst);
+        
+        let filtroTipos = [];
+        if (inst.includes('ECOEMS')) {
+            filtroTipos = ['ECOEMS']; // Tu BD dice 'ECOEMS', no 'ECOEMS GENERAL'
+        } else if (inst.includes('UNAM')) {
+            filtroTipos = ['UNAM_GENERAL', area]; 
+        } else {
+            filtroTipos = [inst];
+        }
 
         // --- FASE 1: DESVÍO DE REPASO ---
         if (nivelLabel === "Repaso") {
@@ -47,7 +58,6 @@ async function init() {
         // --- FASE 2: COSECHA DEL COLCHÓN ADAPTATIVO ---
         const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
         const nivelColchonID = nivelID < 3 ? nivelID + 1 : 3;
-        const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : inst;
 
         const { data: regla } = await _supabase.from('reglas_simulador')
             .select('distribucion_materias')
@@ -56,7 +66,7 @@ async function init() {
             .single();
 
         if (!regla || !regla.distribucion_materias) {
-            alert(`No hay distribución configurada para ${institucionRegla} en ${nivelLabel}.`);
+            alert(`Error estructural: No hay distribución configurada para ${institucionRegla} en ${nivelLabel}.`);
             window.location.href = 'dashboard.html';
             return;
         }
@@ -92,18 +102,15 @@ async function init() {
             let preguntasMateria = reactivosAgrupados[mat];
             let subGruposLectura = {};
             
-            // Agrupamos por lectura (si tienen) o las dejamos como "sueltas"
             preguntasMateria.forEach(p => {
                 let llaveGrupo = (p.texto_lectura && p.texto_lectura.trim() !== "") ? p.texto_lectura : "suelta_" + p.id;
                 if(!subGruposLectura[llaveGrupo]) subGruposLectura[llaveGrupo] = [];
                 subGruposLectura[llaveGrupo].push(p);
             });
 
-            // Revolvemos los subgrupos para que no siempre empiece con lecturas
             let llavesSubGrupo = Object.keys(subGruposLectura).sort(() => Math.random() - 0.5);
             
             llavesSubGrupo.forEach(llave => {
-                // Revolvemos las preguntas de esa misma lectura entre sí
                 let bloque = subGruposLectura[llave].sort(() => Math.random() - 0.5);
                 reactivos.push(...bloque);
             });
@@ -116,12 +123,13 @@ async function init() {
             render(); 
             startTimer();
         } else { 
-            alert(`Base de datos vacía para estos filtros.`);
+            alert(`Base de datos vacía. El sistema intentó buscar en: ${filtroTipos.join(", ")}`);
             window.location.href = 'dashboard.html'; 
         }
     } catch (e) { 
-        console.error("Error crítico:", e);
-        alert("Asegúrate de permitir el acceso a la cámara y micrófono para iniciar el simulador.");
+        console.error("Error crítico detectado:", e);
+        // Ahora el error no te engaña, te dice la verdad de por qué falló
+        alert(`Sistema interrumpido: ${e.message}. \n\nRevisa los permisos de cámara/audio o la consola.`);
         window.location.href = 'dashboard.html';
     }
 }
@@ -157,7 +165,7 @@ async function confirmarAborto() {
     }
 }
 
-// --- FASE 4: RENDERIZADO COMPRIMIDO ---
+// --- RENDERIZADO COMPRIMIDO ---
 function render() {
     const r = reactivos[index];
     const panelLectura = document.getElementById('panel-lectura');
@@ -184,7 +192,6 @@ function render() {
     const letras = ['A', 'B', 'C', 'D'];
     contenido.forEach((op, i) => {
         const b = document.createElement('button');
-        // AJUSTE: Pasamos de p-6 a p-3 md:p-4 para adelgazar las tarjetas de opciones
         b.className = "w-full text-left p-3 md:p-4 rounded-xl border border-slate-800 bg-black/20 flex items-center gap-4 transition-all text-sm md:text-base italic hover:border-cyan-500 hover:bg-slate-800/80 shadow-inner group";
         b.innerHTML = `<span class="min-w-[2rem] w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-xs font-black text-cyan-400 shrink-0 group-hover:scale-110 transition-transform">${letras[i]}</span> <span class="text-slate-200 leading-relaxed">${op.t}</span>`;
         
@@ -224,7 +231,6 @@ async function procesarRespuesta() {
             if (idxReemplazo !== -1 && idxColchon !== -1) {
                 const preguntaDura = colchonReactivos.splice(idxColchon, 1)[0];
                 reactivos[idxReemplazo] = preguntaDura;
-                console.log("🔥 Racha perfecta: Inyectando reactivo de nivel superior.");
             }
             rachaAciertos = 0; 
         }
@@ -274,4 +280,36 @@ async function finalizar() {
         fallas_academicas: reactivosFallados
     };
 
-    await guardarResultadoFinal(p, nivelID,
+    await guardarResultadoFinal(p, nivelID, detallesJSON);
+    await guardarAnalisisVigilancia({ veredicto: veredicto, riesgo: riesgo });
+    await guardarProgresoIA(p);
+    
+    window.location.href = `dashboard.html?res=${Math.round(p)}`;
+}
+
+async function setupVideoMonitor(videoElement) {
+    try {
+        const MODEL_URL = 'https://vladmandic.github.io/face-api/model/';
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+
+        setInterval(async () => {
+            if (videoElement.paused || videoElement.ended) return;
+
+            const detections = await faceapi.detectAllFaces(videoElement, new faceapi.TinyFaceDetectorOptions());
+            const tiempoActual = document.getElementById('timer').innerText;
+
+            if (detections.length === 0) {
+                registrarEventoVigilancia("Rostro no detectado (Posible abandono)");
+                incidenciasVigilancia.push(`Ausencia detectada en cámara en el minuto ${tiempoActual}`);
+            } else if (detections.length > 1) {
+                registrarEventoVigilancia("Múltiples rostros detectados");
+                incidenciasVigilancia.push(`Múltiples personas en cámara en el minuto ${tiempoActual}`);
+            }
+        }, 5000); 
+
+    } catch (error) {
+        console.warn("La vigilancia de video no pudo iniciar:", error);
+    }
+}
+
+window.onload = init;
