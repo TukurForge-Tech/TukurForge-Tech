@@ -1,4 +1,4 @@
-// examen.js - Motor Adaptativo e IA del Simulador
+// examen.js - Motor Adaptativo e IA del Simulador (Versión Universal)
 
 const params = new URLSearchParams(window.location.search);
 const token = params.get('v');
@@ -53,7 +53,7 @@ async function init() {
             return; 
         }
 
-        // --- FASE 2: COSECHA CON EL "IF" MAESTRO ---
+        // --- FASE 2: COSECHA UNIVERSAL (Sin datos en duro) ---
         const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
         const nivelColchonID = nivelID < 3 ? nivelID + 1 : 3;
 
@@ -73,58 +73,65 @@ async function init() {
         let reactivosPuros = [];
         
         for (const [materia, cantidad] of Object.entries(distribucion)) {
-            
-            let queryBase = _supabase.from('reactivos').select('*').in('tipo_examen', filtroTipos).eq('materia', materia);
-            
-            // 🔥 AQUÍ ESTÁ TU SOLUCIÓN: Solo Habilidad Verbal ignora el nivel para no romper los bloques
-            if (materia !== 'Habilidad Verbal') {
-                queryBase = queryBase.eq('nivel', nivelID);
-            }
+            // Bajamos todo sin importar el nivel para proteger bloques mixtos
+            const { data: todos } = await _supabase.from('reactivos')
+                .select('*').in('tipo_examen', filtroTipos).eq('materia', materia);
 
-            const { data: baseData } = await queryBase;
+            if (todos && todos.length > 0) {
+                let gruposLectura = {};
+                let sueltasBase = [];
+                let sueltasColchon = [];
 
-            if (baseData && baseData.length > 0) {
-                if (materia === 'Habilidad Verbal') {
-                    // Agrupamos estrictamente por tu columna id_grupo_lectura
-                    let gruposLectura = {};
-                    baseData.forEach(r => {
-                        let llave = r.id_grupo_lectura ? r.id_grupo_lectura : "suelta_" + r.id;
+                todos.forEach(r => {
+                    let esLectura = false;
+                    let llave = "";
+                    if (r.id_grupo_lectura) {
+                        llave = "grupo_" + r.id_grupo_lectura;
+                        esLectura = true;
+                    } else if (r.texto_lectura && r.texto_lectura.trim() !== "") {
+                        llave = "txt_" + r.texto_lectura.trim().substring(0, 30);
+                        esLectura = true;
+                    }
+
+                    if (esLectura) {
                         if (!gruposLectura[llave]) gruposLectura[llave] = [];
                         gruposLectura[llave].push(r);
-                    });
-
-                    let llavesMezcladas = Object.keys(gruposLectura).sort(() => Math.random() - 0.5);
-                    let seleccionados = [];
-
-                    for (let llave of llavesMezcladas) {
-                        let bloque = gruposLectura[llave].sort((a, b) => a.id - b.id);
-                        if (seleccionados.length < cantidad) {
-                            seleccionados.push(...bloque); // Inyecta el bloque completo de 4 preguntas
-                        }
+                    } else {
+                        if (r.nivel === nivelID) sueltasBase.push(r);
+                        if (r.nivel === nivelColchonID) sueltasColchon.push(r);
                     }
-                    reactivosPuros.push(...seleccionados);
-                } else {
-                    // Español y el resto de materias se manejan normal
-                    let seleccionados = baseData.sort(() => Math.random() - 0.5).slice(0, cantidad);
-                    reactivosPuros.push(...seleccionados);
-                }
-            }
+                });
 
-            // --- Carga del Colchón (50%) respetando nivel superior ---
-            if (nivelID < 3) {
-                const cantColchon = Math.ceil(cantidad * 0.5);
-                let queryColchon = _supabase.from('reactivos').select('*').in('tipo_examen', filtroTipos).eq('materia', materia).eq('nivel', nivelColchonID);
-                
-                const { data: colchonData } = await queryColchon;
-                if (colchonData && colchonData.length > 0) {
-                    // Protegemos la IA para que NO meta lecturas al azar en el colchón
-                    let sueltasColchon = colchonData.filter(c => !c.texto_lectura || c.texto_lectura.trim() === "");
-                    colchonReactivos.push(...sueltasColchon.sort(() => Math.random() - 0.5).slice(0, cantColchon));
+                let seleccionados = [];
+                let llavesLectura = Object.keys(gruposLectura).sort(() => Math.random() - 0.5);
+                sueltasBase = sueltasBase.sort(() => Math.random() - 0.5);
+
+                // 1. Inyectar bloques de lectura enteros primero
+                for (let llave of llavesLectura) {
+                    let bloque = gruposLectura[llave].sort((a, b) => a.id - b.id);
+                    if (seleccionados.length + bloque.length <= cantidad + 1) { 
+                        seleccionados.push(...bloque);
+                    } else if (seleccionados.length === 0) {
+                        seleccionados.push(...bloque);
+                    }
+                    if (seleccionados.length >= cantidad) break;
+                }
+
+                // 2. Rellenar con sueltas si falta
+                while (seleccionados.length < cantidad && sueltasBase.length > 0) {
+                    seleccionados.push(sueltasBase.pop());
+                }
+                reactivosPuros.push(...seleccionados);
+
+                // 3. Llenar el colchón adaptativo solo con sueltas
+                if (nivelID < 3) {
+                    const cantColchon = Math.ceil(cantidad * 0.5);
+                    colchonReactivos.push(...sueltasColchon.slice(0, cantColchon));
                 }
             }
         }
 
-        // --- FASE 2.5: ORDENAMIENTO DE PANTALLA ---
+        // --- FASE 2.5: ORDENAMIENTO GARANTIZADO ---
         let reactivosAgrupados = {};
         reactivosPuros.forEach(r => {
             if (!reactivosAgrupados[r.materia]) reactivosAgrupados[r.materia] = [];
@@ -135,23 +142,23 @@ async function init() {
         
         materiasAleatorias.forEach(mat => {
             let preguntasMateria = reactivosAgrupados[mat];
+            let subGrupos = {};
             
-            if (mat === 'Habilidad Verbal') {
-                // Las mantenemos amarradas para que salgan seguidas
-                let subGrupos = {};
-                preguntasMateria.forEach(p => {
-                    let llave = p.id_grupo_lectura ? p.id_grupo_lectura : "suelta_" + p.id;
-                    if(!subGrupos[llave]) subGrupos[llave] = [];
-                    subGrupos[llave].push(p);
-                });
-                let llavesSubGrupo = Object.keys(subGrupos).sort(() => Math.random() - 0.5);
-                llavesSubGrupo.forEach(llave => {
-                    reactivos.push(...subGrupos[llave]); 
-                });
-            } else {
-                // Las demás materias se revuelven normal
-                reactivos.push(...preguntasMateria.sort(() => Math.random() - 0.5));
-            }
+            preguntasMateria.forEach(p => {
+                let llave = "suelta_" + p.id;
+                if (p.id_grupo_lectura) llave = "grupo_" + p.id_grupo_lectura;
+                else if (p.texto_lectura && p.texto_lectura.trim() !== "") llave = "txt_" + p.texto_lectura.trim().substring(0, 30);
+                
+                if(!subGrupos[llave]) subGrupos[llave] = [];
+                subGrupos[llave].push(p);
+            });
+
+            let llavesSubGrupo = Object.keys(subGrupos).sort(() => Math.random() - 0.5);
+            
+            llavesSubGrupo.forEach(llave => {
+                // El bloque entra entero, sin revolverse por dentro
+                reactivos.push(...subGrupos[llave]);
+            });
         });
 
         colchonReactivos = colchonReactivos.sort(() => Math.random() - 0.5);
@@ -161,7 +168,7 @@ async function init() {
             render(); 
             startTimer();
         } else { 
-            alert(`Base de datos vacía. El sistema intentó buscar en: ${filtroTipos.join(", ")}`);
+            alert(`Base de datos vacía para: ${filtroTipos.join(", ")}`);
             window.location.href = 'dashboard.html'; 
         }
     } catch (e) { 
@@ -260,12 +267,11 @@ async function procesarRespuesta() {
         aciertos++;
         rachaAciertos++;
         
-        // Gatillo IA Adaptativo
         if (rachaAciertos >= 3 && colchonReactivos.length > 0) {
             const idxReemplazo = reactivos.findIndex((re, i) => {
                 if (i <= index) return false;
                 if (re.materia !== r.materia) return false;
-                if (re.texto_lectura && re.texto_lectura.trim() !== "") return false; // Nunca rompe lecturas
+                if (re.texto_lectura && re.texto_lectura.trim() !== "") return false; 
                 return true;
             });
 
