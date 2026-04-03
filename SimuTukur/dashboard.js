@@ -252,7 +252,8 @@ async function mostrarFeedbackIA(puntaje, token, contexto) {
         }
 
         // CORRECCIÓN: Enlace oficial al modelo Gemini 1.5 Flash
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        // CORRECCIÓN: Usamos el modelo 2.0 Flash estable que sí está en tu lista
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
         const response = await fetch(url, {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' },
