@@ -113,13 +113,14 @@ async function cargarNiveles(institucion, puntajeReal) {
     const estaBloqueado = puntajeReal < 70;
     let html = '';
 
+    // Si sacó menos de 70%, mostramos el mensaje de bloqueo y la tarjeta de repaso
     if (estaBloqueado) {
         html += `
             <div class="bg-red-900/20 border border-red-500/50 p-4 rounded-xl mb-4 text-center">
                 <h4 class="text-red-400 font-bold text-sm uppercase mb-1">Entrenamiento Bloqueado (< 70%)</h4>
                 <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Aprueba el Reto de Repaso para avanzar.</p>
             </div>
-            <div class="card-glass p-5 nivel-card border-red-500/50 hover:border-red-400" onclick="irAlExamen('Repaso', 10, 15)">
+            <div class="card-glass p-5 nivel-card border-red-500/50 hover:border-red-400 cursor-pointer" onclick="irAlExamen('Repaso', 10, 15)">
                 <h4 class="text-red-400 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-fire mr-1"></i> Reto de Repaso</h4>
                 <p class="text-sm font-black text-white">10 Reactivos de tus errores</p>
             </div>
@@ -129,13 +130,25 @@ async function cargarNiveles(institucion, puntajeReal) {
     if (data) {
         html += data.map(n => {
             const isLocked = estaBloqueado || n.nivel !== 'Principiante'; 
+            
+            // LÓGICA DE GAMIFICACIÓN: Textos de requisitos según el estado
+            let textoRequisito = "";
+            if (isLocked) {
+                if (estaBloqueado) {
+                    textoRequisito = `<p class="text-[9px] text-red-400/80 italic mt-2 uppercase tracking-wide">🔒 Supera el Repaso primero</p>`;
+                } else {
+                    textoRequisito = `<p class="text-[9px] text-gray-500 italic mt-2 uppercase tracking-wide">🔒 Requiere 70% en el nivel anterior</p>`;
+                }
+            }
+
             return `
-                <div class="card-glass p-5 nivel-card ${isLocked ? 'locked' : ''}" onclick="${isLocked ? '' : `irAlExamen('${n.nivel}', ${n.cantidad_preguntas}, ${n.tiempo_minutos})`}">
+                <div class="card-glass p-5 nivel-card ${isLocked ? 'locked opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-cyan-500'}" onclick="${isLocked ? '' : `irAlExamen('${n.nivel}', ${n.cantidad_preguntas}, ${n.tiempo_minutos})`}">
                     <div class="flex justify-between items-center mb-2">
-                        <h4 class="color-cian font-bold text-xs uppercase italic tracking-tighter">${n.nivel}</h4>
-                        <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'} text-sm text-gray-700"></i>
+                        <h4 class="${isLocked ? 'text-gray-500' : 'color-cian'} font-bold text-xs uppercase italic tracking-tighter">${n.nivel}</h4>
+                        <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'} text-sm ${isLocked ? 'text-gray-600' : 'text-cyan-500'}"></i>
                     </div>
-                    <p class="text-base font-black text-white">${n.cantidad_preguntas} Reactivos | ${n.tiempo_minutos} Min</p>
+                    <p class="text-base font-black ${isLocked ? 'text-gray-400' : 'text-white'}">${n.cantidad_preguntas} Reactivos | ${n.tiempo_minutos} Min</p>
+                    ${textoRequisito}
                 </div>`;
         }).join('');
     }
