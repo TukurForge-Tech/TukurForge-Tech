@@ -40,7 +40,6 @@ async function init() {
             filtroTipos = [inst];
         }
 
-        // --- FASE 1: DESVÍO DE REPASO ---
         if (nivelLabel === "Repaso") {
             reactivos = await obtenerReactivosRepaso(cantQ); 
             if (!reactivos || reactivos.length === 0) {
@@ -54,7 +53,7 @@ async function init() {
             return; 
         }
 
-        // --- FASE 2: COSECHA INTELIGENTE DE PREGUNTAS ---
+        // --- FASE 2: COSECHA INTELIGENTE BLINDADA ---
         const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
         const nivelColchonID = nivelID < 3 ? nivelID + 1 : 3;
 
@@ -74,32 +73,55 @@ async function init() {
         let reactivosPuros = [];
         
         for (const [materia, cantidad] of Object.entries(distribucion)) {
-            // Bajamos TODAS las preguntas de esa materia y nivel
             const { data: todos } = await _supabase.from('reactivos')
                 .select('*').in('tipo_examen', filtroTipos).eq('nivel', nivelID).eq('materia', materia);
 
             if (todos && todos.length > 0) {
-                // Las agrupamos por lectura en la memoria
                 let grupos = {};
                 todos.forEach(r => {
-                    let llave = (r.texto_lectura && r.texto_lectura.trim() !== "") ? r.texto_lectura : "suelta_" + r.id;
-                    if(!grupos[llave]) grupos[llave] = [];
+                    // Agrupación perfecta usando tu UUID de base de datos
+                    let llave = "suelta_" + r.id;
+                    if (r.id_grupo_lectura) {
+                        llave = "grupo_" + r.id_grupo_lectura;
+                    } else if (r.texto_lectura && r.texto_lectura.trim() !== "") {
+                        llave = "txt_" + r.texto_lectura.trim().substring(0, 30);
+                    }
+                    
+                    if (!grupos[llave]) grupos[llave] = [];
                     grupos[llave].push(r);
                 });
 
-                // Mezclamos los grupos para que no salga siempre la misma lectura
-                let llavesMezcladas = Object.keys(grupos).sort(() => Math.random() - 0.5);
+                let llavesLectura = Object.keys(grupos).filter(k => k.startsWith("grupo_") || k.startsWith("txt_")).sort(() => Math.random() - 0.5);
+                let llavesSueltas = Object.keys(grupos).filter(k => k.startsWith("suelta_")).sort(() => Math.random() - 0.5);
                 let seleccionados = [];
 
-                // Llenamos el cupo respetando los bloques de lectura unidos
-                for (let llave of llavesMezcladas) {
-                    let preguntasGrupo = grupos[llave].sort(() => Math.random() - 0.5);
-                    for(let p of preguntasGrupo) {
-                        if (seleccionados.length < cantidad) {
-                            seleccionados.push(p);
+                // 1. Intentamos meter bloques completos de lectura sin romperlos
+                for (let llave of llavesLectura) {
+                    let bloque = grupos[llave].sort(() => Math.random() - 0.5);
+                    if (seleccionados.length + bloque.length <= cantidad) {
+                        seleccionados.push(...bloque);
+                    } else if (seleccionados.length === 0 && bloque.length >= cantidad) {
+                        seleccionados.push(...bloque.slice(0, cantidad));
+                    }
+                }
+
+                // 2. Rellenamos lo que falte con preguntas sueltas
+                for (let llave of llavesSueltas) {
+                    if (seleccionados.length < cantidad) {
+                        seleccionados.push(grupos[llave][0]);
+                    }
+                }
+
+                // 3. Si aún faltan, partimos una lectura a la fuerza (solo como último recurso)
+                if (seleccionados.length < cantidad) {
+                    for (let llave of llavesLectura) {
+                        let bloque = grupos[llave];
+                        for (let p of bloque) {
+                            if (!seleccionados.includes(p) && seleccionados.length < cantidad) {
+                                seleccionados.push(p);
+                            }
                         }
                     }
-                    if (seleccionados.length >= cantidad) break;
                 }
                 reactivosPuros.push(...seleccionados);
             }
@@ -128,18 +150,21 @@ async function init() {
         
         materiasAleatorias.forEach(mat => {
             let preguntasMateria = reactivosAgrupados[mat];
-            let subGruposLectura = {};
+            let subGrupos = {};
             
             preguntasMateria.forEach(p => {
-                let llaveGrupo = (p.texto_lectura && p.texto_lectura.trim() !== "") ? p.texto_lectura : "suelta_" + p.id;
-                if(!subGruposLectura[llaveGrupo]) subGruposLectura[llaveGrupo] = [];
-                subGruposLectura[llaveGrupo].push(p);
+                let llave = "suelta_" + p.id;
+                if (p.id_grupo_lectura) llave = "grupo_" + p.id_grupo_lectura;
+                else if (p.texto_lectura && p.texto_lectura.trim() !== "") llave = "txt_" + p.texto_lectura.trim().substring(0, 30);
+                
+                if(!subGrupos[llave]) subGrupos[llave] = [];
+                subGrupos[llave].push(p);
             });
 
-            let llavesSubGrupo = Object.keys(subGruposLectura).sort(() => Math.random() - 0.5);
+            let llavesSubGrupo = Object.keys(subGrupos).sort(() => Math.random() - 0.5);
             
             llavesSubGrupo.forEach(llave => {
-                let bloque = subGruposLectura[llave].sort(() => Math.random() - 0.5);
+                let bloque = subGrupos[llave].sort(() => Math.random() - 0.5);
                 reactivos.push(...bloque);
             });
         });
@@ -251,12 +276,21 @@ async function procesarRespuesta() {
         rachaAciertos++;
         
         if (rachaAciertos >= 3 && colchonReactivos.length > 0) {
-            const idxReemplazo = reactivos.findIndex((re, i) => i > index && re.materia === r.materia);
-            const idxColchon = colchonReactivos.findIndex(c => c.materia === r.materia);
+            // Buscamos una pregunta futura de la misma materia que NO sea de lectura para no romper bloques
+            const idxReemplazo = reactivos.findIndex((re, i) => {
+                if (i <= index) return false;
+                if (re.materia !== r.materia) return false;
+                if (re.texto_lectura && re.texto_lectura.trim() !== "") return false;
+                return true;
+            });
+
+            // Buscamos una pregunta difícil del colchón que tampoco sea de lectura
+            const idxColchon = colchonReactivos.findIndex(c => c.materia === r.materia && (!c.texto_lectura || c.texto_lectura.trim() === ""));
             
             if (idxReemplazo !== -1 && idxColchon !== -1) {
                 const preguntaDura = colchonReactivos.splice(idxColchon, 1)[0];
                 reactivos[idxReemplazo] = preguntaDura;
+                console.log("🔥 Racha perfecta: Inyectando reactivo de nivel superior de forma segura.");
             }
             rachaAciertos = 0; 
         }
