@@ -397,6 +397,7 @@ async function enviarMensajeChat(token) {
     dibujarBurbujaChat('simu', `<span id="${idBurbujaIA}" class="animate-pulse">Simu está escribiendo...</span>`);
 
     try {
+        // CORRECCIÓN 1: El comodín que sí funciona
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
         const response = await fetch(url, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -410,14 +411,23 @@ async function enviarMensajeChat(token) {
         
         const data = await response.json();
         const respuestaIA = data.candidates[0].content.parts[0].text;
-        
         const formatTexto = respuestaIA.replace(/\*\*(.*?)\*\*/g, '<strong class="color-cian">$1</strong>');
-        document.getElementById(idBurbujaIA).parentElement.innerHTML = formatTexto;
+        
+        // CORRECCIÓN 2: Escudo Anti-Null
+        const spanBurbuja = document.getElementById(idBurbujaIA);
+        if(spanBurbuja && spanBurbuja.parentElement) {
+            spanBurbuja.parentElement.innerHTML = formatTexto;
+        }
         
         await guardarMensajeBD('simu', respuestaIA, token, email);
 
     } catch (e) {
-        document.getElementById(idBurbujaIA).parentElement.innerHTML = "<em>Error de conexión. Intenta de nuevo.</em>";
+        console.error("Error IA Chat:", e);
+        // CORRECCIÓN 2: Escudo Anti-Null en el error
+        const spanBurbuja = document.getElementById(idBurbujaIA);
+        if(spanBurbuja && spanBurbuja.parentElement) {
+            spanBurbuja.parentElement.innerHTML = "<em>Error de conexión con el Tutor. Intenta de nuevo.</em>";
+        }
     }
 }
 
