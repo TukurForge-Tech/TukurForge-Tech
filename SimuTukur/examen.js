@@ -7,12 +7,12 @@ const cantQ = parseInt(localStorage.getItem('simu_preguntas'));
 const mins = parseInt(localStorage.getItem('simu_tiempo'));
 const esPro = localStorage.getItem('es_pro') === "true";
 
-let reactivos = [];         // El examen activo
-let colchonReactivos = [];  // Las preguntas de nivel superior ocultas
-let reactivosFallados = []; // Memoria para la IA
+let reactivos = [];         
+let colchonReactivos = [];  
+let reactivosFallados = []; 
 let index = 0;
 let aciertos = 0;
-let rachaAciertos = 0;      // Gatillo de adrenalina
+let rachaAciertos = 0;      
 let seleccionActual = null;
 let tiempoSeg = mins * 60;
 let incidenciasVigilancia = [];
@@ -47,7 +47,6 @@ async function init() {
         // --- FASE 2: COSECHA DEL COLCHÓN ADAPTATIVO ---
         const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
         const nivelColchonID = nivelID < 3 ? nivelID + 1 : 3;
-        
         const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : inst;
 
         const { data: regla } = await _supabase.from('reglas_simulador')
@@ -57,18 +56,19 @@ async function init() {
             .single();
 
         if (!regla || !regla.distribucion_materias) {
-            alert(`No hay distribución configurada para ${institucionRegla} en ${nivelLabel}. Consulta a TukurForge.`);
+            alert(`No hay distribución configurada para ${institucionRegla} en ${nivelLabel}.`);
             window.location.href = 'dashboard.html';
             return;
         }
 
         const distribucion = regla.distribucion_materias;
+        let reactivosPuros = [];
         
         for (const [materia, cantidad] of Object.entries(distribucion)) {
             const { data: base } = await _supabase.from('reactivos')
                 .select('*').in('tipo_examen', filtroTipos).eq('nivel', nivelID).eq('materia', materia)
                 .limit(cantidad);
-            if (base) reactivos.push(...base);
+            if (base) reactivosPuros.push(...base);
 
             if (nivelID < 3) {
                 const cantColchon = Math.ceil(cantidad * 0.5);
@@ -79,7 +79,36 @@ async function init() {
             }
         }
 
-        reactivos = reactivos.sort(() => Math.random() - 0.5);
+        // --- FASE 2.5: BARAJEO INTELIGENTE (Bloques por Materia y Lecturas unidas) ---
+        let reactivosAgrupados = {};
+        reactivosPuros.forEach(r => {
+            if (!reactivosAgrupados[r.materia]) reactivosAgrupados[r.materia] = [];
+            reactivosAgrupados[r.materia].push(r);
+        });
+
+        let materiasAleatorias = Object.keys(reactivosAgrupados).sort(() => Math.random() - 0.5);
+        
+        materiasAleatorias.forEach(mat => {
+            let preguntasMateria = reactivosAgrupados[mat];
+            let subGruposLectura = {};
+            
+            // Agrupamos por lectura (si tienen) o las dejamos como "sueltas"
+            preguntasMateria.forEach(p => {
+                let llaveGrupo = (p.texto_lectura && p.texto_lectura.trim() !== "") ? p.texto_lectura : "suelta_" + p.id;
+                if(!subGruposLectura[llaveGrupo]) subGruposLectura[llaveGrupo] = [];
+                subGruposLectura[llaveGrupo].push(p);
+            });
+
+            // Revolvemos los subgrupos para que no siempre empiece con lecturas
+            let llavesSubGrupo = Object.keys(subGruposLectura).sort(() => Math.random() - 0.5);
+            
+            llavesSubGrupo.forEach(llave => {
+                // Revolvemos las preguntas de esa misma lectura entre sí
+                let bloque = subGruposLectura[llave].sort(() => Math.random() - 0.5);
+                reactivos.push(...bloque);
+            });
+        });
+
         colchonReactivos = colchonReactivos.sort(() => Math.random() - 0.5);
 
         if (reactivos.length > 0) {
@@ -128,12 +157,11 @@ async function confirmarAborto() {
     }
 }
 
-// --- FASE 4: PANTALLA ADAPTATIVA (División Horizontal) ---
+// --- FASE 4: RENDERIZADO COMPRIMIDO ---
 function render() {
     const r = reactivos[index];
     const panelLectura = document.getElementById('panel-lectura');
 
-    // AJUSTE: Lógica simplificada. Si hay lectura, mostramos el panel superior.
     if (r.texto_lectura && r.texto_lectura.trim() !== "") {
         panelLectura.classList.remove('hidden');
         document.getElementById('texto-lectura-content').innerText = r.texto_lectura;
@@ -156,9 +184,9 @@ function render() {
     const letras = ['A', 'B', 'C', 'D'];
     contenido.forEach((op, i) => {
         const b = document.createElement('button');
-        // El tamaño de letra ya estaba unificado a text-base md:text-lg, perfecto.
-        b.className = "w-full text-left p-5 md:p-6 rounded-2xl border border-slate-800 bg-black/20 flex items-center gap-4 transition-all text-base md:text-lg italic hover:border-cyan-500 hover:bg-slate-800/80 shadow-inner group";
-        b.innerHTML = `<span class="min-w-[2.5rem] w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-sm font-black text-cyan-400 shrink-0 group-hover:scale-110 transition-transform">${letras[i]}</span> <span class="text-slate-200 leading-relaxed">${op.t}</span>`;
+        // AJUSTE: Pasamos de p-6 a p-3 md:p-4 para adelgazar las tarjetas de opciones
+        b.className = "w-full text-left p-3 md:p-4 rounded-xl border border-slate-800 bg-black/20 flex items-center gap-4 transition-all text-sm md:text-base italic hover:border-cyan-500 hover:bg-slate-800/80 shadow-inner group";
+        b.innerHTML = `<span class="min-w-[2rem] w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-xs font-black text-cyan-400 shrink-0 group-hover:scale-110 transition-transform">${letras[i]}</span> <span class="text-slate-200 leading-relaxed">${op.t}</span>`;
         
         b.onclick = () => {
             seleccionActual = op.id;
@@ -173,10 +201,9 @@ function render() {
         g.appendChild(b);
     });
     document.getElementById('btn-confirm').disabled = true;
-    document.getElementById('panel-preguntas').scrollTop = 0; // Reinicia el scroll al inicio de la pregunta
+    document.getElementById('panel-preguntas').scrollTop = 0; 
 }
 
-// ... (Resto del código intacto)
 async function procesarRespuesta() {
     const r = reactivos[index];
     const respuestaBD = String(r.respuesta_correcta).trim().toLowerCase();
@@ -247,36 +274,4 @@ async function finalizar() {
         fallas_academicas: reactivosFallados
     };
 
-    await guardarResultadoFinal(p, nivelID, detallesJSON);
-    await guardarAnalisisVigilancia({ veredicto: veredicto, riesgo: riesgo });
-    await guardarProgresoIA(p);
-    
-    window.location.href = `dashboard.html?res=${Math.round(p)}`;
-}
-
-async function setupVideoMonitor(videoElement) {
-    try {
-        const MODEL_URL = 'https://vladmandic.github.io/face-api/model/';
-        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-
-        setInterval(async () => {
-            if (videoElement.paused || videoElement.ended) return;
-
-            const detections = await faceapi.detectAllFaces(videoElement, new faceapi.TinyFaceDetectorOptions());
-            const tiempoActual = document.getElementById('timer').innerText;
-
-            if (detections.length === 0) {
-                registrarEventoVigilancia("Rostro no detectado (Posible abandono)");
-                incidenciasVigilancia.push(`Ausencia detectada en cámara en el minuto ${tiempoActual}`);
-            } else if (detections.length > 1) {
-                registrarEventoVigilancia("Múltiples rostros detectados");
-                incidenciasVigilancia.push(`Múltiples personas en cámara en el minuto ${tiempoActual}`);
-            }
-        }, 5000); 
-
-    } catch (error) {
-        console.warn("La vigilancia de video no pudo iniciar:", error);
-    }
-}
-
-window.onload = init;
+    await guardarResultadoFinal(p, nivelID,
