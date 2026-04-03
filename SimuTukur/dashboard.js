@@ -332,7 +332,8 @@ async function obtenerContextoOficialBD(token) {
     
     if (!res || !res.detalles_fallas || !res.detalles_fallas.fallas_academicas) return "";
     
-    const idsFallas = res.detalles_fallas.fallas_academicas.map(f => f.pregunta_id);
+    // ¡EL TRUCO FINANCIERO! Solo tomamos un máximo de 3 fallas para no inflar el recibo de Google
+    const idsFallas = res.detalles_fallas.fallas_academicas.map(f => f.pregunta_id).slice(0, 3);
     if (idsFallas.length === 0) return "";
 
     const { data: reactivos } = await _supabase.from('reactivos')
