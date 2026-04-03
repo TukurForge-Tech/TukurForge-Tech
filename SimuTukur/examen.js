@@ -29,12 +29,11 @@ async function init() {
         const inst = localStorage.getItem('plan_institucion'); 
         const area = localStorage.getItem('plan_area'); 
         
-        // 🔥 CORRECCIÓN VITAL: Limpiamos los términos para que empaten exacto con Supabase
         const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : (inst.includes('UNAM') ? 'UNAM A4' : inst);
         
         let filtroTipos = [];
         if (inst.includes('ECOEMS')) {
-            filtroTipos = ['ECOEMS']; // Tu BD dice 'ECOEMS', no 'ECOEMS GENERAL'
+            filtroTipos = ['ECOEMS']; 
         } else if (inst.includes('UNAM')) {
             filtroTipos = ['UNAM_GENERAL', area]; 
         } else {
@@ -55,7 +54,7 @@ async function init() {
             return; 
         }
 
-        // --- FASE 2: COSECHA DEL COLCHÓN ADAPTATIVO ---
+        // --- FASE 2: COSECHA INTELIGENTE DE PREGUNTAS ---
         const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
         const nivelColchonID = nivelID < 3 ? nivelID + 1 : 3;
 
@@ -75,21 +74,50 @@ async function init() {
         let reactivosPuros = [];
         
         for (const [materia, cantidad] of Object.entries(distribucion)) {
-            const { data: base } = await _supabase.from('reactivos')
-                .select('*').in('tipo_examen', filtroTipos).eq('nivel', nivelID).eq('materia', materia)
-                .limit(cantidad);
-            if (base) reactivosPuros.push(...base);
+            // Bajamos TODAS las preguntas de esa materia y nivel
+            const { data: todos } = await _supabase.from('reactivos')
+                .select('*').in('tipo_examen', filtroTipos).eq('nivel', nivelID).eq('materia', materia);
 
+            if (todos && todos.length > 0) {
+                // Las agrupamos por lectura en la memoria
+                let grupos = {};
+                todos.forEach(r => {
+                    let llave = (r.texto_lectura && r.texto_lectura.trim() !== "") ? r.texto_lectura : "suelta_" + r.id;
+                    if(!grupos[llave]) grupos[llave] = [];
+                    grupos[llave].push(r);
+                });
+
+                // Mezclamos los grupos para que no salga siempre la misma lectura
+                let llavesMezcladas = Object.keys(grupos).sort(() => Math.random() - 0.5);
+                let seleccionados = [];
+
+                // Llenamos el cupo respetando los bloques de lectura unidos
+                for (let llave of llavesMezcladas) {
+                    let preguntasGrupo = grupos[llave].sort(() => Math.random() - 0.5);
+                    for(let p of preguntasGrupo) {
+                        if (seleccionados.length < cantidad) {
+                            seleccionados.push(p);
+                        }
+                    }
+                    if (seleccionados.length >= cantidad) break;
+                }
+                reactivosPuros.push(...seleccionados);
+            }
+
+            // Descargamos el colchón extra (nivel superior)
             if (nivelID < 3) {
                 const cantColchon = Math.ceil(cantidad * 0.5);
-                const { data: colchon } = await _supabase.from('reactivos')
-                    .select('*').in('tipo_examen', filtroTipos).eq('nivel', nivelColchonID).eq('materia', materia)
-                    .limit(cantColchon);
-                if (colchon) colchonReactivos.push(...colchon);
+                const { data: colchonTodos } = await _supabase.from('reactivos')
+                    .select('*').in('tipo_examen', filtroTipos).eq('nivel', nivelColchonID).eq('materia', materia);
+
+                if (colchonTodos && colchonTodos.length > 0) {
+                    let colchonShuffled = colchonTodos.sort(() => Math.random() - 0.5).slice(0, cantColchon);
+                    colchonReactivos.push(...colchonShuffled);
+                }
             }
         }
 
-        // --- FASE 2.5: BARAJEO INTELIGENTE (Bloques por Materia y Lecturas unidas) ---
+        // --- FASE 2.5: ORDENAMIENTO EN PANTALLA ---
         let reactivosAgrupados = {};
         reactivosPuros.forEach(r => {
             if (!reactivosAgrupados[r.materia]) reactivosAgrupados[r.materia] = [];
@@ -128,7 +156,6 @@ async function init() {
         }
     } catch (e) { 
         console.error("Error crítico detectado:", e);
-        // Ahora el error no te engaña, te dice la verdad de por qué falló
         alert(`Sistema interrumpido: ${e.message}. \n\nRevisa los permisos de cámara/audio o la consola.`);
         window.location.href = 'dashboard.html';
     }
@@ -165,7 +192,6 @@ async function confirmarAborto() {
     }
 }
 
-// --- RENDERIZADO COMPRIMIDO ---
 function render() {
     const r = reactivos[index];
     const panelLectura = document.getElementById('panel-lectura');
