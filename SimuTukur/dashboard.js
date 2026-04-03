@@ -251,9 +251,7 @@ async function mostrarFeedbackIA(puntaje, token, contexto) {
             promptInvisible = `Eres el tutor IA de SimuTukur. El estudiante acaba de iniciar sesión. Detectaste que reprobó su último simulacro con ${puntaje}%. Salúdalo por su nombre (${localStorage.getItem('nombre_alumno')}), infórmale con firmeza que su Entrenamiento está Bloqueado y debe superar el "Reto de Repaso". REGLA: Máximo 3 líneas.`;
         }
 
-        // CORRECCIÓN: Enlace oficial al modelo Gemini 1.5 Flash
-        // CORRECCIÓN: Usamos el modelo 2.0 Flash estable que sí está en tu lista
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
         const response = await fetch(url, {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' },
