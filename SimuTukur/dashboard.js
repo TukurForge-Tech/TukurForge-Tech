@@ -297,7 +297,8 @@ async function generarAnalisisInicialIA(token, puntaje, contexto, email) {
             promptInvisible = `Eres el tutor IA. El alumno acaba de iniciar sesión. Reprobó su último simulacro con ${puntaje}%. Salúdalo, dile que su Entrenamiento está Bloqueado y debe superar el "Reto de Repaso". Máximo 3 líneas.`;
         }
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+        // CORRECCIÓN 1: El comodín que sí funciona
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
         const response = await fetch(url, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: promptInvisible }] }], generationConfig: { temperature: 0.4 } })
@@ -308,12 +309,20 @@ async function generarAnalisisInicialIA(token, puntaje, contexto, email) {
         const data = await response.json();
         const textoIA = data.candidates[0].content.parts[0].text;
         
-        document.getElementById(idBurbuja).parentElement.innerHTML = textoIA;
+        // CORRECCIÓN 2: Escudo Anti-Null
+        const spanBurbuja = document.getElementById(idBurbuja);
+        if(spanBurbuja && spanBurbuja.parentElement) {
+            spanBurbuja.parentElement.innerHTML = textoIA;
+        }
         await guardarMensajeBD('simu', textoIA, token, email);
 
     } catch (e) {
         console.error("Error IA:", e);
-        document.getElementById(idBurbuja).parentElement.innerHTML = `Análisis guardado. Puntaje: ${puntaje}%. Tienes un repaso pendiente.`;
+        // CORRECCIÓN 2: Escudo Anti-Null en el error
+        const spanBurbuja = document.getElementById(idBurbuja);
+        if(spanBurbuja && spanBurbuja.parentElement) {
+            spanBurbuja.parentElement.innerHTML = `Análisis guardado. Puntaje: ${puntaje}%. Tienes un repaso pendiente.`;
+        }
     }
 }
 
@@ -388,7 +397,7 @@ async function enviarMensajeChat(token) {
     dibujarBurbujaChat('simu', `<span id="${idBurbujaIA}" class="animate-pulse">Simu está escribiendo...</span>`);
 
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
         const response = await fetch(url, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
