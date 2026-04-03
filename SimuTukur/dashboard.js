@@ -340,4 +340,145 @@ function actualizarLoader(id, texto, error = false) {
     div.innerHTML = error ? `<p class="text-red-500">${textoFormat}</p>` : `<div class="bg-gray-800/60 p-3 rounded-xl rounded-tl-none border border-white/5 shadow-sm max-w-[90%]"><strong class="color-cian font-black italic text-[10px] uppercase flex items-center gap-2 mb-1"><i class="fa-solid fa-brain"></i> Tutor Simu</strong><p class="text-gray-200 leading-relaxed">${textoFormat}</p></div>`;
 }
 
+// ==========================================
+// MOTOR DE CHAT INTERACTIVO (MEMORIA Y RAG)
+// ==========================================
+
+async function cargarHistorialChat(token, puntaje, contexto) {
+    const chatBox = document.getElementById('chat-box');
+    const email = localStorage.getItem('session_email');
+    
+    // 1. Buscamos si ya hay plática previa
+    const { data: historial } = await _supabase.from('chat_historial')
+        .select('*').eq('token_hex', token).eq('email', email).order('created_at', { ascending: true });
+
+    chatBox.innerHTML = ''; // Limpiamos la caja
+
+    if (historial && historial.length > 0) {
+        // Si hay historial, lo dibujamos todo
+        historial.forEach(msg => dibujarBurbujaChat(msg.emisor, msg.mensaje));
+    } else {
+        // Si es la primera vez, disparamos el análisis inicial (El "Gancho")
+        await generarAnalisisInicialIA(token, puntaje, contexto, email);
+    }
+}
+
+function dibujarBurbujaChat(emisor, texto) {
+    const chatBox = document.getElementById('chat-box');
+    const div = document.createElement('div');
+    
+    if (emisor === 'alumno') {
+        div.className = "bg-cyan-900/30 p-3 rounded-xl rounded-tr-none border border-cyan-500/30 max-w-[85%] shadow-sm ml-auto mb-3 text-right";
+        div.innerHTML = `<p class="text-sm text-white">${texto}</p>`;
+    } else {
+        div.className = "bg-gray-800/40 p-4 rounded-xl rounded-tl-none border border-white/5 max-w-[85%] shadow-sm mb-3";
+        div.innerHTML = `<p class="text-sm text-cyan-50 text-left leading-relaxed">${texto}</p>`;
+    }
+    
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll hacia abajo
+}
+
+// Guarda en la base de datos silenciosamente
+async function guardarMensajeBD(emisor, mensaje, token, email) {
+    await _supabase.from('chat_historial').insert({
+        email: email, token_hex: token, emisor: emisor, mensaje: mensaje
+    });
+}
+
+// Extrae las explicaciones oficiales de los reactivos fallados (La técnica RAG)
+async function obtenerContextoOficialBD(token) {
+    const { data: res } = await _supabase.from('resultados_examenes')
+        .select('detalles_fallas').eq('token_hex', token).single();
+    
+    if (!res || !res.detalles_fallas || !res.detalles_fallas.fallas_academicas) return "";
+    
+    const idsFallas = res.detalles_fallas.fallas_academicas.map(f => f.pregunta_id);
+    if (idsFallas.length === 0) return "";
+
+    const { data: reactivos } = await _supabase.from('reactivos')
+        .select('tema_guia, explicacion_ia').in('id', idsFallas);
+    
+    let contexto = "";
+    if (reactivos) {
+        reactivos.forEach(r => {
+            if (r.explicacion_ia && r.explicacion_ia.trim() !== "") {
+                contexto += `[Tema: ${r.tema_guia} -> Explicación Oficial: ${r.explicacion_ia}] `;
+            }
+        });
+    }
+    return contexto; // Si todo está vacío, devolverá "" y la IA usará su conocimiento propio
+}
+
+// Evento para enviar mensaje nuevo
+async function enviarMensajeChat(token) {
+    const input = document.querySelector('input[placeholder*="Pregunte algo"]'); // Tu caja de texto
+    const btn = document.querySelector('button.bg-cyan-500, button[onclick*="enviar"]'); // Tu botón enviar
+    const textoUsuario = input.value.trim();
+    
+    if (!textoUsuario) return;
+    
+    // Cobro de Energía IA
+    let energiaElement = document.getElementById('energia-ia-texto'); // Ajusta el ID según tu HTML
+    if (energiaElement) {
+        let energia = parseInt(energiaElement.innerText);
+        if (energia <= 0) {
+            alert("Energía IA agotada. Recarga tu saldo.");
+            return;
+        }
+        energiaElement.innerText = energia - 1; // Restamos visualmente
+    }
+
+    const email = localStorage.getItem('session_email');
+    
+    // 1. Mostrar y guardar lo del usuario
+    input.value = '';
+    dibujarBurbujaChat('alumno', textoUsuario);
+    await guardarMensajeBD('alumno', textoUsuario, token, email);
+
+    // 2. Extraer contexto (Ventana Móvil de 4 mensajes + Explicaciones de BD)
+    const { data: ultimosMsgs } = await _supabase.from('chat_historial')
+        .select('emisor, mensaje').eq('token_hex', token).eq('email', email).order('created_at', { ascending: false }).limit(4);
+    
+    let historialTexto = (ultimosMsgs || []).reverse().map(m => `${m.emisor.toUpperCase()}: ${m.mensaje}`).join("\n");
+    const contextoOficial = await obtenerContextoOficialBD(token);
+    
+    // 3. El Prompt Maestro (Con fallback por si la BD está vacía)
+    let promptChat = `Eres Simu, un tutor experto. El alumno te está haciendo una pregunta.
+    Si el alumno pregunta sobre un tema en el que falló, AQUÍ ESTÁ LA EXPLICACIÓN OFICIAL DE NUESTRA BASE DE DATOS: "${contextoOficial}". 
+    (Si la explicación oficial está vacía, usa tu propio conocimiento experto para enseñarle paso a paso).
+    
+    Historial reciente de la plática:
+    ${historialTexto}
+    
+    REGLAS:
+    - Responde directo a la duda.
+    - Sé muy didáctico, paciente y claro.
+    - Si usas el material oficial, hazle el reto rápido que viene ahí.
+    - NUNCA escribas más de 2 párrafos cortos. No satures al alumno.`;
+
+    const idBurbujaIA = "typing-" + Date.now();
+    dibujarBurbujaChat('simu', `<span id="${idBurbujaIA}" class="animate-pulse">Simu está escribiendo...</span>`);
+
+    try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+        const response = await fetch(url, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: promptChat }] }],
+                generationConfig: { temperature: 0.4 }
+            })
+        });
+        
+        const data = await response.json();
+        const respuestaIA = data.candidates[0].content.parts[0].text;
+        
+        document.getElementById(idBurbujaIA).parentElement.innerHTML = respuestaIA;
+        await guardarMensajeBD('simu', respuestaIA, token, email);
+
+    } catch (e) {
+        document.getElementById(idBurbujaIA).parentElement.innerHTML = "<em>Error de conexión. Intenta de nuevo.</em>";
+    }
+}
+
 window.onload = inicializarDashboard;
