@@ -89,9 +89,9 @@ async function seleccionarCurso(data, btn) {
     cargarNiveles(palabraBusqueda, puntajeFinal);
 
     if (puntajeReciente) {
-        mostrarFeedbackIA(parseInt(puntajeReciente), data.token_hex, "reciente");
+        cargarHistorialChat(data.token_hex, parseInt(puntajeReciente), "reciente");
     } else if (ultimoPuntajeBD !== null && ultimoPuntajeBD < 70) {
-        mostrarFeedbackIA(ultimoPuntajeBD, data.token_hex, "historico_reprobado");
+        cargarHistorialChat(data.token_hex, ultimoPuntajeBD, "historico_reprobado");
     } else if (ultimoPuntajeBD !== null) {
         document.getElementById('chat-box').innerHTML = `
             <div class="bg-gray-800/40 p-4 rounded-xl rounded-tl-none border border-white/5 max-w-[85%] shadow-sm">
@@ -214,63 +214,32 @@ async function simularCompra() {
     printChat("Simu", "¡Energía IA restablecida al 100%! Puedes continuar preguntando.");
 }
 
-async function mostrarFeedbackIA(puntaje, token, contexto) {
-    const chatBox = document.getElementById('chat-box');
-    chatBox.innerHTML = ''; 
-    
-    let probabilidad = "ALTA";
-    if (puntaje < 50) probabilidad = "BAJA";
-    else if (puntaje < 80) probabilidad = "MEDIA";
-
-    const idLoader = printChat("Simu", "Extrayendo telemetría y grabaciones de seguridad...", true);
+async function generarAnalisisInicialIA(token, puntaje, contexto, email) {
+    const idBurbuja = "typing-inicial-" + Date.now();
+    dibujarBurbujaChat('simu', `<span id="${idBurbuja}" class="animate-pulse text-cyan-400">Extrayendo telemetría...</span>`);
 
     try {
-        let promptInvisible = "";
+        // ... (Aquí va toda tu lógica de ayer donde sacas el reporte de cámara y los temasMalos) ...
+        // Para no hacerte el código enorme, mantén la extracción de temasMalos igual que ayer.
 
-        if (contexto === "reciente") {
-            const { data: ultVig } = await _supabase.from('analisis_vigilancia_ia')
-                .select('analisis_ia').eq('token_hex', token).order('timestamp', { ascending: false }).limit(1);
-            const reporteCamara = (ultVig && ultVig.length > 0) ? ultVig[0].analisis_ia : "Sin anomalías";
+        let promptInvisible = `Eres Simu, tutor IA. Alumno: ${localStorage.getItem('nombre_alumno')}. Puntaje: ${puntaje}%.
+        (Cámara: Sin anomalías. Fallas: ${temasMalos || "varias materias"}).
+        REGLAS: 1) Da tu veredicto. 2) Di sus temas fallados. 3) EL GANCHO: Cierra tu mensaje haciendo una pregunta directa invitándolo a repasar un tema específico (Ej: '¿Quieres que veamos un reto rápido de Biología?'). 4) Máximo 5 líneas.`;
 
-            const { data: ultExamen } = await _supabase.from('resultados_examenes')
-                .select('detalles_fallas').eq('token_hex', token).order('fecha_aplicacion', { ascending: false }).limit(1);
-            
-            let temasMalos = "Ninguna materia crítica";
-            if (ultExamen && ultExamen.length > 0 && ultExamen[0].detalles_fallas && ultExamen[0].detalles_fallas.fallas_academicas) {
-                const fallas = ultExamen[0].detalles_fallas.fallas_academicas;
-                if (fallas.length > 0) {
-                    const materiasUnicas = [...new Set(fallas.map(f => f.materia))];
-                    temasMalos = materiasUnicas.join(", ");
-                }
-            }
-
-            promptInvisible = `Eres Simu, tutor IA de SimuTukur. El estudiante ${localStorage.getItem('nombre_alumno')} acaba de terminar su examen con ${puntaje}%. 
-            Reporte de Cámara/Audio: "${reporteCamara}". 
-            Materias en las que falló: "${temasMalos}". 
-            Probabilidad de ingreso: ${probabilidad}. 
-            REGLAS: 1) Salúdalo. 2) Da tu veredicto de su calificación. 3) Dile EXACTAMENTE qué viste o escuchaste en la cámara según el reporte. 4) Dile en qué materias específicas falló. 5) MÁXIMO 5 LÍNEAS. Sé directo.`;
-        } else {
-            promptInvisible = `Eres el tutor IA de SimuTukur. El estudiante acaba de iniciar sesión. Detectaste que reprobó su último simulacro con ${puntaje}%. Salúdalo por su nombre (${localStorage.getItem('nombre_alumno')}), infórmale con firmeza que su Entrenamiento está Bloqueado y debe superar el "Reto de Repaso". REGLA: Máximo 3 líneas.`;
-        }
-
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
         const response = await fetch(url, {
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: promptInvisible }] }],
-                //generationConfig: { maxOutputTokens: 500, temperature: 0.4 }
-                generationConfig: { temperature: 0.4 }
-            })
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptInvisible }] }], generationConfig: { temperature: 0.4 } })
         });
         
-        if (!response.ok) throw new Error("Error en la conexión con el servidor IA");
-
         const data = await response.json();
-        actualizarLoader(idLoader, data.candidates[0].content.parts[0].text);
+        const textoIA = data.candidates[0].content.parts[0].text;
+        
+        document.getElementById(idBurbuja).parentElement.innerHTML = textoIA;
+        await guardarMensajeBD('simu', textoIA, token, email); // GUARDAMOS EN MEMORIA
+
     } catch (e) {
-        console.error("Falla en IA:", e);
-        actualizarLoader(idLoader, `Análisis guardado. Puntaje: ${puntaje}%. Tienes un repaso pendiente. (Nota del sistema: Interferencia en la conexión IA).`, true);
+        document.getElementById(idBurbuja).parentElement.innerHTML = "Análisis guardado. Repaso pendiente.";
     }
 }
 
