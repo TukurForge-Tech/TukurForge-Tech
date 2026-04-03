@@ -144,25 +144,33 @@ async function cargarNiveles(institucion, puntajeReal) {
 
 async function cargarHistorial(token) {
     const contenedor = document.getElementById('contenedor-historial');
-    const { data, error } = await _supabase.from('resultados_examenes')
-        .select('*')
-        .eq('token_hex', token)
-        .order('fecha_aplicacion', { ascending: false });
+    try {
+        // SOLUCIÓN: Pedimos solo 3 columnas específicas. Evita errores si agregas columnas nuevas a la BD.
+        const { data, error } = await _supabase.from('resultados_examenes')
+            .select('tipo_prueba, fecha_aplicacion, puntaje_obtenido')
+            .eq('token_hex', token)
+            .order('fecha_aplicacion', { ascending: false });
 
-    if (error || !data || data.length === 0) {
-        contenedor.innerHTML = `<div class="card-glass p-6 text-xs text-gray-500 italic border-dashed text-center">Sin actividad registrada.</div>`;
-        return;
-    }
-    
-    contenedor.innerHTML = data.map(reg => `
-        <div class="card-glass p-4 border-l-4 border-cyan-500 bg-white/5 transition-all hover:bg-white/10">
-            <div class="flex justify-between items-center text-[10px] sm:text-xs mb-2">
-                <span class="text-cyan-400 font-black uppercase tracking-tighter">${reg.tipo_prueba}</span>
-                <span class="text-gray-500">${new Date(reg.fecha_aplicacion).toLocaleDateString()}</span>
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            contenedor.innerHTML = `<div class="card-glass p-6 text-xs text-gray-500 italic border-dashed text-center">Sin actividad registrada.</div>`;
+            return;
+        }
+        
+        contenedor.innerHTML = data.map(reg => `
+            <div class="card-glass p-4 border-l-4 border-cyan-500 bg-white/5 transition-all hover:bg-white/10 mb-3">
+                <div class="flex justify-between items-center text-[10px] sm:text-xs mb-2">
+                    <span class="text-cyan-400 font-black uppercase tracking-tighter">${reg.tipo_prueba}</span>
+                    <span class="text-gray-500">${new Date(reg.fecha_aplicacion).toLocaleDateString()}</span>
+                </div>
+                <p class="text-2xl font-black text-white">${reg.puntaje_obtenido}% <span class="text-xs text-gray-500 font-normal italic">Aciertos</span></p>
             </div>
-            <p class="text-2xl font-black text-white">${reg.puntaje_obtenido}% <span class="text-xs text-gray-500 font-normal italic">Aciertos</span></p>
-        </div>
-    `).join('');
+        `).join('');
+    } catch(e) {
+        console.error("Falla al cargar historial:", e);
+        contenedor.innerHTML = `<div class="card-glass p-6 text-xs text-red-500 italic text-center">Error al sincronizar historial.</div>`;
+    }
 }
 
 function irAlExamen(nivel, q, t) {
@@ -212,29 +220,57 @@ async function mostrarFeedbackIA(puntaje, token, contexto) {
     if (puntaje < 50) probabilidad = "BAJA";
     else if (puntaje < 80) probabilidad = "MEDIA";
 
-    let promptInvisible = "";
-    if (contexto === "reciente") {
-        promptInvisible = `Eres el tutor de SimuTukur. El estudiante acaba de terminar su examen de ${localStorage.getItem('plan_nombre_completo')}. Su calificación fue ${puntaje}% (Probabilidad de ingreso: ${probabilidad}). Su nivel es Principiante. Salúdalo por su nombre (${localStorage.getItem('nombre_alumno')}), dile brevemente tu evaluación de su puntaje, anímalo y pregúntale en qué reactivo tiene dudas. REGLA ESTRICTA: Tu respuesta no debe superar las 3 líneas. Sé claro, concreto y no te salgas del tema.`;
-    } else {
-        promptInvisible = `Eres el tutor de SimuTukur. El estudiante acaba de iniciar sesión. Detectaste en su historial que reprobó su último simulacro de ${localStorage.getItem('plan_nombre_completo')} con ${puntaje}%. Salúdalo por su nombre (${localStorage.getItem('nombre_alumno')}), infórmale con firmeza pero de forma constructiva que su Entrenamiento está Bloqueado y debe superar el "Reto de Repaso" (panel derecho) para poder avanzar. REGLA ESTRICTA: Tu respuesta no debe superar las 3 líneas.`;
-    }
-
-    const idLoader = printChat("Simu", "Analizando telemetría...", true);
+    const idLoader = printChat("Simu", "Extrayendo telemetría y grabaciones de seguridad...", true);
 
     try {
+        let promptInvisible = "";
+
+        if (contexto === "reciente") {
+            // 1. Extraemos el análisis de la cámara
+            const { data: ultVig } = await _supabase.from('analisis_vigilancia_ia')
+                .select('analisis_ia').eq('token_hex', token).order('timestamp', { ascending: false }).limit(1);
+            const reporteCamara = (ultVig && ultVig.length > 0) ? ultVig[0].analisis_ia : "Sin anomalías";
+
+            // 2. Extraemos el JSON con las materias reprobadas
+            const { data: ultExamen } = await _supabase.from('resultados_examenes')
+                .select('detalles_fallas').eq('token_hex', token).order('fecha_aplicacion', { ascending: false }).limit(1);
+            
+            let temasMalos = "Ninguna materia crítica";
+            if (ultExamen && ultExamen.length > 0 && ultExamen[0].detalles_fallas && ultExamen[0].detalles_fallas.fallas_academicas) {
+                const fallas = ultExamen[0].detalles_fallas.fallas_academicas;
+                if (fallas.length > 0) {
+                    const materiasUnicas = [...new Set(fallas.map(f => f.materia))];
+                    temasMalos = materiasUnicas.join(", ");
+                }
+            }
+
+            // 3. Prompt paramétrico para Gemini
+            promptInvisible = `Eres Simu, tutor IA de SimuTukur. El estudiante ${localStorage.getItem('nombre_alumno')} acaba de terminar su examen con ${puntaje}%. 
+            Reporte Biomédico de Cámara/Audio: "${reporteCamara}". 
+            Materias en las que falló: "${temasMalos}". 
+            Probabilidad de ingreso: ${probabilidad}. 
+            REGLAS ESTRICTAS: 1) Salúdalo. 2) Da tu veredicto de su calificación. 3) Dile EXACTAMENTE qué viste o escuchaste en la cámara según el reporte. 4) Dile en qué materias específicas falló. 5) MÁXIMO 5 LÍNEAS. Sé directo.`;
+        } else {
+            promptInvisible = `Eres el tutor IA de SimuTukur. El estudiante acaba de iniciar sesión. Detectaste que reprobó su último simulacro con ${puntaje}%. Salúdalo por su nombre (${localStorage.getItem('nombre_alumno')}), infórmale con firmeza que su Entrenamiento está Bloqueado y debe superar el "Reto de Repaso". REGLA ESTRICTA: Máximo 3 líneas.`;
+        }
+
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
         const response = await fetch(url, {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: promptInvisible }] }],
-                generationConfig: { maxOutputTokens: 150, temperature: 0.3 }
+                generationConfig: { maxOutputTokens: 250, temperature: 0.4 }
             })
         });
+        
+        if (!response.ok) throw new Error("Error en la conexión con el servidor IA");
+
         const data = await response.json();
         actualizarLoader(idLoader, data.candidates[0].content.parts[0].text);
     } catch (e) {
-        actualizarLoader(idLoader, `Análisis guardado. Puntaje: ${puntaje}%. Tienes un repaso pendiente.`);
+        console.error("Falla en IA:", e);
+        actualizarLoader(idLoader, `Análisis guardado. Puntaje: ${puntaje}%. Tienes un repaso pendiente. (Nota del sistema: Interferencia en la conexión con la red neuronal IA).`, true);
     }
 }
 
