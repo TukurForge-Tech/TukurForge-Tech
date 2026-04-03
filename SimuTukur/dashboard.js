@@ -257,7 +257,8 @@ async function mostrarFeedbackIA(puntaje, token, contexto) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: promptInvisible }] }],
-                generationConfig: { maxOutputTokens: 500, temperature: 0.4 }
+                //generationConfig: { maxOutputTokens: 500, temperature: 0.4 }
+                generationConfig: { temperature: 0.4 }
             })
         });
         
