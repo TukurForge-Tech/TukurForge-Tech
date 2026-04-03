@@ -43,7 +43,7 @@ async function init() {
         if (nivelLabel === "Repaso") {
             reactivos = await obtenerReactivosRepaso(cantQ); 
             if (!reactivos || reactivos.length === 0) {
-                alert("¡Expediente limpio! No tienes suficientes errores registrados para armar un repaso. Sigue entrenando niveles normales.");
+                alert("¡Expediente limpio! No tienes suficientes errores registrados para armar un repaso.");
                 window.location.href = 'dashboard.html';
                 return;
             }
@@ -53,7 +53,7 @@ async function init() {
             return; 
         }
 
-        // --- FASE 2: COSECHA INTELIGENTE (RESPETANDO BLOQUES DE LECTURA) ---
+        // --- FASE 2: COSECHA CON EL "IF" MAESTRO ---
         const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
         const nivelColchonID = nivelID < 3 ? nivelID + 1 : 3;
 
@@ -64,7 +64,7 @@ async function init() {
             .single();
 
         if (!regla || !regla.distribucion_materias) {
-            alert(`Error estructural: No hay distribución configurada para ${institucionRegla} en ${nivelLabel}.`);
+            alert(`Error: No hay distribución para ${institucionRegla} en ${nivelLabel}.`);
             window.location.href = 'dashboard.html';
             return;
         }
@@ -73,64 +73,58 @@ async function init() {
         let reactivosPuros = [];
         
         for (const [materia, cantidad] of Object.entries(distribucion)) {
-            // 🔥 SOLUCIÓN AL BUG: Descargamos TODAS las preguntas de la materia sin filtrar por nivel todavía
-            const { data: todos } = await _supabase.from('reactivos')
-                .select('*').in('tipo_examen', filtroTipos).eq('materia', materia);
+            
+            let queryBase = _supabase.from('reactivos').select('*').in('tipo_examen', filtroTipos).eq('materia', materia);
+            
+            // 🔥 AQUÍ ESTÁ TU SOLUCIÓN: Solo Habilidad Verbal ignora el nivel para no romper los bloques
+            if (materia !== 'Habilidad Verbal') {
+                queryBase = queryBase.eq('nivel', nivelID);
+            }
 
-            if (todos && todos.length > 0) {
-                let sueltasBase = [];
-                let sueltasColchon = [];
-                let gruposLectura = {};
+            const { data: baseData } = await queryBase;
 
-                // Separamos las que son bloque de lectura, de las que son preguntas sueltas
-                todos.forEach(r => {
-                    if (r.id_grupo_lectura) {
-                        if (!gruposLectura[r.id_grupo_lectura]) gruposLectura[r.id_grupo_lectura] = [];
-                        gruposLectura[r.id_grupo_lectura].push(r);
-                    } else if (r.texto_lectura && r.texto_lectura.trim() !== "") {
-                        let llave = "txt_" + r.texto_lectura.trim().substring(0, 30);
+            if (baseData && baseData.length > 0) {
+                if (materia === 'Habilidad Verbal') {
+                    // Agrupamos estrictamente por tu columna id_grupo_lectura
+                    let gruposLectura = {};
+                    baseData.forEach(r => {
+                        let llave = r.id_grupo_lectura ? r.id_grupo_lectura : "suelta_" + r.id;
                         if (!gruposLectura[llave]) gruposLectura[llave] = [];
                         gruposLectura[llave].push(r);
-                    } else {
-                        // Si es pregunta suelta, aquí sí aplicamos el filtro de Nivel
-                        if (r.nivel === nivelID) sueltasBase.push(r);
-                        if (r.nivel === nivelColchonID) sueltasColchon.push(r);
+                    });
+
+                    let llavesMezcladas = Object.keys(gruposLectura).sort(() => Math.random() - 0.5);
+                    let seleccionados = [];
+
+                    for (let llave of llavesMezcladas) {
+                        let bloque = gruposLectura[llave].sort((a, b) => a.id - b.id);
+                        if (seleccionados.length < cantidad) {
+                            seleccionados.push(...bloque); // Inyecta el bloque completo de 4 preguntas
+                        }
                     }
-                });
-
-                let seleccionados = [];
-                let llavesLectura = Object.keys(gruposLectura).sort(() => Math.random() - 0.5);
-                sueltasBase = sueltasBase.sort(() => Math.random() - 0.5);
-
-                // 1. Intentamos meter bloques completos de lectura primero (crucial para Habilidad Verbal)
-                for (let llave of llavesLectura) {
-                    let bloque = gruposLectura[llave].sort((a, b) => a.id - b.id); // Mantiene orden lógico de la lectura
-                    
-                    if (seleccionados.length + bloque.length <= cantidad + 1) { // Permite rebasar por 1 para no romper el bloque
-                        seleccionados.push(...bloque);
-                    } else if (seleccionados.length === 0) {
-                        // Si nos piden 3 y el bloque trae 4, metemos los 4. Es mejor que romper la lectura.
-                        seleccionados.push(...bloque);
-                    }
-                    if (seleccionados.length >= cantidad) break;
+                    reactivosPuros.push(...seleccionados);
+                } else {
+                    // Español y el resto de materias se manejan normal
+                    let seleccionados = baseData.sort(() => Math.random() - 0.5).slice(0, cantidad);
+                    reactivosPuros.push(...seleccionados);
                 }
+            }
 
-                // 2. Si faltan preguntas para la materia, rellenamos con preguntas sueltas del nivel correcto
-                while (seleccionados.length < cantidad && sueltasBase.length > 0) {
-                    seleccionados.push(sueltasBase.pop());
-                }
-
-                reactivosPuros.push(...seleccionados);
-
-                // Llenamos el colchón IA solo con preguntas sueltas para no inyectar lecturas a la mitad
-                if (nivelID < 3) {
-                    const cantColchon = Math.ceil(cantidad * 0.5);
-                    colchonReactivos.push(...sueltasColchon.slice(0, cantColchon));
+            // --- Carga del Colchón (50%) respetando nivel superior ---
+            if (nivelID < 3) {
+                const cantColchon = Math.ceil(cantidad * 0.5);
+                let queryColchon = _supabase.from('reactivos').select('*').in('tipo_examen', filtroTipos).eq('materia', materia).eq('nivel', nivelColchonID);
+                
+                const { data: colchonData } = await queryColchon;
+                if (colchonData && colchonData.length > 0) {
+                    // Protegemos la IA para que NO meta lecturas al azar en el colchón
+                    let sueltasColchon = colchonData.filter(c => !c.texto_lectura || c.texto_lectura.trim() === "");
+                    colchonReactivos.push(...sueltasColchon.sort(() => Math.random() - 0.5).slice(0, cantColchon));
                 }
             }
         }
 
-        // --- FASE 2.5: ORDENAMIENTO EN PANTALLA (Por materia y respetando bloques) ---
+        // --- FASE 2.5: ORDENAMIENTO DE PANTALLA ---
         let reactivosAgrupados = {};
         reactivosPuros.forEach(r => {
             if (!reactivosAgrupados[r.materia]) reactivosAgrupados[r.materia] = [];
@@ -141,24 +135,23 @@ async function init() {
         
         materiasAleatorias.forEach(mat => {
             let preguntasMateria = reactivosAgrupados[mat];
-            let subGrupos = {};
             
-            // Re-agrupamos internamente por lectura para asegurarnos que salgan pegadas
-            preguntasMateria.forEach(p => {
-                let llave = "suelta_" + p.id;
-                if (p.id_grupo_lectura) llave = "grupo_" + p.id_grupo_lectura;
-                else if (p.texto_lectura && p.texto_lectura.trim() !== "") llave = "txt_" + p.texto_lectura.trim().substring(0, 30);
-                
-                if(!subGrupos[llave]) subGrupos[llave] = [];
-                subGrupos[llave].push(p);
-            });
-
-            let llavesSubGrupo = Object.keys(subGrupos).sort(() => Math.random() - 0.5);
-            
-            llavesSubGrupo.forEach(llave => {
-                let bloque = subGrupos[llave]; // No revolvemos el bloque por dentro para mantener el hilo de la lectura
-                reactivos.push(...bloque);
-            });
+            if (mat === 'Habilidad Verbal') {
+                // Las mantenemos amarradas para que salgan seguidas
+                let subGrupos = {};
+                preguntasMateria.forEach(p => {
+                    let llave = p.id_grupo_lectura ? p.id_grupo_lectura : "suelta_" + p.id;
+                    if(!subGrupos[llave]) subGrupos[llave] = [];
+                    subGrupos[llave].push(p);
+                });
+                let llavesSubGrupo = Object.keys(subGrupos).sort(() => Math.random() - 0.5);
+                llavesSubGrupo.forEach(llave => {
+                    reactivos.push(...subGrupos[llave]); 
+                });
+            } else {
+                // Las demás materias se revuelven normal
+                reactivos.push(...preguntasMateria.sort(() => Math.random() - 0.5));
+            }
         });
 
         colchonReactivos = colchonReactivos.sort(() => Math.random() - 0.5);
@@ -272,14 +265,13 @@ async function procesarRespuesta() {
             const idxReemplazo = reactivos.findIndex((re, i) => {
                 if (i <= index) return false;
                 if (re.materia !== r.materia) return false;
-                if (re.texto_lectura && re.texto_lectura.trim() !== "") return false; // Nunca reemplaza una lectura
+                if (re.texto_lectura && re.texto_lectura.trim() !== "") return false; // Nunca rompe lecturas
                 return true;
             });
 
             if (idxReemplazo !== -1) {
-                const preguntaDura = colchonReactivos.shift(); // Saca la primera del colchón
+                const preguntaDura = colchonReactivos.shift(); 
                 reactivos[idxReemplazo] = preguntaDura;
-                console.log("🔥 Racha perfecta: Inyectando reactivo de nivel superior.");
             }
             rachaAciertos = 0; 
         }
