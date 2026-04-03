@@ -66,7 +66,9 @@ async function seleccionarCurso(data, btn) {
     localStorage.setItem('simu_creditos', data.intentos_simulacro_restantes || 0);
     actualizarDisplayCreditos();
 
+    setTimeout(() => {
     cargarHistorial(data.token_hex);
+    }, 800);
     
     const { data: historialBD } = await _supabase.from('resultados_examenes')
         .select('puntaje_obtenido')
