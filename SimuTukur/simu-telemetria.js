@@ -23,16 +23,24 @@ async function registrarEventoVigilancia(evento) {
 }
 
 async function guardarResultadoFinal(puntajeFinal, nivelFinal, detallesFallasJSON) {
+    // 1. Detectamos si es un examen normal o un castigo
+    let nombrePrueba = localStorage.getItem('plan_nombre_completo');
+    if (localStorage.getItem('simu_nivel') === "Repaso") {
+        nombrePrueba = "RETO DE REPASO"; 
+    }
+
+    // 2. Lo guardamos en la base de datos con su etiqueta correcta
     const { error } = await _supabase.from('resultados_examenes').insert({
         email: localStorage.getItem('session_email'),
         token_hex: localStorage.getItem('token_hex_hijo'),
         nombre_alumno: localStorage.getItem('nombre_alumno'),
-        tipo_prueba: localStorage.getItem('plan_nombre_completo'), 
+        tipo_prueba: nombrePrueba, 
         puntaje_obtenido: Math.round(puntajeFinal), 
         nivel_examen: parseInt(nivelFinal), 
-        detalles_fallas: detallesFallasJSON, // Aquí inyectamos las fallas reales
+        detalles_fallas: detallesFallasJSON, // Aquí va el JSON de fallas
         fecha_aplicacion: new Date().toISOString() 
     });
+    
     if (error) console.error("Error en resultados_examenes:", error.message);
 }
 
