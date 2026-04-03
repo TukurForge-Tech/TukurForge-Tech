@@ -40,14 +40,31 @@ async function init() {
             filtroTipos = [inst];
         }
 
+        // --- FASE 1: DESVÍO DE REPASO ---
         if (nivelLabel === "Repaso") {
-            reactivos = await obtenerReactivosRepaso(cantQ); 
-            if (!reactivos || reactivos.length === 0) {
+            let reactivosRepaso = await obtenerReactivosRepaso(cantQ); 
+            if (!reactivosRepaso || reactivosRepaso.length === 0) {
                 alert("¡Expediente limpio! No tienes suficientes errores registrados para armar un repaso.");
                 window.location.href = 'dashboard.html';
                 return;
             }
-            reactivos = reactivos.sort(() => Math.random() - 0.5);
+
+            // APLICAMOS LA MAGIA DE AGRUPAMIENTO AL REPASO
+            let subGrupos = {};
+            reactivosRepaso.forEach(p => {
+                let llave = "suelta_" + p.id;
+                if (p.id_grupo_lectura) llave = "grupo_" + p.id_grupo_lectura;
+                else if (p.texto_lectura && p.texto_lectura.trim() !== "") llave = "txt_" + p.texto_lectura.trim().substring(0, 30);
+                
+                if(!subGrupos[llave]) subGrupos[llave] = [];
+                subGrupos[llave].push(p);
+            });
+
+            let llavesSubGrupo = Object.keys(subGrupos).sort(() => Math.random() - 0.5);
+            llavesSubGrupo.forEach(llave => {
+                reactivos.push(...subGrupos[llave]); // Empuja el bloque de lectura pegado
+            });
+
             render();
             startTimer();
             return; 
