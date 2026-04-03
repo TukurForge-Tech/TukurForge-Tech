@@ -66,7 +66,7 @@
                 
                 <div class="p-3 border-t border-white/5 bg-black/40 shrink-0">
                     <div class="flex gap-2 bg-gray-900 border border-white/10 rounded-xl p-2 items-center">
-                        <input type="text" id="user-input" placeholder="Pregunte algo a Simu..." class="bg-transparent flex-grow text-xs p-2 outline-none text-white" onkeypress="if(event.key === 'Enter') procesarEnvioChat()">
+                        <input type="text" id="user-input" placeholder="Pregunte algo a Simu..." class="bg-transparent flex-grow text-xs p-2 outline-none text-white" onkeypress="if(event.key === 'Enter') enviarMensajeChat(localStorage.getItem('token_hex_hijo') || localStorage.getItem('token_hex'))">
                         <button onclick="enviarMensajeChat(localStorage.getItem('token_hex_hijo') || localStorage.getItem('token_hex'))" class="bg-cyan-500 hover:bg-cyan-400 text-white font-bold py-2 px-4 rounded-xl transition-colors">ENVIAR</button>
                     </div>
                 </div>
