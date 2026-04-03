@@ -145,7 +145,7 @@ async function cargarNiveles(institucion, puntajeReal) {
 async function cargarHistorial(token) {
     const contenedor = document.getElementById('contenedor-historial');
     try {
-        // SOLUCIÓN: Pedimos solo 3 columnas específicas. Evita errores si agregas columnas nuevas a la BD.
+        // SOLUCIÓN: Pedimos solo las 3 columnas que usamos.
         const { data, error } = await _supabase.from('resultados_examenes')
             .select('tipo_prueba, fecha_aplicacion, puntaje_obtenido')
             .eq('token_hex', token)
@@ -226,12 +226,10 @@ async function mostrarFeedbackIA(puntaje, token, contexto) {
         let promptInvisible = "";
 
         if (contexto === "reciente") {
-            // 1. Extraemos el análisis de la cámara
             const { data: ultVig } = await _supabase.from('analisis_vigilancia_ia')
                 .select('analisis_ia').eq('token_hex', token).order('timestamp', { ascending: false }).limit(1);
             const reporteCamara = (ultVig && ultVig.length > 0) ? ultVig[0].analisis_ia : "Sin anomalías";
 
-            // 2. Extraemos el JSON con las materias reprobadas
             const { data: ultExamen } = await _supabase.from('resultados_examenes')
                 .select('detalles_fallas').eq('token_hex', token).order('fecha_aplicacion', { ascending: false }).limit(1);
             
@@ -244,16 +242,16 @@ async function mostrarFeedbackIA(puntaje, token, contexto) {
                 }
             }
 
-            // 3. Prompt paramétrico para Gemini
             promptInvisible = `Eres Simu, tutor IA de SimuTukur. El estudiante ${localStorage.getItem('nombre_alumno')} acaba de terminar su examen con ${puntaje}%. 
-            Reporte Biomédico de Cámara/Audio: "${reporteCamara}". 
+            Reporte de Cámara/Audio: "${reporteCamara}". 
             Materias en las que falló: "${temasMalos}". 
             Probabilidad de ingreso: ${probabilidad}. 
-            REGLAS ESTRICTAS: 1) Salúdalo. 2) Da tu veredicto de su calificación. 3) Dile EXACTAMENTE qué viste o escuchaste en la cámara según el reporte. 4) Dile en qué materias específicas falló. 5) MÁXIMO 5 LÍNEAS. Sé directo.`;
+            REGLAS: 1) Salúdalo. 2) Da tu veredicto de su calificación. 3) Dile EXACTAMENTE qué viste o escuchaste en la cámara según el reporte. 4) Dile en qué materias específicas falló. 5) MÁXIMO 5 LÍNEAS. Sé directo.`;
         } else {
-            promptInvisible = `Eres el tutor IA de SimuTukur. El estudiante acaba de iniciar sesión. Detectaste que reprobó su último simulacro con ${puntaje}%. Salúdalo por su nombre (${localStorage.getItem('nombre_alumno')}), infórmale con firmeza que su Entrenamiento está Bloqueado y debe superar el "Reto de Repaso". REGLA ESTRICTA: Máximo 3 líneas.`;
+            promptInvisible = `Eres el tutor IA de SimuTukur. El estudiante acaba de iniciar sesión. Detectaste que reprobó su último simulacro con ${puntaje}%. Salúdalo por su nombre (${localStorage.getItem('nombre_alumno')}), infórmale con firmeza que su Entrenamiento está Bloqueado y debe superar el "Reto de Repaso". REGLA: Máximo 3 líneas.`;
         }
 
+        // Aquí usamos la llave que ya está en tu supabase-client.js
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
         const response = await fetch(url, {
             method: 'POST', 
@@ -270,7 +268,7 @@ async function mostrarFeedbackIA(puntaje, token, contexto) {
         actualizarLoader(idLoader, data.candidates[0].content.parts[0].text);
     } catch (e) {
         console.error("Falla en IA:", e);
-        actualizarLoader(idLoader, `Análisis guardado. Puntaje: ${puntaje}%. Tienes un repaso pendiente. (Nota del sistema: Interferencia en la conexión con la red neuronal IA).`, true);
+        actualizarLoader(idLoader, `Análisis guardado. Puntaje: ${puntaje}%. Tienes un repaso pendiente. (Nota del sistema: Interferencia en la conexión IA).`, true);
     }
 }
 
