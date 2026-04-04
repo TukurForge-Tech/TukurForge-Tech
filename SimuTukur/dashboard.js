@@ -106,6 +106,7 @@ async function seleccionarCurso(data, btn) {
     }
 }
 
+// LÓGICA DE GAMIFICACIÓN VISUAL
 async function cargarNiveles(institucion, puntajeReal) {
     const contenedor = document.getElementById('contenedor-niveles');
     const { data } = await _supabase.from('reglas_simulador').select('*').eq('institucion', institucion).order('id', { ascending: true });
@@ -113,7 +114,6 @@ async function cargarNiveles(institucion, puntajeReal) {
     const estaBloqueado = puntajeReal < 70;
     let html = '';
 
-    // Si sacó menos de 70%, mostramos el mensaje de bloqueo y la tarjeta de repaso
     if (estaBloqueado) {
         html += `
             <div class="bg-red-900/20 border border-red-500/50 p-4 rounded-xl mb-4 text-center">
@@ -123,6 +123,7 @@ async function cargarNiveles(institucion, puntajeReal) {
             <div class="card-glass p-5 nivel-card border-red-500/50 hover:border-red-400 cursor-pointer" onclick="irAlExamen('Repaso', 10, 15)">
                 <h4 class="text-red-400 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-fire mr-1"></i> Reto de Repaso</h4>
                 <p class="text-sm font-black text-white">10 Reactivos de tus errores</p>
+                <p class="text-[9px] text-cyan-400 font-bold mt-2 uppercase tracking-wide">🎯 Meta: 70% para aprobar</p>
             </div>
         `;
     }
@@ -131,7 +132,6 @@ async function cargarNiveles(institucion, puntajeReal) {
         html += data.map(n => {
             const isLocked = estaBloqueado || n.nivel !== 'Principiante'; 
             
-            // LÓGICA DE GAMIFICACIÓN: Textos de requisitos según el estado
             let textoRequisito = "";
             if (isLocked) {
                 if (estaBloqueado) {
