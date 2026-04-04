@@ -19,7 +19,10 @@
 
     <nav class="fixed w-full z-50 bg-[#050a14]/90 backdrop-blur-md border-b border-gray-800">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <h1 class="text-2xl font-black italic text-cyan-400 tracking-tighter">SIMUTUKUR</h1>
+            <div class="flex items-center gap-3">
+                <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur2.jpeg" alt="Simu Búho" class="w-10 h-10 rounded-lg object-cover border border-cyan-500/30">
+                <h1 class="text-2xl font-black italic text-cyan-400 tracking-tighter hidden sm:block">SIMUTUKUR</h1>
+            </div>
             <div class="flex gap-4">
                 <a href="#dudas" class="hidden md:flex text-gray-400 hover:text-white text-sm font-bold items-center transition">Preguntas Frecuentes</a>
                 <a href="login.html" class="bg-gray-800 hover:bg-gray-700 text-white text-sm font-black py-2 px-6 rounded-full transition border border-gray-700">Iniciar Sesión</a>
@@ -55,7 +58,7 @@
                 <p class="text-gray-400 text-sm leading-relaxed">Olvídate de las dudas. Si fallas una pregunta, nuestra Inteligencia Artificial te explica el porqué paso a paso y te reta a mejorar en tiempo real.</p>
             </div>
             <div class="bg-glass p-8 rounded-2xl">
-                <i class="fa-solid fa-camera-web text-4xl text-cyan-400 mb-6"></i>
+                <i class="fa-solid fa-video text-4xl text-cyan-400 mb-6"></i>
                 <h3 class="text-xl font-black uppercase italic tracking-tighter mb-3">Telemetría Real</h3>
                 <p class="text-gray-400 text-sm leading-relaxed">Simulamos la presión del examen real. Usamos la cámara y micrófono de tu computadora para vigilar el entorno y asegurar cero distracciones.</p>
             </div>
@@ -74,6 +77,18 @@
         </div>
 
         <div class="space-y-4">
+            
+            <details class="bg-glass rounded-xl border border-gray-800 group cursor-pointer">
+                <summary class="p-6 font-bold flex justify-between items-center text-gray-200 group-hover:text-cyan-400 transition">
+                    ¿Qué es la "Energía IA" y cómo funcionan los Tokens?
+                    <i class="fa-solid fa-chevron-down text-gray-600 group-open:rotate-180 transition"></i>
+                </summary>
+                <div class="p-6 pt-0 text-sm text-gray-400 leading-relaxed border-t border-gray-800 mt-2">
+                    Tu inscripción incluye un saldo inicial de <strong class="text-white">200 tokens de Energía IA</strong>. Cada vez que le haces una duda escrita al Tutor en el chat interactivo, se consume 1 token para cubrir el procesamiento de los servidores de Inteligencia Artificial. <br><br>
+                    <strong class="text-cyan-400">¿Qué pasa si me los acabo?</strong> El simulador (tus exámenes, reportes y métricas) seguirá funcionando de forma ilimitada sin costo extra. Sin embargo, para seguir chateando con el Tutor IA, podrás adquirir recargas de Energía IA desde $20 MXN directamente en tu panel. Cuentas claras, amistades largas.
+                </div>
+            </details>
+
             <details class="bg-glass rounded-xl border border-gray-800 group cursor-pointer">
                 <summary class="p-6 font-bold flex justify-between items-center text-gray-200 group-hover:text-cyan-400 transition">
                     ¿Puedo hacer el examen desde mi celular?
