@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimuTukur | El Simulador con Inteligencia Artificial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #050a14; color: white; font-family: system-ui, -apple-system, sans-serif; }
+        .text-cian { color: #06b6d4; }
+        .bg-glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        /* Animación para el acordeón de dudas */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+    </style>
+</head>
+<body class="antialiased selection:bg-cyan-500 selection:text-white">
+
+    <nav class="fixed w-full z-50 bg-[#050a14]/90 backdrop-blur-md border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <h1 class="text-2xl font-black italic text-cyan-400 tracking-tighter">SIMUTUKUR</h1>
+            <div class="flex gap-4">
+                <a href="#dudas" class="hidden md:flex text-gray-400 hover:text-white text-sm font-bold items-center transition">Preguntas Frecuentes</a>
+                <a href="login.html" class="bg-gray-800 hover:bg-gray-700 text-white text-sm font-black py-2 px-6 rounded-full transition border border-gray-700">Iniciar Sesión</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="pt-40 pb-20 px-6 text-center max-w-5xl mx-auto">
+        <div class="inline-block bg-cyan-900/30 border border-cyan-500/30 text-cyan-400 text-[10px] font-black uppercase tracking-widest py-1 px-3 rounded-full mb-6">
+            Especialistas en ECOEMS 2026
+        </div>
+        <h2 class="text-5xl md:text-7xl font-black italic tracking-tighter leading-tight mb-6">
+            No dejes su futuro <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">al azar.</span>
+        </h2>
+        <p class="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+            El único simulador con Inteligencia Artificial que entrena al aspirante como un maestro particular 24/7. Telemetría de atención, retos personalizados y explicaciones paso a paso.
+        </p>
+        <div class="flex flex-col sm:flex-row justify-center gap-4">
+            <a href="demo.html" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 px-8 rounded-full transition transform hover:scale-105 shadow-[0_0_20px_rgba(6,182,212,0.4)]">
+                Hacer Examen Demo
+            </a>
+            <a href="registro.html" class="bg-glass hover:bg-white/10 text-white font-black py-4 px-8 rounded-full transition border border-gray-700">
+                Ver Planes y Precios
+            </a>
+        </div>
+    </section>
+
+    <section class="py-20 bg-black/40 border-y border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-8">
+            <div class="bg-glass p-8 rounded-2xl">
+                <i class="fa-solid fa-brain text-4xl text-cyan-400 mb-6"></i>
+                <h3 class="text-xl font-black uppercase italic tracking-tighter mb-3">Tutor IA "Simu"</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">Olvídate de las dudas. Si fallas una pregunta, nuestra Inteligencia Artificial te explica el porqué paso a paso y te reta a mejorar en tiempo real.</p>
+            </div>
+            <div class="bg-glass p-8 rounded-2xl">
+                <i class="fa-solid fa-camera-web text-4xl text-cyan-400 mb-6"></i>
+                <h3 class="text-xl font-black uppercase italic tracking-tighter mb-3">Telemetría Real</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">Simulamos la presión del examen real. Usamos la cámara y micrófono de tu computadora para vigilar el entorno y asegurar cero distracciones.</p>
+            </div>
+            <div class="bg-glass p-8 rounded-2xl border-cyan-500/30">
+                <i class="fa-solid fa-chart-line text-4xl text-cyan-400 mb-6"></i>
+                <h3 class="text-xl font-black uppercase italic tracking-tighter mb-3">Ruta de Mejora</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">El sistema aprende de tus errores y bloquea los niveles avanzados hasta que domines tus puntos débiles mediante "Retos de Repaso".</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="dudas" class="py-24 max-w-3xl mx-auto px-6">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-black italic tracking-tighter text-cyan-400 uppercase">Preguntas Frecuentes y Reglas</h2>
+            <p class="text-gray-400 text-sm mt-2">Todo lo que necesitas saber antes de iniciar tu entrenamiento.</p>
+        </div>
+
+        <div class="space-y-4">
+            <details class="bg-glass rounded-xl border border-gray-800 group cursor-pointer">
+                <summary class="p-6 font-bold flex justify-between items-center text-gray-200 group-hover:text-cyan-400 transition">
+                    ¿Puedo hacer el examen desde mi celular?
+                    <i class="fa-solid fa-chevron-down text-gray-600 group-open:rotate-180 transition"></i>
+                </summary>
+                <div class="p-6 pt-0 text-sm text-gray-400 leading-relaxed border-t border-gray-800 mt-2">
+                    <strong class="text-white">No.</strong> SimuTukur requiere un entorno de evaluación profesional. Para garantizar el correcto funcionamiento de la biometría y la IA, la plataforma está estrictamente bloqueada para dispositivos móviles. Solo puedes ingresar desde una Computadora o Laptop.
+                </div>
+            </details>
+
+            <details class="bg-glass rounded-xl border border-gray-800 group cursor-pointer">
+                <summary class="p-6 font-bold flex justify-between items-center text-gray-200 group-hover:text-cyan-400 transition">
+                    ¿Necesito instalar algún software invasivo?
+                    <i class="fa-solid fa-chevron-down text-gray-600 group-open:rotate-180 transition"></i>
+                </summary>
+                <div class="p-6 pt-0 text-sm text-gray-400 leading-relaxed border-t border-gray-800 mt-2">
+                    A diferencia de los exámenes institucionales que requieren instalar navegadores bloqueadores, nosotros operamos 100% en la web. Solo pediremos permisos nativos de tu navegador para acceder a la cámara y audio. Si no otorgas los permisos, el simulador no iniciará. No grabamos ni almacenamos tu video o voz.
+                </div>
+            </details>
+
+            <details class="bg-glass rounded-xl border border-gray-800 group cursor-pointer">
+                <summary class="p-6 font-bold flex justify-between items-center text-gray-200 group-hover:text-cyan-400 transition">
+                    ¿Qué pasa si falla mi internet o se va la luz?
+                    <i class="fa-solid fa-chevron-down text-gray-600 group-open:rotate-180 transition"></i>
+                </summary>
+                <div class="p-6 pt-0 text-sm text-gray-400 leading-relaxed border-t border-gray-800 mt-2">
+                    Las intermitencias de red locales, fallas eléctricas o hardware defectuoso son responsabilidad del usuario. Si pierdes la conexión, el intento de examen podría no guardarse. Te sugerimos conectarte por cable de red (Ethernet) para mayor estabilidad.
+                </div>
+            </details>
+
+            <details class="bg-glass rounded-xl border border-gray-800 group cursor-pointer">
+                <summary class="p-6 font-bold flex justify-between items-center text-gray-200 group-hover:text-cyan-400 transition">
+                    ¿La Inteligencia Artificial puede equivocarse?
+                    <i class="fa-solid fa-chevron-down text-gray-600 group-open:rotate-180 transition"></i>
+                </summary>
+                <div class="p-6 pt-0 text-sm text-gray-400 leading-relaxed border-t border-gray-800 mt-2">
+                    SimuTukur utiliza modelos generativos de lenguaje de última generación. Aunque están entrenados para ser precisos, la IA puede presentar "alucinaciones" (inconsistencias) en casos muy raros. El usuario acepta el uso de esta tecnología entendiendo su naturaleza experimental.
+                </div>
+            </details>
+
+            <details class="bg-glass rounded-xl border border-gray-800 group cursor-pointer">
+                <summary class="p-6 font-bold flex justify-between items-center text-gray-200 group-hover:text-cyan-400 transition">
+                    ¿Hay devoluciones o reembolsos?
+                    <i class="fa-solid fa-chevron-down text-gray-600 group-open:rotate-180 transition"></i>
+                </summary>
+                <div class="p-6 pt-0 text-sm text-gray-400 leading-relaxed border-t border-gray-800 mt-2">
+                    <strong class="text-red-400">No hay reembolsos.</strong> Al ser un producto 100% digital que incluye el consumo de "Energía IA" (tokens de procesamiento en servidores), todas las ventas son finales y no aplican devoluciones de dinero bajo ninguna circunstancia. Te sugerimos realizar la Prueba Demo gratuita antes de comprar.
+                </div>
+            </details>
+        </div>
+    </section>
+
+    <footer class="bg-[#02050a] py-12 border-t border-gray-800 text-center">
+        <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-4">SimuTukur © 2026. Todos los derechos reservados.</p>
+        <div class="flex justify-center gap-6 text-xs text-gray-600">
+            <a href="#" class="hover:text-cyan-400 transition">Aviso de Privacidad</a>
+            <a href="#" class="hover:text-cyan-400 transition">Términos de Servicio</a>
+            <a href="#" class="hover:text-cyan-400 transition">Contrato Digital</a>
+        </div>
+    </footer>
+
+</body>
+</html>
