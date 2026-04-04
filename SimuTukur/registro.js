@@ -1,8 +1,7 @@
-// registro.js - Lógica de inscripción y pagos profesional
 let referenciaUnica = "";
 let passwordValido = false;
+let metodoPago = "STRIPE"; // Inicia siempre en Stripe
 
-// Función para ver/ocultar password (OBS 3)
 function togglePassword(inputId, icon) {
     const input = document.getElementById(inputId);
     if (input.type === "password") {
@@ -16,24 +15,21 @@ function togglePassword(inputId, icon) {
     }
 }
 
-// LÓGICA DE VALIDACIÓN DE REGLAS DE CONTRASEÑA (OBS 5)
 function validarPasswordRules(password) {
     const rules = {
         mayus: /[A-Z]/.test(password),
         minus: /[a-z]/.test(password),
         num: /[0-9]/.test(password),
-        especial: /[@#$!%*?&]/.test(password), // & Incluido pero blindado en backend
+        especial: /[@#$!%*?&]/.test(password),
         length: password.length >= 8
     };
 
-    // Actualizar UI
     actualizarRuleUI('rule-mayus', rules.mayus);
     actualizarRuleUI('rule-minus', rules.minus);
     actualizarRuleUI('rule-num', rules.num);
     actualizarRuleUI('rule-especial', rules.especial);
     actualizarRuleUI('rule-length', rules.length);
 
-    // Retorna true si cumple todas las reglas
     return Object.values(rules).every(Boolean);
 }
 
@@ -55,9 +51,7 @@ function actualizarRuleUI(elementId, cumplido) {
 function generarReferencia() {
     const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let codigo = "ST-";
-    for (let i = 0; i < 5; i++) {
-        codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-    }
+    for (let i = 0; i < 5; i++) codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
     referenciaUnica = codigo;
     document.getElementById('ref-display').innerText = referenciaUnica;
 }
@@ -67,17 +61,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const form = document.getElementById('registroForm');
     const btnSubmit = document.getElementById('btnSubmit');
+    const btnIcon = document.getElementById('btnIcon');
+    const btnText = document.getElementById('btnText');
     const inputPass = document.getElementById('password');
     const inputConfirm = document.getElementById('confirm_password');
     const errorMatch = document.getElementById('match-error');
 
-    // Listener para validación en tiempo real de password
+    // Validación en tiempo real
     inputPass.addEventListener('input', () => {
         passwordValido = validarPasswordRules(inputPass.value);
-        validarFormulario(); // Revisa si puede activar botón
+        validarFormulario();
     });
 
-    // Listener para validación de coincidencia
     inputConfirm.addEventListener('input', () => {
         const coinciden = inputPass.value === inputConfirm.value;
         if (coinciden) {
@@ -88,23 +83,16 @@ document.addEventListener("DOMContentLoaded", () => {
         validarFormulario();
     });
 
-    // Función inteligente de validación final (activa/desactiva botón)
     const validarFormulario = () => {
-        const formValidity = form.checkValidity(); // Revisa required y types nativos
-        const passwordsCoinciden = inputPass.value === inputConfirm.value;
-        
-        // Habilitar botón solo si cumple TODO (form, reglas pass, y coinciden)
-        const habilitar = formValidity && passwordValido && passwordsCoinciden;
-        
-        btnSubmit.disabled = !habilitar;
+        const formValidity = form.checkValidity();
+        const passesMatch = inputPass.value === inputConfirm.value;
+        btnSubmit.disabled = !(formValidity && passwordValido && passesMatch);
     };
 
-    // Escuchar cambios en todo el form
     form.addEventListener('input', validarFormulario);
     form.addEventListener('change', validarFormulario);
 
-
-    // LÓGICA DE CUPONES (Misma lógica anterior conectada a Supabase)
+    // LÓGICA DE CUPONES (Supabase)
     const btnAplicar = document.getElementById('btnAplicar');
     btnAplicar.addEventListener('click', async () => {
         const codigo = document.getElementById('codigoPromo').value.trim().toUpperCase();
@@ -115,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
         msg.classList.add('animate-pulse', 'text-cyan-400');
 
         try {
-            const { data, error } = await _supabase.from('cupones_descuento').select('*').eq('codigo', codigo).single();
+            const { data, error } = await _supabase.from('cupones_descuento').select('*').eq('codigo', codigo).eq('estatus', 'Activo').single();
 
             if (error || !data) throw new Error("Cupón inválido");
 
@@ -123,45 +111,56 @@ document.addEventListener("DOMContentLoaded", () => {
             msg.innerText = `¡Cupón de ${data.descuento_porcentaje}% aplicado! Paga sin comisiones.`;
             msg.classList.add('text-green-400');
             
-            // Lógica visual de precios tachados
-            document.getElementById('precio-ecoems-old').classList.remove('hidden');
-            document.getElementById('precio-ecoems').innerText = "$399"; // Ejemplo visual 20%
-            document.getElementById('precio-uni-old').classList.remove('hidden');
-            document.getElementById('precio-uni').innerText = "$479"; // Ejemplo visual 20%
+            // Precios calculados
+            const precioEcoemsBase = 499;
+            const precioUniBase = 599;
+            const factorDescuento = (100 - data.descuento_porcentaje) / 100;
 
-            // Mostrar área de archivo (Se vuelve obligatorio)
+            document.getElementById('precio-ecoems-old').classList.remove('hidden');
+            document.getElementById('precio-ecoems').innerText = "$" + Math.round(precioEcoemsBase * factorDescuento);
+            document.getElementById('precio-uni-old').classList.remove('hidden');
+            document.getElementById('precio-uni').innerText = "$" + Math.round(precioUniBase * factorDescuento);
+
+            // MODO TRANSFERENCIA
+            metodoPago = "TRANSFERENCIA";
             document.getElementById('area-transferencia').classList.remove('hidden');
             document.getElementById('area-archivo').classList.remove('hidden');
             document.getElementById('comprobanteFile').required = true;
+            
+            // MOSTRAR AVISO DE 24H SOLO PARA TRANSFERENCIA
+            document.getElementById('aviso-transferencia').classList.remove('hidden');
+
+            // CAMBIAR BOTÓN A CYAN
+            btnSubmit.classList.remove('bg-blue-600', 'hover:bg-blue-500');
+            btnSubmit.classList.add('bg-cyan-600', 'hover:bg-cyan-500');
+            btnIcon.className = "fa-solid fa-cloud-arrow-up text-xl";
+            btnText.innerText = "Enviar Comprobante";
 
         } catch (err) {
             msg.classList.remove('animate-pulse', 'text-cyan-400');
             msg.innerText = "Cupón inválido o expirado.";
             msg.classList.add('text-red-400');
         }
-        validarFormulario(); // Revalida form por si cambió required de archivo
+        validarFormulario(); 
     });
 
-    // ENVÍO DE FORMULARIO
     form.addEventListener('submit', async (e) => {
         e.preventDefault(); 
         
-        // Blindaje final: no dejar enviar si pass no son válidos (por si hackean HTML)
         const passesMatch = inputPass.value === inputConfirm.value;
-        if(!passwordValido || !passesMatch) {
-            alert("La contraseña no cumple las reglas de seguridad o no coinciden.");
-            return;
-        }
+        if(!passwordValido || !passesMatch) return;
 
         btnSubmit.disabled = true;
-        btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
+        btnIcon.className = "fa-solid fa-spinner fa-spin text-xl";
+        btnText.innerText = "Procesando...";
 
         const archivo = document.getElementById('comprobanteFile').files[0];
-        let urlArchivo = "PAGO_STRIPE_PENDIENTE"; // Valor por defecto si no usan cupón
+        let urlArchivo = "PAGO_STRIPE_PENDIENTE";
 
         try {
-            // SI HAY ARCHIVO (USARON CUPÓN), SUBIRLO
-            if (archivo) {
+            if (metodoPago === "TRANSFERENCIA" && archivo) {
+                if (archivo.size > 5 * 1024 * 1024) throw new Error("El archivo excede los 5MB permitidos.");
+
                 const fileExt = archivo.name.split('.').pop();
                 const fileName = `${referenciaUnica}-${Date.now()}.${fileExt}`;
                 const { error: uploadError } = await _supabase.storage.from('comprobantes').upload(fileName, archivo);
@@ -170,31 +169,45 @@ document.addEventListener("DOMContentLoaded", () => {
                 urlArchivo = publicUrlData.publicUrl;
             }
 
-            // GUARDAR DATOS EN SUPABASE (SOLO EL PRIMER PASSWORD)
             const { error: dbError } = await _supabase.from('registro_pagos').insert({
                 nombre_tutor: document.getElementById('nombreTutor').value,
                 nombre_alumno: document.getElementById('nombreAlumno').value,
                 correo: document.getElementById('correo').value,
-                password_hijo: inputPass.value, // GUARDAMOS LA PRIMERA (OBS 3)
+                password_hijo: inputPass.value,
                 telefono: document.getElementById('telefono').value,
                 tipo_examen: document.getElementById('tipoExamen').value,
                 referencia_pago: referenciaUnica,
                 comprobante_url: urlArchivo,
-                terminos_aceptados: document.getElementById('checkLegal').checked
+                terminos_aceptados: document.getElementById('checkLegal').checked,
+                estatus: metodoPago === "STRIPE" ? "Pendiente Stripe" : "Pendiente Transferencia"
             });
 
             if (dbError) throw dbError;
 
-            // Mostrar Éxito
-            document.getElementById('contenedor-formulario').classList.add('hidden');
-            document.getElementById('ref-exito').innerText = referenciaUnica;
-            document.getElementById('pantalla-exito').classList.remove('hidden');
+            // RUTEO FINAL
+            if (metodoPago === "STRIPE") {
+                // Aquí va tu link de Stripe
+                alert("Redirigiendo a Stripe para pagar de forma segura...");
+                window.location.href = "index.html"; // Cambiar por link de Stripe
+            } else {
+                document.getElementById('contenedor-formulario').classList.add('hidden');
+                document.getElementById('area-transferencia').classList.add('hidden');
+                document.getElementById('ref-exito').innerText = referenciaUnica;
+                document.getElementById('pantalla-exito').classList.remove('hidden');
+            }
 
         } catch (error) {
             console.error(error);
-            alert("Error al procesar el registro. Revisa tu conexión.");
+            alert(error.message || "Error al procesar el registro.");
             btnSubmit.disabled = false;
-            btnSubmit.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Enviar Comprobante';
+            
+            if(metodoPago === "STRIPE"){
+                btnIcon.className = "fa-brands fa-stripe text-xl";
+                btnText.innerText = "Pagar Seguro con Tarjeta";
+            } else {
+                btnIcon.className = "fa-solid fa-cloud-arrow-up text-xl";
+                btnText.innerText = "Enviar Comprobante";
+            }
         }
     });
 });
