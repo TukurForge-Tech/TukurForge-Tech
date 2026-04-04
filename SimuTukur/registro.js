@@ -70,10 +70,11 @@ async function procesarRegistro() {
             nombre_tutor: tutor,
             nombre_alumno: alumno,
             correo: correo,
-            telefono: telefono, // Nuevo campo
+            telefono: telefono,
             tipo_examen: examen,
             referencia_pago: referenciaUnica,
-            comprobante_url: urlArchivo
+            comprobante_url: urlArchivo,
+            terminos_aceptados: document.getElementById('checkLegal').checked
         });
 
         if (dbError) throw new Error("Error al guardar datos. " + dbError.message);
