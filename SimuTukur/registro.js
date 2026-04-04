@@ -14,14 +14,26 @@ function generarReferencia() {
     if (refDisplay) refDisplay.innerText = referenciaUnica;
 }
 
-// Interceptar el envío del formulario
+// Interceptar el envío del formulario y validar campos
 document.addEventListener("DOMContentLoaded", () => {
     generarReferencia();
 
     const form = document.getElementById('registroForm');
+    const btnSubmit = document.getElementById('btnSubmit');
+
     if (form) {
+        // Función mágica que revisa si todo lo obligatorio está lleno
+        const validarFormulario = () => {
+            const todoLleno = form.checkValidity(); 
+            btnSubmit.disabled = !todoLleno; // Prende o apaga el botón
+        };
+
+        // Escuchar cada vez que el usuario escribe, elige un archivo o marca el check
+        form.addEventListener('input', validarFormulario);
+        form.addEventListener('change', validarFormulario);
+
         form.addEventListener('submit', async (e) => {
-            e.preventDefault(); // Evitar que la página recargue
+            e.preventDefault(); 
             await procesarRegistro();
         });
     }
@@ -39,6 +51,7 @@ async function procesarRegistro() {
     const telefono = document.getElementById('telefono').value;
     const examen = document.getElementById('tipoExamen').value;
     const archivo = document.getElementById('comprobanteFile').files[0];
+    const terminosAceptados = document.getElementById('checkLegal').checked;
 
     if (!archivo) {
         alert("Por favor selecciona un archivo.");
@@ -65,7 +78,7 @@ async function procesarRegistro() {
         
         const urlArchivo = publicUrlData.publicUrl;
 
-        // 4. Guardar en Base de Datos (Incluyendo Teléfono)
+        // 4. Guardar en Base de Datos
         const { error: dbError } = await _supabase.from('registro_pagos').insert({
             nombre_tutor: tutor,
             nombre_alumno: alumno,
@@ -74,7 +87,7 @@ async function procesarRegistro() {
             tipo_examen: examen,
             referencia_pago: referenciaUnica,
             comprobante_url: urlArchivo,
-            terminos_aceptados: document.getElementById('checkLegal').checked
+            terminos_aceptados: terminosAceptados
         });
 
         if (dbError) throw new Error("Error al guardar datos. " + dbError.message);
