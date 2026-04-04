@@ -370,10 +370,13 @@ async function enviarMensajeChat(token) {
     if (!textoUsuario) return;
     
     let energiaElement = document.getElementById('creditos-display');
+    let energia = 0; // Guardamos la variable afuera para poder reembolsarla
+
+    // 1. LA CASETA DE COBRO
     if (energiaElement) {
-        let energia = parseInt(energiaElement.innerText) || 0;
+        energia = parseInt(energiaElement.innerText) || 0;
         if (energia <= 0) {
-            dibujarBurbujaChat('simu', "Te has quedado sin Energía IA. Usa el botón 'Comprar' en la parte superior.");
+            dibujarBurbujaChat('simu', "Te has quedado sin Energía IA. Usa el botón 'Comprar' en la parte superior para recargar.");
             return;
         }
         energia -= 1;
@@ -411,14 +414,10 @@ async function enviarMensajeChat(token) {
     dibujarBurbujaChat('simu', `<span id="${idBurbujaIA}" class="animate-pulse">Simu está escribiendo...</span>`);
 
     try {
-        // CORRECCIÓN 1: El comodín que sí funciona
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
         const response = await fetch(url, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: promptChat }] }],
-                generationConfig: { temperature: 0.4 }
-            })
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptChat }] }], generationConfig: { temperature: 0.4 } })
         });
         
         if (!response.ok) throw new Error("Network response was not ok");
@@ -427,20 +426,21 @@ async function enviarMensajeChat(token) {
         const respuestaIA = data.candidates[0].content.parts[0].text;
         const formatTexto = respuestaIA.replace(/\*\*(.*?)\*\*/g, '<strong class="color-cian">$1</strong>');
         
-        // CORRECCIÓN 2: Escudo Anti-Null
         const spanBurbuja = document.getElementById(idBurbujaIA);
-        if(spanBurbuja && spanBurbuja.parentElement) {
-            spanBurbuja.parentElement.innerHTML = formatTexto;
-        }
+        if(spanBurbuja && spanBurbuja.parentElement) spanBurbuja.parentElement.innerHTML = formatTexto;
         
         await guardarMensajeBD('simu', respuestaIA, token, email);
 
     } catch (e) {
-        console.error("Error IA Chat:", e);
-        // CORRECCIÓN 2: Escudo Anti-Null en el error
         const spanBurbuja = document.getElementById(idBurbujaIA);
-        if(spanBurbuja && spanBurbuja.parentElement) {
-            spanBurbuja.parentElement.innerHTML = "<em>Error de conexión con el Tutor. Intenta de nuevo.</em>";
+        if(spanBurbuja && spanBurbuja.parentElement) spanBurbuja.parentElement.innerHTML = "<em>Error de conexión con el Tutor. Intenta de nuevo.</em>";
+        
+        // ¡EL REEMBOLSO AUTOMÁTICO EN CASO DE ERROR!
+        if (energiaElement) {
+            energia += 1; // Le devolvemos el punto
+            energiaElement.innerText = energia;
+            localStorage.setItem('simu_creditos', energia);
+            await guardarCreditosEnBD(energia);
         }
     }
 }
