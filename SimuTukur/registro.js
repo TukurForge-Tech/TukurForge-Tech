@@ -1,13 +1,65 @@
+// registro.js - Lógica de inscripción y pagos profesional
 let referenciaUnica = "";
-let metodoPago = "STRIPE"; // Por defecto
+let passwordValido = false;
+
+// Función para ver/ocultar password (OBS 3)
+function togglePassword(inputId, icon) {
+    const input = document.getElementById(inputId);
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = "password";
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// LÓGICA DE VALIDACIÓN DE REGLAS DE CONTRASEÑA (OBS 5)
+function validarPasswordRules(password) {
+    const rules = {
+        mayus: /[A-Z]/.test(password),
+        minus: /[a-z]/.test(password),
+        num: /[0-9]/.test(password),
+        especial: /[@#$!%*?&]/.test(password), // & Incluido pero blindado en backend
+        length: password.length >= 8
+    };
+
+    // Actualizar UI
+    actualizarRuleUI('rule-mayus', rules.mayus);
+    actualizarRuleUI('rule-minus', rules.minus);
+    actualizarRuleUI('rule-num', rules.num);
+    actualizarRuleUI('rule-especial', rules.especial);
+    actualizarRuleUI('rule-length', rules.length);
+
+    // Retorna true si cumple todas las reglas
+    return Object.values(rules).every(Boolean);
+}
+
+function actualizarRuleUI(elementId, cumplido) {
+    const element = document.getElementById(elementId);
+    if (cumplido) {
+        element.classList.remove('text-gray-500');
+        element.classList.add('text-green-400');
+        element.querySelector('i').classList.remove('fa-circle', 'text-gray-700');
+        element.querySelector('i').classList.add('fa-check-circle', 'text-green-400');
+    } else {
+        element.classList.remove('text-green-400');
+        element.classList.add('text-gray-500');
+        element.querySelector('i').classList.remove('fa-check-circle', 'text-green-400');
+        element.querySelector('i').classList.add('fa-circle', 'text-gray-700');
+    }
+}
 
 function generarReferencia() {
     const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let codigo = "ST-";
-    for (let i = 0; i < 5; i++) codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    for (let i = 0; i < 5; i++) {
+        codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
     referenciaUnica = codigo;
-    const refDisplay = document.getElementById('ref-display');
-    if (refDisplay) refDisplay.innerText = referenciaUnica;
+    document.getElementById('ref-display').innerText = referenciaUnica;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -15,140 +67,134 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const form = document.getElementById('registroForm');
     const btnSubmit = document.getElementById('btnSubmit');
-    const btnAplicar = document.getElementById('btnAplicar');
-    const inputPromo = document.getElementById('codigoPromo');
+    const inputPass = document.getElementById('password');
+    const inputConfirm = document.getElementById('confirm_password');
+    const errorMatch = document.getElementById('match-error');
 
-    // LÓGICA DE CUPONES
-    btnAplicar.addEventListener('click', () => {
-        const codigo = inputPromo.value.trim().toUpperCase();
-        const msg = document.getElementById('msgPromo');
-        
-        if(codigo === 'VOCALES2026' || codigo === 'SCOUT20' || codigo === 'LANZAMIENTO10') {
-            msg.innerText = "¡Cupón aplicado! Se ha activado el pago sin comisiones.";
-            msg.classList.remove('hidden', 'text-red-400');
-            msg.classList.add('text-green-400');
-            
-            // Cambiar Precios (Ejemplo visual del 20%)
-            document.getElementById('precio-ecoems-old').classList.remove('hidden');
-            document.getElementById('precio-ecoems').innerText = "$399";
-            document.getElementById('precio-uni-old').classList.remove('hidden');
-            document.getElementById('precio-uni').innerText = "$479";
+    // Listener para validación en tiempo real de password
+    inputPass.addEventListener('input', () => {
+        passwordValido = validarPasswordRules(inputPass.value);
+        validarFormulario(); // Revisa si puede activar botón
+    });
 
-            // Activar Modo Transferencia
-            metodoPago = "TRANSFERENCIA";
-            document.getElementById('area-transferencia').classList.remove('hidden');
-            document.getElementById('area-archivo').classList.remove('hidden');
-            document.getElementById('comprobanteFile').required = true;
-
-            // Cambiar Botón
-            btnSubmit.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Enviar Comprobante';
-            btnSubmit.className = "w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 px-4 rounded-xl transition-all text-sm uppercase flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed";
-        } else {
-            msg.innerText = "Cupón inválido o expirado.";
-            msg.classList.remove('hidden', 'text-green-400');
-            msg.classList.add('text-red-400');
+    // Listener para validación de coincidencia
+    inputConfirm.addEventListener('input', () => {
+        const coinciden = inputPass.value === inputConfirm.value;
+        if (coinciden) {
+            errorMatch.classList.add('hidden');
+        } else if (inputConfirm.value.length > 0) {
+            errorMatch.classList.remove('hidden');
         }
         validarFormulario();
     });
 
-    // Validación en tiempo real
+    // Función inteligente de validación final (activa/desactiva botón)
     const validarFormulario = () => {
-        btnSubmit.disabled = !form.checkValidity(); 
+        const formValidity = form.checkValidity(); // Revisa required y types nativos
+        const passwordsCoinciden = inputPass.value === inputConfirm.value;
+        
+        // Habilitar botón solo si cumple TODO (form, reglas pass, y coinciden)
+        const habilitar = formValidity && passwordValido && passwordsCoinciden;
+        
+        btnSubmit.disabled = !habilitar;
     };
 
+    // Escuchar cambios en todo el form
     form.addEventListener('input', validarFormulario);
     form.addEventListener('change', validarFormulario);
 
+
+    // LÓGICA DE CUPONES (Misma lógica anterior conectada a Supabase)
+    const btnAplicar = document.getElementById('btnAplicar');
+    btnAplicar.addEventListener('click', async () => {
+        const codigo = document.getElementById('codigoPromo').value.trim().toUpperCase();
+        const msg = document.getElementById('msgPromo');
+        
+        msg.innerText = "Validando...";
+        msg.classList.remove('hidden', 'text-green-400', 'text-red-400');
+        msg.classList.add('animate-pulse', 'text-cyan-400');
+
+        try {
+            const { data, error } = await _supabase.from('cupones_descuento').select('*').eq('codigo', codigo).single();
+
+            if (error || !data) throw new Error("Cupón inválido");
+
+            msg.classList.remove('animate-pulse', 'text-cyan-400');
+            msg.innerText = `¡Cupón de ${data.descuento_porcentaje}% aplicado! Paga sin comisiones.`;
+            msg.classList.add('text-green-400');
+            
+            // Lógica visual de precios tachados
+            document.getElementById('precio-ecoems-old').classList.remove('hidden');
+            document.getElementById('precio-ecoems').innerText = "$399"; // Ejemplo visual 20%
+            document.getElementById('precio-uni-old').classList.remove('hidden');
+            document.getElementById('precio-uni').innerText = "$479"; // Ejemplo visual 20%
+
+            // Mostrar área de archivo (Se vuelve obligatorio)
+            document.getElementById('area-transferencia').classList.remove('hidden');
+            document.getElementById('area-archivo').classList.remove('hidden');
+            document.getElementById('comprobanteFile').required = true;
+
+        } catch (err) {
+            msg.classList.remove('animate-pulse', 'text-cyan-400');
+            msg.innerText = "Cupón inválido o expirado.";
+            msg.classList.add('text-red-400');
+        }
+        validarFormulario(); // Revalida form por si cambió required de archivo
+    });
+
+    // ENVÍO DE FORMULARIO
     form.addEventListener('submit', async (e) => {
         e.preventDefault(); 
-        await procesarRegistro();
-    });
-});
+        
+        // Blindaje final: no dejar enviar si pass no son válidos (por si hackean HTML)
+        const passesMatch = inputPass.value === inputConfirm.value;
+        if(!passwordValido || !passesMatch) {
+            alert("La contraseña no cumple las reglas de seguridad o no coinciden.");
+            return;
+        }
 
-async function procesarRegistro() {
-    const btn = document.getElementById('btnSubmit');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
 
-    const tutor = document.getElementById('nombreTutor').value;
-    const alumno = document.getElementById('nombreAlumno').value;
-    const correo = document.getElementById('correo').value;
-    const password = document.getElementById('password').value; // ¡NUEVO!
-    const examen = document.getElementById('tipoExamen').value;
-    const terminos = document.getElementById('checkLegal').checked;
-    
-    let urlArchivo = "PAGO_STRIPE";
+        const archivo = document.getElementById('comprobanteFile').files[0];
+        let urlArchivo = "PAGO_STRIPE_PENDIENTE"; // Valor por defecto si no usan cupón
 
-    try {
-        // SI ES TRANSFERENCIA: SUBIR FOTO
-        if (metodoPago === "TRANSFERENCIA") {
-            const archivo = document.getElementById('comprobanteFile').files[0];
-            
-            // LÍMITE DE 5MB
-            if (archivo.size > 5 * 1024 * 1024) {
-                alert("El archivo es muy pesado. Máximo 5MB.");
-                throw new Error("Archivo muy grande");
+        try {
+            // SI HAY ARCHIVO (USARON CUPÓN), SUBIRLO
+            if (archivo) {
+                const fileExt = archivo.name.split('.').pop();
+                const fileName = `${referenciaUnica}-${Date.now()}.${fileExt}`;
+                const { error: uploadError } = await _supabase.storage.from('comprobantes').upload(fileName, archivo);
+                if (uploadError) throw uploadError;
+                const { data: publicUrlData } = _supabase.storage.from('comprobantes').getPublicUrl(fileName);
+                urlArchivo = publicUrlData.publicUrl;
             }
 
-            const fileExt = archivo.name.split('.').pop();
-            const fileName = `${referenciaUnica}-${Date.now()}.${fileExt}`;
+            // GUARDAR DATOS EN SUPABASE (SOLO EL PRIMER PASSWORD)
+            const { error: dbError } = await _supabase.from('registro_pagos').insert({
+                nombre_tutor: document.getElementById('nombreTutor').value,
+                nombre_alumno: document.getElementById('nombreAlumno').value,
+                correo: document.getElementById('correo').value,
+                password_hijo: inputPass.value, // GUARDAMOS LA PRIMERA (OBS 3)
+                telefono: document.getElementById('telefono').value,
+                tipo_examen: document.getElementById('tipoExamen').value,
+                referencia_pago: referenciaUnica,
+                comprobante_url: urlArchivo,
+                terminos_aceptados: document.getElementById('checkLegal').checked
+            });
 
-            const { data, error: uploadError } = await _supabase.storage.from('comprobantes').upload(fileName, archivo);
-            if (uploadError) throw uploadError;
+            if (dbError) throw dbError;
 
-            const { data: publicUrlData } = _supabase.storage.from('comprobantes').getPublicUrl(fileName);
-            urlArchivo = publicUrlData.publicUrl;
+            // Mostrar Éxito
+            document.getElementById('contenedor-formulario').classList.add('hidden');
+            document.getElementById('ref-exito').innerText = referenciaUnica;
+            document.getElementById('pantalla-exito').classList.remove('hidden');
+
+        } catch (error) {
+            console.error(error);
+            alert("Error al procesar el registro. Revisa tu conexión.");
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Enviar Comprobante';
         }
-
-        // 1. GUARDAR EN LA SALA DE ESPERA (registro_pagos)
-        const { error: dbError } = await _supabase.from('registro_pagos').insert({
-            nombre_tutor: tutor,
-            nombre_alumno: alumno,
-            correo: correo,
-            tipo_examen: examen,
-            referencia_pago: referenciaUnica,
-            comprobante_url: urlArchivo,
-            terminos_aceptados: terminos,
-            estatus: metodoPago === "STRIPE" ? "Pendiente Stripe" : "Pendiente Transferencia"
-        });
-
-        if (dbError) throw dbError;
-
-        // 2. DAR ACCESO INMEDIATO (Guardarlo en usuarios_membresias)
-        // Le asignamos temporalmente tu token_hex de ECOEMS o UNAM
-        let tokenAsignado = examen === "ECOEMS" ? "9c3e7f1b" : "e7b1f9d4"; // Cambia por tus tokens reales
-
-        const { error: memberError } = await _supabase.from('usuarios_membresias').insert({
-            nombre_tutor: tutor,
-            nombre_alumno: alumno,
-            email: correo,
-            password_hijo: password, // Guarda su contraseña elegida
-            token_hex: tokenAsignado,
-            intentos_simulacro_restantes: 200
-        });
-
-        if (memberError) throw memberError;
-
-        // 3. RUTEO FINAL
-        if (metodoPago === "STRIPE") {
-            // AQUÍ PONES TU LINK REAL DE STRIPE
-            // Ejemplo: window.location.href = "https://buy.stripe.com/tu_link_secreto";
-            alert("En esta fase, serías redirigido a Stripe para ingresar tu tarjeta.");
-            mostrarExito(correo); // Por ahora simulamos que volvió de Stripe
-        } else {
-            mostrarExito(correo);
-        }
-
-    } catch (error) {
-        console.error("Fallo:", error);
-        btn.disabled = false;
-        btn.innerHTML = metodoPago === "STRIPE" ? 'Pagar Seguro con Tarjeta' : 'Enviar Comprobante';
-    }
-}
-
-function mostrarExito(correo) {
-    document.getElementById('contenedor-formulario').classList.add('hidden');
-    document.getElementById('area-transferencia').classList.add('hidden');
-    document.getElementById('res-email').innerText = correo;
-    document.getElementById('pantalla-exito').classList.remove('hidden');
-}
+    });
+});
