@@ -69,3 +69,42 @@ body {
     height: 100%; 
     width: 0%; 
 }
+
+/* =========================================
+   Estilos Específicos para Formularios (Login/Registro)
+========================================= */
+input[type="file"]::file-selector-button { 
+    display: none; 
+}
+.password-toggle { 
+    cursor: pointer; 
+    color: #6b7280; 
+    transition: color 0.2s; 
+}
+.password-toggle:hover { 
+    color: #06b6d4; 
+}
+/* Mejora para el Select en Windows */
+select option { 
+    background-color: #111827; 
+    color: white; 
+}
+select optgroup { 
+    background-color: #1f2937; 
+    color: #06b6d4; 
+    font-weight: bold; 
+}
+/* Efecto Splash de Login */
+#splash-screen { 
+    position: fixed; 
+    inset: 0; 
+    background: #000; 
+    z-index: 9999; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+}
+.login-card { 
+    background: rgba(15, 23, 42, 0.9); 
+    backdrop-filter: blur(15px); 
+}
