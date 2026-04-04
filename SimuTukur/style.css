@@ -4,8 +4,6 @@ body {
     background-color: #050914; /* Tono unificado para todo el sistema */
     color: white; 
     font-family: 'Segoe UI', sans-serif; 
-    overflow: hidden; 
-    height: 100vh; 
 }
 
 /* Componentes UI */
