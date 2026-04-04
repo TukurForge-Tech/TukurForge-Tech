@@ -7,12 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <style>
         body { background-color: #050a14; color: white; font-family: system-ui, -apple-system, sans-serif; }
         .bg-glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        /* Ocultar el input file feo por defecto */
         input[type="file"]::file-selector-button { display: none; }
     </style>
 </head>
@@ -63,8 +60,8 @@
             </div>
             
             <div class="mt-8 bg-black/50 p-6 rounded-xl border border-dashed border-cyan-900/50 text-center">
-                <p class="text-xs text-gray-500 uppercase font-bold mb-2">Datos para Transferencia (Banamex)</p>
-                <p class="text-white text-lg font-black tracking-widest mb-1">CLABE: 002180702015112659</p> <p class="text-sm text-cyan-400 mb-4">A nombre de: Homar Rodriguez Zarco</p> <div class="bg-cyan-900/30 border border-cyan-500/50 p-3 rounded-lg inline-block">
+                <p class="text-xs text-gray-500 uppercase font-bold mb-2">Datos para Transferencia (BBVA)</p>
+                <p class="text-white text-lg font-black tracking-widest mb-1">CLABE: 1234 5678 9012 3456</p> <p class="text-sm text-cyan-400 mb-4">A nombre de: TU NOMBRE AQUI</p> <div class="bg-cyan-900/30 border border-cyan-500/50 p-3 rounded-lg inline-block">
                     <p class="text-[10px] text-gray-300 uppercase font-bold mb-1">Pon esta clave en el Concepto de Pago:</p>
                     <p id="ref-display" class="text-xl font-black tracking-widest text-white">CARGANDO...</p>
                 </div>
@@ -74,7 +71,7 @@
         <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl relative" id="contenedor-formulario">
             <h3 class="text-xl font-black uppercase tracking-widest text-cyan-400 mb-6 border-b border-gray-800 pb-4">Validación de Pago</h3>
             
-            <form id="registroForm" class="space-y-4" onsubmit="event.preventDefault(); procesarRegistro();">
+            <form id="registroForm" class="space-y-4">
                 <div>
                     <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Nombre del Padre/Madre</label>
                     <input type="text" id="nombreTutor" required class="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-sm text-white outline-none focus:border-cyan-500 transition" placeholder="Ej. Carlos Martínez">
@@ -86,6 +83,10 @@
                 <div>
                     <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Correo Electrónico a vincular</label>
                     <input type="email" id="correo" required class="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-sm text-white outline-none focus:border-cyan-500 transition" placeholder="ejemplo@correo.com">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">WhatsApp de Contacto (Para enviar acceso)</label>
+                    <input type="tel" id="telefono" required class="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-sm text-white outline-none focus:border-cyan-500 transition" placeholder="10 dígitos">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Examen a Presentar</label>
@@ -101,7 +102,10 @@
                     <input type="file" id="comprobanteFile" accept="image/*,application/pdf" required class="w-full bg-black/50 border border-dashed border-cyan-500/50 rounded-lg p-3 text-sm text-gray-400 cursor-pointer hover:bg-cyan-900/20 transition">
                 </div>
 
-                <div class="pt-4">
+                <div class="pt-4 space-y-3">
+                    <div class="bg-cyan-900/20 border border-cyan-500/30 p-3 rounded-lg text-[10px] text-gray-300 leading-relaxed">
+                        <strong class="text-white uppercase">Aviso Importante:</strong> Al enviar este formulario, nuestro equipo de finanzas validará el comprobante con el banco. En un lapso de <strong class="text-cyan-400">12 a 24 horas</strong> te enviaremos tu Clave Única de Acceso por WhatsApp.
+                    </div>
                     <button id="btnSubmit" type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-3 px-4 rounded-xl transition-colors text-sm uppercase flex items-center justify-center gap-2">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Enviar Comprobante
                     </button>
@@ -114,93 +118,15 @@
             <h3 class="text-2xl font-black italic tracking-tighter text-white uppercase mb-2">¡Comprobante Recibido!</h3>
             <p class="text-gray-400 text-sm leading-relaxed mb-6">Hemos guardado tu pago exitosamente bajo la referencia <strong id="ref-exito" class="text-cyan-400">--</strong>.</p>
             <div class="bg-black/50 p-4 rounded-xl border border-gray-800 text-xs text-gray-500 text-left w-full mb-6">
-                Nuestro equipo de finanzas validará la transacción. En un lapso máximo de <strong class="text-white">12 a 24 horas</strong> recibirás un correo con tus claves de acceso oficial a la plataforma.
+                Nuestro equipo de finanzas validará la transacción. En un lapso máximo de <strong class="text-white">12 a 24 horas</strong> recibirás un WhatsApp oficial con tu Clave Única de Acceso a la plataforma.
             </div>
             <a href="index.html" class="bg-gray-800 hover:bg-gray-700 text-white text-xs font-black uppercase tracking-widest py-3 px-6 rounded-lg transition">Volver al Inicio</a>
         </div>
 
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
-
-    <script>
-        let referenciaUnica = "";
-
-        // Generar una clave tipo ST-9A4F
-        function generarReferencia() {
-            const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            let codigo = "";
-            for (let i = 0; i < 5; i++) {
-                codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-            }
-            referenciaUnica = "ST-" + codigo;
-            document.getElementById('ref-display').innerText = referenciaUnica;
-        }
-
-        // Ejecutar al cargar la página
-        window.onload = generarReferencia;
-
-        async function procesarRegistro() {
-            const btn = document.getElementById('btnSubmit');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo archivo...';
-
-            const tutor = document.getElementById('nombreTutor').value;
-            const alumno = document.getElementById('nombreAlumno').value;
-            const correo = document.getElementById('correo').value;
-            const examen = document.getElementById('tipoExamen').value;
-            const archivo = document.getElementById('comprobanteFile').files[0];
-
-            if (!archivo) {
-                alert("Por favor selecciona un archivo.");
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Enviar Comprobante';
-                return;
-            }
-
-            try {
-                // 1. Crear nombre de archivo único para no sobreescribir
-                const fileExt = archivo.name.split('.').pop();
-                const fileName = `${referenciaUnica}-${Date.now()}.${fileExt}`;
-
-                // 2. Subir al Storage de Supabase (Bucket: comprobantes)
-                const { data: uploadData, error: uploadError } = await _supabase.storage
-                    .from('comprobantes')
-                    .upload(fileName, archivo);
-
-                if (uploadError) throw new Error("Error al subir imagen: " + uploadError.message);
-
-                // 3. Obtener URL pública
-                const { data: publicUrlData } = _supabase.storage
-                    .from('comprobantes')
-                    .getPublicUrl(fileName);
-                
-                const urlArchivo = publicUrlData.publicUrl;
-
-                // 4. Guardar datos en la Tabla
-                const { error: dbError } = await _supabase.from('registro_pagos').insert({
-                    nombre_tutor: tutor,
-                    nombre_alumno: alumno,
-                    correo: correo,
-                    tipo_examen: examen,
-                    referencia_pago: referenciaUnica,
-                    comprobante_url: urlArchivo
-                });
-
-                if (dbError) throw new Error("Error guardando datos: " + dbError.message);
-
-                // 5. Mostrar Éxito
-                document.getElementById('contenedor-formulario').classList.add('hidden');
-                document.getElementById('ref-exito').innerText = referenciaUnica;
-                document.getElementById('pantalla-exito').classList.remove('hidden');
-
-            } catch (error) {
-                console.error(error);
-                alert("Hubo un problema al procesar el envío. Revisa tu conexión a internet o intenta subir una imagen menos pesada.");
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Enviar Comprobante';
-            }
-        }
-    </script>
+    <script src="registro.js"></script>
 </body>
 </html>
