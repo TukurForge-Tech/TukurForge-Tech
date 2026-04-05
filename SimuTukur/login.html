@@ -7,15 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    
-    <style>
-        body { background-color: #050a14; color: white; }
-        #splash-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; }
-        .hidden { display: none !important; }
-        .login-card { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(15px); }
-        .password-toggle { cursor: pointer; color: #6b7280; transition: color 0.2s; }
-        .password-toggle:hover { color: #06b6d4; }
-    </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-6">
     
@@ -25,15 +16,14 @@
         <p class="text-sm text-gray-400 mb-4 max-w-xs leading-relaxed">SimuTukur requiere un entorno de escritorio para la telemetría y el Tutor IA. Por favor, ingresa desde una <strong class="text-cyan-400">Computadora o Laptop</strong>.</p>
     </div>
 
-    <div id="login-box" class="login-card w-full max-w-md p-8 md:p-10 rounded-2xl border border-gray-800 shadow-2xl relative overflow-hidden hidden lg:block">
-        
+    <div id="login-box" class="card-glass w-full max-w-md p-8 md:p-10 relative overflow-hidden hidden lg:block bg-gray-900">
         <div class="text-center mb-10">
             <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur2.jpeg" class="w-16 h-16 mx-auto rounded-xl border border-cyan-500/30 mb-4" alt="Simu Logo">
             <h1 class="text-3xl font-black italic tracking-tighter text-white uppercase">Acceso <span class="text-cyan-400">Aspirantes</span></h1>
             <p class="text-xs text-gray-500 uppercase tracking-widest mt-2 font-bold">Ingresa tus credenciales</p>
         </div>
 
-        <form id="loginForm" class="space-y-6" onsubmit="event.preventDefault(); procesarLogin();">
+        <form id="loginForm" class="space-y-6">
             <div>
                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Usuario (Correo Electrónico)</label>
                 <input type="email" id="email" required class="w-full bg-black/50 border border-gray-700 rounded-lg p-4 text-sm text-white outline-none focus:border-cyan-500 transition" placeholder="ejemplo@correo.com">
@@ -65,7 +55,7 @@
         <p class="absolute bottom-10 text-cyan-500 text-xs uppercase tracking-widest font-bold animate-pulse">Iniciando Biometría y Tutor IA...</p>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
     <script src="login.js"></script>
 </body>
