@@ -46,6 +46,9 @@ async function procesarLogin() {
             return;
         }
 
+        // ---> AGREGA ESTA LÍNEA DE RAYOS X AQUÍ <---
+        console.log("De la BD llegó:", data.password_hijo, "| Del HTML se lee:", passwordValue);
+        
         // Validación estricta que permite &, $, % y emojis
         if (data.password_hijo === passwordValue) {
             localStorage.setItem('token_hex', data.token_hex);
