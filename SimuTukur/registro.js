@@ -111,6 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputPass = document.getElementById('password');
     const inputConfirm = document.getElementById('confirm_password');
     const errorMatch = document.getElementById('match-error');
+    const comprobanteFile = document.getElementById('comprobanteFile');
 
     // Validación de Contraseña en vivo
     inputPass.addEventListener('input', () => {
@@ -128,6 +129,19 @@ document.addEventListener("DOMContentLoaded", () => {
         validarFormulario();
     });
 
+    // Validación de Peso de Archivo (Máx 5MB)
+    comprobanteFile.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            const fileSize = this.files[0].size / 1024 / 1024; // Convierte a MB
+            if (fileSize > 5) {
+                alert("⚠️ El archivo es muy pesado. El límite máximo es de 5MB.");
+                this.value = ""; // Limpia el input para evitar que envíe basura
+            }
+        }
+        validarFormulario();
+    });
+
+    // El motor maestro que decide si el botón se prende o se apaga
     const validarFormulario = () => {
         const formValidity = form.checkValidity();
         const passesMatch = inputPass.value === inputConfirm.value;
@@ -138,34 +152,37 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener('change', validarFormulario);
 
     // ==========================================
-    // LÓGICA DE CUPONES (CON EMOJIS UNIVERSALES)
+    // LÓGICA DE CUPONES Y TÉRMINOS LEGALES
     // ==========================================
     const inputPromo = document.getElementById('codigoPromo');
     const btnAplicar = document.getElementById('btnAplicar');
     const msgPromo = document.getElementById('msgPromo');
+    const checkTransferencia = document.getElementById('checkTransferencia');
 
     const revertirStripe = () => {
         metodoPago = "STRIPE";
-        // Restaurar precios
         document.getElementById('precio-ecoems-old').classList.add('hidden');
         document.getElementById('precio-ecoems').innerText = "$499";
         document.getElementById('precio-uni-old').classList.add('hidden');
         document.getElementById('precio-uni').innerText = "$599";
         
-        // Ocultar sección de transferencia
         document.getElementById('area-transferencia').classList.add('hidden');
         document.getElementById('area-archivo').classList.add('hidden');
-        document.getElementById('comprobanteFile').required = false;
+        
+        // El comprobante ya NO es obligatorio
+        comprobanteFile.required = false;
+        
+        // Ocultar y desmarcar el aviso legal extra
         document.getElementById('aviso-transferencia').classList.add('hidden');
+        checkTransferencia.required = false;
+        checkTransferencia.checked = false;
 
-        // Restaurar botón a Stripe
         btnSubmit.classList.add('enabled:bg-blue-600', 'enabled:hover:bg-blue-500', 'enabled:shadow-[0_0_15px_rgba(37,99,235,0.4)]');
         btnSubmit.classList.remove('enabled:bg-cyan-600', 'enabled:hover:bg-cyan-500', 'enabled:shadow-[0_0_15px_rgba(6,182,212,0.4)]');
         btnIcon.className = "fa-brands fa-stripe text-xl";
         btnText.innerText = "Pagar Seguro con Tarjeta";
     };
 
-    // Auto-reversa al borrar texto
     inputPromo.addEventListener('input', (e) => {
         if (e.target.value.trim() === "") {
             msgPromo.className = "text-[10px] mt-1 hidden";
@@ -174,7 +191,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Acción del botón Aplicar
     btnAplicar.addEventListener('click', async () => {
         const codigo = inputPromo.value.trim().toUpperCase();
         if(!codigo) {
@@ -197,11 +213,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 
             if (error || !data) throw new Error("Cupón inválido");
 
-            // CHECK VISUAL DE ÉXITO CON EMOJI
             msgPromo.innerHTML = `✅ ¡Cupón de ${data.descuento_porcentaje}% aplicado!`;
             msgPromo.className = "text-[10px] mt-2 text-green-400 font-bold block";
             
-            // Recálculo Matemático
             const precioEcoemsBase = 499;
             const precioUniBase = 599;
             const factorDescuento = (100 - data.descuento_porcentaje) / 100;
@@ -211,14 +225,15 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('precio-uni-old').classList.remove('hidden');
             document.getElementById('precio-uni').innerText = "$" + Math.round(precioUniBase * factorDescuento);
 
-            // Transición Visual a Transferencia
             metodoPago = "TRANSFERENCIA";
             document.getElementById('area-transferencia').classList.remove('hidden');
             document.getElementById('area-archivo').classList.remove('hidden');
-            document.getElementById('comprobanteFile').required = true;
+            
+            // Forzar archivo y aviso legal como OBLIGATORIOS
+            comprobanteFile.required = true;
             document.getElementById('aviso-transferencia').classList.remove('hidden');
+            checkTransferencia.required = true;
 
-            // Actualización del Botón Principal
             btnSubmit.classList.remove('enabled:bg-blue-600', 'enabled:hover:bg-blue-500', 'enabled:shadow-[0_0_15px_rgba(37,99,235,0.4)]');
             btnSubmit.classList.add('enabled:bg-cyan-600', 'enabled:hover:bg-cyan-500', 'enabled:shadow-[0_0_15px_rgba(6,182,212,0.4)]');
             btnIcon.className = "fa-solid fa-cloud-arrow-up text-xl";
@@ -248,12 +263,25 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectExamen = document.getElementById('tipoExamen');
         const tokenSeleccionado = selectExamen.value; 
         const nombreExamenFinanzas = selectExamen.options[selectExamen.selectedIndex].dataset.nombreExamen; 
-
-        const archivo = document.getElementById('comprobanteFile').files[0];
-        let urlArchivo = "PAGO_STRIPE_PENDIENTE";
+        const correo = document.getElementById('correo').value.trim();
 
         try {
+            // 🛑 VALIDACIÓN CONTRA COMPRAS DUPLICADAS EN LA BASE DE DATOS
+            const { data: planExistente } = await _supabase.from('usuarios_membresias')
+                .select('id')
+                .eq('email', correo)
+                .eq('token_hex', tokenSeleccionado);
+            
+            if (planExistente && planExistente.length > 0) {
+                throw new Error("Este correo ya tiene registrado este examen exacto. Por favor inicia sesión o elige un plan diferente.");
+            }
+
+            // Procesamiento del Archivo de Comprobante
+            const archivo = comprobanteFile.files[0];
+            let urlArchivo = "PAGO_STRIPE_PENDIENTE";
+
             if (metodoPago === "TRANSFERENCIA" && archivo) {
+                // Doble validación de peso en Backend por si acaso
                 if (archivo.size > 5 * 1024 * 1024) throw new Error("El archivo excede los 5MB.");
                 const fileExt = archivo.name.split('.').pop();
                 const fileName = `${referenciaUnica}-${Date.now()}.${fileExt}`;
@@ -266,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const { error: dbPagosError } = await _supabase.from('registro_pagos').insert({
                 nombre_tutor: document.getElementById('nombreTutor').value,
                 nombre_alumno: document.getElementById('nombreAlumno').value,
-                correo: document.getElementById('correo').value,
+                correo: correo,
                 password_hijo: inputPass.value,
                 telefono: document.getElementById('telefono').value,
                 tipo_examen: nombreExamenFinanzas, 
@@ -280,7 +308,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const { error: dbMembresiaError } = await _supabase.from('usuarios_membresias').insert({
                 nombre_tutor: document.getElementById('nombreTutor').value,
                 nombre_alumno: document.getElementById('nombreAlumno').value,
-                email: document.getElementById('correo').value,
+                email: correo,
                 password_hijo: inputPass.value, 
                 token_hex: tokenSeleccionado, 
                 intentos_simulacro_restantes: 200 
