@@ -4,148 +4,23 @@ let referenciaUnica = "";
 let passwordValido = false;
 let metodoPago = "STRIPE"; 
 
-function togglePassword(inputId, icon) {
-    const input = document.getElementById(inputId);
-    if (input.type === "password") {
-        input.type = "text";
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
-    } else {
-        input.type = "password";
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
-    }
-}
-
-function validarPasswordRules(password) {
-    const rules = {
-        mayus: /[A-Z]/.test(password),
-        minus: /[a-z]/.test(password),
-        num: /[0-9]/.test(password),
-        especial: /[@#$!%*?&]/.test(password),
-        length: password.length >= 8
-    };
-
-    actualizarRuleUI('rule-mayus', rules.mayus);
-    actualizarRuleUI('rule-minus', rules.minus);
-    actualizarRuleUI('rule-num', rules.num);
-    actualizarRuleUI('rule-especial', rules.especial);
-    actualizarRuleUI('rule-length', rules.length);
-
-    return Object.values(rules).every(Boolean);
-}
-
-function actualizarRuleUI(elementId, cumplido) {
-    const element = document.getElementById(elementId);
-    if (cumplido) {
-        element.classList.remove('text-gray-500');
-        element.classList.add('text-green-400');
-        element.querySelector('i').classList.replace('fa-circle', 'fa-check-circle');
-    } else {
-        element.classList.remove('text-green-400');
-        element.classList.add('text-gray-500');
-        element.querySelector('i').classList.replace('fa-check-circle', 'fa-circle');
-    }
-}
-
-function generarReferencia() {
-    const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let codigo = "ST-";
-    for (let i = 0; i < 5; i++) codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-    referenciaUnica = codigo;
-    const display = document.getElementById('ref-display');
-    if(display) display.innerText = referenciaUnica;
-}
-
-// Carga de Exámenes desde Supabase
-// Carga de Exámenes desde Supabase
-async function cargarExamenesBD() {
-    const select = document.getElementById('tipoExamen');
-    try {
-        const { data, error } = await _supabase
-            .from('config_examenes')
-            .select('token_hex, institucion, descripcion')
-            .eq('plan', 'PRO')
-            .order('institucion', { ascending: true });
-
-        if (error) throw error;
-
-        if (!data || data.length === 0) {
-            select.innerHTML = '<option value="" disabled selected class="text-gray-400">No hay exámenes disponibles en BD</option>';
-            return;
+document.addEventListener("DOMContentLoaded", async () => {
+    // 🛑 INTERCEPTOR STRIPE: Si regresamos de pagar con éxito, frenamos el formulario y mostramos el triunfo
+    const urlParams = new URLSearchParams(window.location.search);
+    if(urlParams.get('pago') === 'exito') {
+        document.getElementById('contenedor-formulario').classList.add('hidden');
+        document.getElementById('area-transferencia').classList.add('hidden');
+        const refExito = urlParams.get('ref') || '--';
+        document.getElementById('ref-exito').innerText = refExito;
+        document.getElementById('pantalla-exito').classList.remove('hidden');
+        
+        // Actualizamos sigilosamente en BD que ya pagó
+        if(refExito !== '--') {
+            await _supabase.from('registro_pagos').update({ estatus: 'Pagado Stripe' }).eq('referencia_pago', refExito);
         }
-
-        // 🛑 FILTRO DE EMERGENCIA: Solo dejamos pasar ECOEMS
-        const examenesHabilitados = data.filter(ex => ex.institucion.includes('ECOEMS'));
-
-        const grupos = {};
-        examenesHabilitados.forEach(ex => {
-            if (!grupos[ex.institucion]) grupos[ex.institucion] = [];
-            grupos[ex.institucion].push(ex);
-        });
-
-        select.innerHTML = '<option value="" disabled selected class="text-gray-400">Selecciona tu examen...</option>';
-
-        for (const inst in grupos) {
-            const optgroup = document.createElement('optgroup');
-            optgroup.label = `--- ${inst} ---`;
-            grupos[inst].forEach(ex => {
-                const option = document.createElement('option');
-                option.value = ex.token_hex; 
-                option.text = ex.descripcion; 
-                option.dataset.nombreExamen = `${inst} - ${ex.descripcion}`; 
-                optgroup.appendChild(option);
-            });
-            select.appendChild(optgroup);
-        }
-    } catch (err) {
-        console.error("Error conectando a Supabase:", err);
-        select.innerHTML = '<option value="" disabled selected class="text-red-400">Error de red. Recarga la página.</option>';
+        return; 
     }
-}
-/*async function cargarExamenesBD() {
-    const select = document.getElementById('tipoExamen');
-    try {
-        const { data, error } = await _supabase
-            .from('config_examenes')
-            .select('token_hex, institucion, descripcion')
-            .eq('plan', 'PRO')
-            .order('institucion', { ascending: true });
 
-        if (error) throw error;
-
-        if (!data || data.length === 0) {
-            select.innerHTML = '<option value="" disabled selected class="text-gray-400">No hay exámenes disponibles en BD</option>';
-            return;
-        }
-
-        const grupos = {};
-        data.forEach(ex => {
-            if (!grupos[ex.institucion]) grupos[ex.institucion] = [];
-            grupos[ex.institucion].push(ex);
-        });
-
-        select.innerHTML = '<option value="" disabled selected class="text-gray-400">Selecciona tu examen...</option>';
-
-        for (const inst in grupos) {
-            const optgroup = document.createElement('optgroup');
-            optgroup.label = `--- ${inst} ---`;
-            grupos[inst].forEach(ex => {
-                const option = document.createElement('option');
-                option.value = ex.token_hex; 
-                option.text = ex.descripcion; 
-                option.dataset.nombreExamen = `${inst} - ${ex.descripcion}`; 
-                optgroup.appendChild(option);
-            });
-            select.appendChild(optgroup);
-        }
-    } catch (err) {
-        console.error("Error conectando a Supabase:", err);
-        select.innerHTML = '<option value="" disabled selected class="text-red-400">Error de red. Recarga la página.</option>';
-    }
-}*/
-
-document.addEventListener("DOMContentLoaded", () => {
     generarReferencia();
     cargarExamenesBD(); 
 
@@ -158,7 +33,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const errorMatch = document.getElementById('match-error');
     const comprobanteFile = document.getElementById('comprobanteFile');
 
-    // Validación de Contraseña en vivo
     inputPass.addEventListener('input', () => {
         passwordValido = validarPasswordRules(inputPass.value);
         validarFormulario();
@@ -174,19 +48,17 @@ document.addEventListener("DOMContentLoaded", () => {
         validarFormulario();
     });
 
-    // Validación de Peso de Archivo (Máx 5MB)
     comprobanteFile.addEventListener('change', function() {
         if (this.files.length > 0) {
-            const fileSize = this.files[0].size / 1024 / 1024; // Convierte a MB
+            const fileSize = this.files[0].size / 1024 / 1024; 
             if (fileSize > 5) {
                 alert("⚠️ El archivo es muy pesado. El límite máximo es de 5MB.");
-                this.value = ""; // Limpia el input para evitar que envíe basura
+                this.value = ""; 
             }
         }
         validarFormulario();
     });
 
-    // El motor maestro que decide si el botón se prende o se apaga
     const validarFormulario = () => {
         const formValidity = form.checkValidity();
         const passesMatch = inputPass.value === inputConfirm.value;
@@ -197,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener('change', validarFormulario);
 
     // ==========================================
-    // LÓGICA DE CUPONES Y TÉRMINOS LEGALES
+    // LÓGICA DE CUPONES
     // ==========================================
     const inputPromo = document.getElementById('codigoPromo');
     const btnAplicar = document.getElementById('btnAplicar');
@@ -213,11 +85,8 @@ document.addEventListener("DOMContentLoaded", () => {
         
         document.getElementById('area-transferencia').classList.add('hidden');
         document.getElementById('area-archivo').classList.add('hidden');
-        
-        // El comprobante ya NO es obligatorio
         comprobanteFile.required = false;
         
-        // Ocultar y desmarcar el aviso legal extra
         document.getElementById('aviso-transferencia').classList.add('hidden');
         checkTransferencia.required = false;
         checkTransferencia.checked = false;
@@ -274,7 +143,6 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('area-transferencia').classList.remove('hidden');
             document.getElementById('area-archivo').classList.remove('hidden');
             
-            // Forzar archivo y aviso legal como OBLIGATORIOS
             comprobanteFile.required = true;
             document.getElementById('aviso-transferencia').classList.remove('hidden');
             checkTransferencia.required = true;
@@ -293,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ==========================================
-    // ENVÍO DE FORMULARIO A BD
+    // ENVÍO DE FORMULARIO A BD Y STRIPE
     // ==========================================
     form.addEventListener('submit', async (e) => {
         e.preventDefault(); 
@@ -311,7 +179,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const correo = document.getElementById('correo').value.trim();
 
         try {
-            // 🛑 VALIDACIÓN CONTRA COMPRAS DUPLICADAS EN LA BASE DE DATOS
             const { data: planExistente } = await _supabase.from('usuarios_membresias')
                 .select('id')
                 .eq('email', correo)
@@ -321,12 +188,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error("Este correo ya tiene registrado este examen exacto. Por favor inicia sesión o elige un plan diferente.");
             }
 
-            // Procesamiento del Archivo de Comprobante
             const archivo = comprobanteFile.files[0];
             let urlArchivo = "PAGO_STRIPE_PENDIENTE";
 
             if (metodoPago === "TRANSFERENCIA" && archivo) {
-                // Doble validación de peso en Backend por si acaso
                 if (archivo.size > 5 * 1024 * 1024) throw new Error("El archivo excede los 5MB.");
                 const fileExt = archivo.name.split('.').pop();
                 const fileName = `${referenciaUnica}-${Date.now()}.${fileExt}`;
@@ -361,7 +226,24 @@ document.addEventListener("DOMContentLoaded", () => {
             if (dbMembresiaError) throw dbMembresiaError;
 
             if (metodoPago === "STRIPE") {
-                alert("Simulación: Redirigiendo a pasarela Stripe segura...");
+                // LLAMADA AL PUENTE DE STRIPE
+                const precioBase = 499; 
+                const { data: stripeData, error: stripeError } = await _supabase.functions.invoke('stripe-checkout', {
+                    body: {
+                        nombre_alumno: document.getElementById('nombreAlumno').value,
+                        correo: correo,
+                        tipo_examen: nombreExamenFinanzas,
+                        referencia_pago: referenciaUnica,
+                        precio: precioBase
+                    }
+                });
+
+                if (stripeError) throw stripeError;
+                if (stripeData && stripeData.url) {
+                    window.location.href = stripeData.url; // Viaje en primera clase a la pasarela
+                } else {
+                    throw new Error("Error de conexión bancaria. Intenta más tarde.");
+                }
             } else {
                 document.getElementById('contenedor-formulario').classList.add('hidden');
                 document.getElementById('area-transferencia').classList.add('hidden');
@@ -383,3 +265,66 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
+// Funciones Auxiliares
+function togglePassword(inputId, icon) {
+    const input = document.getElementById(inputId);
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = "password";
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+function validarPasswordRules(password) {
+    const rules = { mayus: /[A-Z]/.test(password), minus: /[a-z]/.test(password), num: /[0-9]/.test(password), especial: /[@#$!%*?&]/.test(password), length: password.length >= 8 };
+    actualizarRuleUI('rule-mayus', rules.mayus); actualizarRuleUI('rule-minus', rules.minus); actualizarRuleUI('rule-num', rules.num); actualizarRuleUI('rule-especial', rules.especial); actualizarRuleUI('rule-length', rules.length);
+    return Object.values(rules).every(Boolean);
+}
+
+function actualizarRuleUI(elementId, cumplido) {
+    const element = document.getElementById(elementId);
+    if (cumplido) {
+        element.classList.remove('text-gray-500'); element.classList.add('text-green-400'); element.querySelector('i').classList.replace('fa-circle', 'fa-check-circle');
+    } else {
+        element.classList.remove('text-green-400'); element.classList.add('text-gray-500'); element.querySelector('i').classList.replace('fa-check-circle', 'fa-circle');
+    }
+}
+
+function generarReferencia() {
+    const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let codigo = "ST-";
+    for (let i = 0; i < 5; i++) codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    referenciaUnica = codigo;
+    const display = document.getElementById('ref-display');
+    if(display) display.innerText = referenciaUnica;
+}
+
+async function cargarExamenesBD() {
+    const select = document.getElementById('tipoExamen');
+    try {
+        const { data, error } = await _supabase.from('config_examenes').select('token_hex, institucion, descripcion').eq('plan', 'PRO').order('institucion', { ascending: true });
+        if (error) throw error;
+        if (!data || data.length === 0) { select.innerHTML = '<option value="" disabled selected class="text-gray-400">No hay exámenes disponibles en BD</option>'; return; }
+
+        const examenesHabilitados = data.filter(ex => ex.institucion.includes('ECOEMS'));
+        const grupos = {};
+        examenesHabilitados.forEach(ex => { if (!grupos[ex.institucion]) grupos[ex.institucion] = []; grupos[ex.institucion].push(ex); });
+
+        select.innerHTML = '<option value="" disabled selected class="text-gray-400">Selecciona tu examen...</option>';
+        for (const inst in grupos) {
+            const optgroup = document.createElement('optgroup'); optgroup.label = `--- ${inst} ---`;
+            grupos[inst].forEach(ex => {
+                const option = document.createElement('option'); option.value = ex.token_hex; option.text = ex.descripcion; option.dataset.nombreExamen = `${inst} - ${ex.descripcion}`; optgroup.appendChild(option);
+            });
+            select.appendChild(optgroup);
+        }
+    } catch (err) {
+        console.error("Error conectando a Supabase:", err);
+        select.innerHTML = '<option value="" disabled selected class="text-red-400">Error de red. Recarga la página.</option>';
+    }
+}
