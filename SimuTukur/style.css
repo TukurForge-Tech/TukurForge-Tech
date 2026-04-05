@@ -82,27 +82,18 @@ input[type="file"]::file-selector-button {
 .password-toggle:hover { 
     color: #06b6d4; 
 }
-/* Mejora para el Select en Windows */
-select option { 
-    background-color: #111827; 
-    color: white; 
+
+/* =========================================
+   ESCUDOS DE EMERGENCIA (Antídoto Visual)
+========================================= */
+/* 1. Obliga a que la pantalla del Splash Video desaparezca de inmediato */
+.hidden { 
+    display: none !important; 
 }
-select optgroup { 
-    background-color: #1f2937; 
-    color: #06b6d4; 
-    font-weight: bold; 
-}
-/* Efecto Splash de Login */
-#splash-screen { 
-    position: fixed; 
-    inset: 0; 
-    background: #000; 
-    z-index: 9999; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-}
-.login-card { 
-    background: rgba(15, 23, 42, 0.9); 
-    backdrop-filter: blur(15px); 
+
+/* 2. Obliga a que el mensaje de celulares desaparezca si estás en una computadora */
+@media (min-width: 768px) {
+    .md\:hidden {
+        display: none !important;
+    }
 }
