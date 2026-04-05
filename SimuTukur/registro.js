@@ -55,7 +55,7 @@ function generarReferencia() {
     if(display) display.innerText = referenciaUnica;
 }
 
-// AQUÍ ESTÁ LA FUNCIÓN QUE FALTABA
+// FUNCIÓN CON PARACAÍDAS DE EMERGENCIA
 async function cargarExamenesBD() {
     const select = document.getElementById('tipoExamen');
     try {
@@ -68,7 +68,7 @@ async function cargarExamenesBD() {
         if (error) throw error;
 
         if (!data || data.length === 0) {
-            select.innerHTML = '<option value="" disabled selected class="text-gray-400">No hay exámenes disponibles</option>';
+            select.innerHTML = '<option value="" disabled selected class="text-gray-400">No hay exámenes disponibles en BD</option>';
             return;
         }
 
@@ -93,14 +93,18 @@ async function cargarExamenesBD() {
             select.appendChild(optgroup);
         }
     } catch (err) {
-        console.error("Error cargando exámenes:", err);
-        select.innerHTML = '<option value="" disabled selected class="text-red-400">Error de red. Recarga la página.</option>';
+        console.error("Error conectando a Supabase:", err);
+        // PARACAÍDAS: Inyectamos exámenes manuales para que la interfaz NO se bloquee
+        alert("Socio: Hay un bloqueo de red conectando con Supabase (Failed to Fetch). Te cargué 2 exámenes locales para que no te detengas y puedas probar el diseño y la contraseña.");
+        select.innerHTML = '<option value="" disabled selected class="text-cyan-400">--- MODO LOCAL ACTIVADO ---</option>' +
+                           '<option value="TOKEN_FALLBACK_1" data-nombre-examen="ECOEMS Local">ECOEMS General (Modo Local)</option>' +
+                           '<option value="TOKEN_FALLBACK_2" data-nombre-examen="UNAM Local">UNAM Área 1 (Modo Local)</option>';
     }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     generarReferencia();
-    cargarExamenesBD(); // Se manda a llamar al cargar la página
+    cargarExamenesBD(); 
 
     const form = document.getElementById('registroForm');
     const btnSubmit = document.getElementById('btnSubmit');
@@ -174,7 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } catch (err) {
             msg.classList.remove('animate-pulse', 'text-cyan-400');
-            msg.innerText = "Cupón inválido o expirado.";
+            msg.innerText = "Cupón inválido o error de red.";
             msg.classList.add('text-red-400');
         }
         validarFormulario(); 
@@ -235,7 +239,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (metodoPago === "STRIPE") {
                 alert("Simulación: Redirigiendo a pasarela Stripe segura...");
-                // window.location.href = "LINK STRIPE";
             } else {
                 document.getElementById('contenedor-formulario').classList.add('hidden');
                 document.getElementById('area-transferencia').classList.add('hidden');
@@ -245,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } catch (error) {
             console.error(error);
-            alert(error.message || "Error al procesar el registro.");
+            alert(error.message || "Error al procesar el registro (Revisa conexión).");
             btnSubmit.disabled = false;
             if(metodoPago === "STRIPE"){
                 btnIcon.className = "fa-brands fa-stripe text-xl";
