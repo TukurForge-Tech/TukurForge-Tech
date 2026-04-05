@@ -5,7 +5,7 @@ let passwordValido = false;
 let metodoPago = "STRIPE"; 
 
 document.addEventListener("DOMContentLoaded", async () => {
-    // 🛑 INTERCEPTOR STRIPE: Si regresamos de pagar con éxito, frenamos el formulario y mostramos el triunfo
+    // 🛑 INTERCEPTOR STRIPE: Creación de cuenta SOLO si el pago fue exitoso
     const urlParams = new URLSearchParams(window.location.search);
     if(urlParams.get('pago') === 'exito') {
         document.getElementById('contenedor-formulario').classList.add('hidden');
@@ -14,9 +14,29 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById('ref-exito').innerText = refExito;
         document.getElementById('pantalla-exito').classList.remove('hidden');
         
-        // Actualizamos sigilosamente en BD que ya pagó
         if(refExito !== '--') {
+            // 1. Actualizamos en BD que el pago es exitoso
             await _supabase.from('registro_pagos').update({ estatus: 'Pagado Stripe' }).eq('referencia_pago', refExito);
+            
+            // 2. CREAMOS LA MEMBRESÍA USANDO LA MEMORIA DEL NAVEGADOR
+            const tempCorreo = localStorage.getItem('simu_correo');
+            if(tempCorreo) {
+                await _supabase.from('usuarios_membresias').insert({
+                    nombre_tutor: localStorage.getItem('simu_tutor'),
+                    nombre_alumno: localStorage.getItem('simu_alumno'),
+                    email: tempCorreo,
+                    password_hijo: localStorage.getItem('simu_pass'),
+                    token_hex: localStorage.getItem('simu_token'),
+                    intentos_simulacro_restantes: 200
+                });
+                
+                // 3. Borramos la memoria por seguridad
+                localStorage.removeItem('simu_tutor');
+                localStorage.removeItem('simu_alumno');
+                localStorage.removeItem('simu_correo');
+                localStorage.removeItem('simu_pass');
+                localStorage.removeItem('simu_token');
+            }
         }
         return; 
     }
@@ -201,6 +221,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 urlArchivo = publicUrlData.publicUrl;
             }
 
+            // Siempre registramos el intento de pago para tener el historial
             const { error: dbPagosError } = await _supabase.from('registro_pagos').insert({
                 nombre_tutor: document.getElementById('nombreTutor').value,
                 nombre_alumno: document.getElementById('nombreAlumno').value,
@@ -215,20 +236,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
             if (dbPagosError) throw dbPagosError;
 
-            const { error: dbMembresiaError } = await _supabase.from('usuarios_membresias').insert({
-                nombre_tutor: document.getElementById('nombreTutor').value,
-                nombre_alumno: document.getElementById('nombreAlumno').value,
-                email: correo,
-                password_hijo: inputPass.value, 
-                token_hex: tokenSeleccionado, 
-                intentos_simulacro_restantes: 200 
-            });
-            if (dbMembresiaError) throw dbMembresiaError;
-
+            // BIFURCACIÓN DE RUTAS
             if (metodoPago === "STRIPE") {
-                // LLAMADA AL PUENTE DE STRIPE
+                // GUARDAMOS DATOS EN MEMORIA Y VOLAMOS A STRIPE
+                localStorage.setItem('simu_tutor', document.getElementById('nombreTutor').value);
+                localStorage.setItem('simu_alumno', document.getElementById('nombreAlumno').value);
+                localStorage.setItem('simu_correo', correo);
+                localStorage.setItem('simu_pass', inputPass.value);
+                localStorage.setItem('simu_token', tokenSeleccionado);
+
                 const precioBase = 499; 
-                const { data: stripeData, error: stripeError } = await _supabase.functions.invoke('stripe-checkout', {
+                const { data: stripeData, error: stripeError } = await _supabase.functions.invoke('supabase-functions-new-stripe-checkout', {
                     body: {
                         nombre_alumno: document.getElementById('nombreAlumno').value,
                         correo: correo,
@@ -240,11 +258,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 if (stripeError) throw stripeError;
                 if (stripeData && stripeData.url) {
-                    window.location.href = stripeData.url; // Viaje en primera clase a la pasarela
+                    window.location.href = stripeData.url; 
                 } else {
                     throw new Error("Error de conexión bancaria. Intenta más tarde.");
                 }
             } else {
+                // SI ES TRANSFERENCIA, CREAMOS LA MEMBRESÍA DE CORTESÍA AHORA MISMO
+                const { error: dbMembresiaError } = await _supabase.from('usuarios_membresias').insert({
+                    nombre_tutor: document.getElementById('nombreTutor').value,
+                    nombre_alumno: document.getElementById('nombreAlumno').value,
+                    email: correo,
+                    password_hijo: inputPass.value, 
+                    token_hex: tokenSeleccionado, 
+                    intentos_simulacro_restantes: 200 
+                });
+                if (dbMembresiaError) throw dbMembresiaError;
+
                 document.getElementById('contenedor-formulario').classList.add('hidden');
                 document.getElementById('area-transferencia').classList.add('hidden');
                 document.getElementById('ref-exito').innerText = referenciaUnica;
