@@ -1,4 +1,4 @@
-// login.js - Lógica de Autenticación de Aspirantes
+// login.js - Lógica de Autenticación de Aspirantes Multi-Curso
 
 document.addEventListener("DOMContentLoaded", () => {
     // Función del Ojo de contraseña
@@ -37,35 +37,46 @@ async function procesarLogin() {
     btn.disabled = true;
 
     try {
-        // Petición a Supabase usando el cliente oficial
+        // 1. Petición a Supabase SIN .single() porque un correo puede tener varios cursos
         const { data, error } = await _supabase
             .from('usuarios_membresias')
             .select('*')
-            .eq('email', emailValue)
-            .single();
+            .eq('email', emailValue);
 
-        if (error || !data) {
+        if (error || !data || data.length === 0) {
             mostrarError("Usuario no registrado", btn, msg);
             return;
         }
 
-        // ==========================================
-        // BLINDAJE DE CARACTERES ESPECIALES
-        // ==========================================
-        // 1. Limpiamos la BD: Si guardó & como &amp;, lo devolvemos a &.
-        // 2. Usamos trim() en ambos lados para matar espacios invisibles accidentales.
-        let passwordBDLimpio = (data.password_hijo || "").replace(/&amp;/g, "&").trim();
+        // 2. Limpieza de lo que tecleó el usuario
         let passwordTecleadoLimpio = passwordValue.trim();
+        
+        let perfilHijoEncontrado = null;
+        let perfilPadreEncontrado = false;
 
-        // Comparación estricta ya limpia
-        if (passwordBDLimpio === passwordTecleadoLimpio) {
+        // 3. Recorremos TODOS los cursos comprados bajo ese correo buscando la contraseña
+        for (const registro of data) {
+            // Limpiamos los &amp; y espacios invisibles de la BD
+            let passHijoLimpio = (registro.password_hijo || "").replace(/&amp;/g, "&").trim();
+            let passPadreLimpio = (registro.password_padre || "").replace(/&amp;/g, "&").trim();
+
+            if (passHijoLimpio === passwordTecleadoLimpio) {
+                perfilHijoEncontrado = registro;
+                break; // Match perfecto de alumno, detenemos la búsqueda
+            } else if (passPadreLimpio === passwordTecleadoLimpio) {
+                perfilPadreEncontrado = true;
+            }
+        }
+
+        // 4. Verificación de Vías
+        if (perfilHijoEncontrado) {
             
-            // Guardado en Memoria
-            localStorage.setItem('token_hex', data.token_hex);
-            localStorage.setItem('nombre_alumno', data.nombre_alumno);
+            // Guardado en Memoria (El dashboard.js usa session_email para pintar las pestañas)
+            localStorage.setItem('token_hex', perfilHijoEncontrado.token_hex); 
+            localStorage.setItem('nombre_alumno', perfilHijoEncontrado.nombre_alumno);
             localStorage.setItem('session_email', emailValue); 
             
-            // Transición de éxito
+            // Transición de éxito al Dashboard
             document.getElementById('login-box').classList.add('hidden');
             const splash = document.getElementById('splash-screen');
             const video = document.getElementById('splash-video');
@@ -75,10 +86,12 @@ async function procesarLogin() {
                 video.play();
                 video.onended = () => { window.location.href = 'dashboard.html'; };
             } else {
-                // Paracaídas por si el video no carga
                 window.location.href = 'dashboard.html';
             }
             
+        } else if (perfilPadreEncontrado) {
+            // La carretera del padre que me indicaste que no está activa aún
+            mostrarError("Panel de tutores en desarrollo. Usa la contraseña del alumno.", btn, msg);
         } else {
             mostrarError("Contraseña incorrecta", btn, msg);
         }
