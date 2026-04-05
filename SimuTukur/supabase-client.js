@@ -11,19 +11,16 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 // ==========================================
-// 2. CREDENCIALES DE INTELIGENCIA ARTIFICIAL
-// ==========================================
-// Colocamos la llave aquí para mantener la seguridad en un solo archivo
-const GEMINI_API_KEY = 'AIzaSyCSyNTLQ2uJw96Srl2UVabQU090iIT9cbs'; 
-
-// ==========================================
-// 3. FUNCIONES GLOBALES DE SEGURIDAD
+// 2. FUNCIONES GLOBALES DE SEGURIDAD
 // ==========================================
 // Función global para verificar sesión
 function verificarSesion() {
     const token = localStorage.getItem('token_hex');
+
+    // Si no hay token, los botamos al Login
     if (!token || token === "null") {
-        window.location.href = 'index.html';
+        window.location.href = 'login.html';
+        return null;
     }
     return token;
 }
