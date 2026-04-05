@@ -1,3 +1,5 @@
+// registro.js - Lógica de Inscripción y Pagos
+
 let referenciaUnica = "";
 let passwordValido = false;
 let metodoPago = "STRIPE"; 
@@ -55,7 +57,7 @@ function generarReferencia() {
     if(display) display.innerText = referenciaUnica;
 }
 
-// FUNCIÓN CON PARACAÍDAS DE EMERGENCIA
+// Carga de Exámenes desde Supabase
 async function cargarExamenesBD() {
     const select = document.getElementById('tipoExamen');
     try {
@@ -94,11 +96,7 @@ async function cargarExamenesBD() {
         }
     } catch (err) {
         console.error("Error conectando a Supabase:", err);
-        // PARACAÍDAS: Inyectamos exámenes manuales para que la interfaz NO se bloquee
-        alert("Socio: Hay un bloqueo de red conectando con Supabase (Failed to Fetch). Te cargué 2 exámenes locales para que no te detengas y puedas probar el diseño y la contraseña.");
-        select.innerHTML = '<option value="" disabled selected class="text-cyan-400">--- MODO LOCAL ACTIVADO ---</option>' +
-                           '<option value="TOKEN_FALLBACK_1" data-nombre-examen="ECOEMS Local">ECOEMS General (Modo Local)</option>' +
-                           '<option value="TOKEN_FALLBACK_2" data-nombre-examen="UNAM Local">UNAM Área 1 (Modo Local)</option>';
+        select.innerHTML = '<option value="" disabled selected class="text-red-400">Error de red. Recarga la página.</option>';
     }
 }
 
@@ -114,6 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputConfirm = document.getElementById('confirm_password');
     const errorMatch = document.getElementById('match-error');
 
+    // Validación de Contraseña en vivo
     inputPass.addEventListener('input', () => {
         passwordValido = validarPasswordRules(inputPass.value);
         validarFormulario();
@@ -138,24 +137,71 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener('input', validarFormulario);
     form.addEventListener('change', validarFormulario);
 
-    // CUPONES
+    // ==========================================
+    // LÓGICA DE CUPONES (CON REVERSA Y CHECK)
+    // ==========================================
+    const inputPromo = document.getElementById('codigoPromo');
     const btnAplicar = document.getElementById('btnAplicar');
-    btnAplicar.addEventListener('click', async () => {
-        const codigo = document.getElementById('codigoPromo').value.trim().toUpperCase();
-        const msg = document.getElementById('msgPromo');
+    const msgPromo = document.getElementById('msgPromo');
+
+    const revertirStripe = () => {
+        metodoPago = "STRIPE";
+        // Restaurar precios
+        document.getElementById('precio-ecoems-old').classList.add('hidden');
+        document.getElementById('precio-ecoems').innerText = "$499";
+        document.getElementById('precio-uni-old').classList.add('hidden');
+        document.getElementById('precio-uni').innerText = "$599";
         
-        msg.innerText = "Validando...";
-        msg.classList.remove('hidden', 'text-green-400', 'text-red-400');
-        msg.classList.add('animate-pulse', 'text-cyan-400');
+        // Ocultar sección de transferencia
+        document.getElementById('area-transferencia').classList.add('hidden');
+        document.getElementById('area-archivo').classList.add('hidden');
+        document.getElementById('comprobanteFile').required = false;
+        document.getElementById('aviso-transferencia').classList.add('hidden');
+
+        // Restaurar botón a Stripe
+        btnSubmit.classList.add('enabled:bg-blue-600', 'enabled:hover:bg-blue-500', 'enabled:shadow-[0_0_15px_rgba(37,99,235,0.4)]');
+        btnSubmit.classList.remove('enabled:bg-cyan-600', 'enabled:hover:bg-cyan-500', 'enabled:shadow-[0_0_15px_rgba(6,182,212,0.4)]');
+        btnIcon.className = "fa-brands fa-stripe text-xl";
+        btnText.innerText = "Pagar Seguro con Tarjeta";
+    };
+
+    // Auto-reversa al borrar texto
+    inputPromo.addEventListener('input', (e) => {
+        if (e.target.value.trim() === "") {
+            msgPromo.className = "text-[10px] mt-1 hidden";
+            revertirStripe();
+            validarFormulario();
+        }
+    });
+
+    // Acción del botón Aplicar
+    btnAplicar.addEventListener('click', async () => {
+        const codigo = inputPromo.value.trim().toUpperCase();
+        if(!codigo) {
+            msgPromo.innerHTML = '<i class="fa-solid fa-circle-exclamation mr-1"></i> Escribe un código primero';
+            msgPromo.className = "text-[10px] mt-2 text-red-400 font-bold block";
+            revertirStripe();
+            validarFormulario();
+            return;
+        }
+        
+        msgPromo.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Validando...';
+        msgPromo.className = "text-[10px] mt-2 text-cyan-400 animate-pulse font-bold block";
 
         try {
-            const { data, error } = await _supabase.from('cupones_descuento').select('*').eq('codigo', codigo).eq('estatus', 'Activo').single();
+            const { data, error } = await _supabase.from('cupones_descuento')
+                .select('*')
+                .eq('codigo', codigo)
+                .eq('estatus', 'Activo')
+                .single();
+                
             if (error || !data) throw new Error("Cupón inválido");
 
-            msg.classList.remove('animate-pulse', 'text-cyan-400');
-            msg.innerText = `¡Cupón de ${data.descuento_porcentaje}% aplicado!`;
-            msg.classList.add('text-green-400');
+            // CHECK VISUAL DE ÉXITO
+            msgPromo.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> ¡Cupón de ${data.descuento_porcentaje}% aplicado!`;
+            msgPromo.className = "text-[10px] mt-2 text-green-400 font-bold block";
             
+            // Recálculo Matemático
             const precioEcoemsBase = 499;
             const precioUniBase = 599;
             const factorDescuento = (100 - data.descuento_porcentaje) / 100;
@@ -165,26 +211,30 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('precio-uni-old').classList.remove('hidden');
             document.getElementById('precio-uni').innerText = "$" + Math.round(precioUniBase * factorDescuento);
 
+            // Transición Visual a Transferencia
             metodoPago = "TRANSFERENCIA";
             document.getElementById('area-transferencia').classList.remove('hidden');
             document.getElementById('area-archivo').classList.remove('hidden');
             document.getElementById('comprobanteFile').required = true;
             document.getElementById('aviso-transferencia').classList.remove('hidden');
 
+            // Actualización del Botón Principal
             btnSubmit.classList.remove('enabled:bg-blue-600', 'enabled:hover:bg-blue-500', 'enabled:shadow-[0_0_15px_rgba(37,99,235,0.4)]');
             btnSubmit.classList.add('enabled:bg-cyan-600', 'enabled:hover:bg-cyan-500', 'enabled:shadow-[0_0_15px_rgba(6,182,212,0.4)]');
             btnIcon.className = "fa-solid fa-cloud-arrow-up text-xl";
             btnText.innerText = "Enviar Comprobante";
 
         } catch (err) {
-            msg.classList.remove('animate-pulse', 'text-cyan-400');
-            msg.innerText = "Cupón inválido o error de red.";
-            msg.classList.add('text-red-400');
+            msgPromo.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> Cupón inválido o expirado';
+            msgPromo.className = "text-[10px] mt-2 text-red-400 font-bold block";
+            revertirStripe(); 
         }
         validarFormulario(); 
     });
 
-    // ENVÍO DE FORMULARIO
+    // ==========================================
+    // ENVÍO DE FORMULARIO A BD
+    // ==========================================
     form.addEventListener('submit', async (e) => {
         e.preventDefault(); 
         
