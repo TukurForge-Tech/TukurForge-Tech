@@ -58,7 +58,52 @@ function generarReferencia() {
 }
 
 // Carga de Exámenes desde Supabase
+// Carga de Exámenes desde Supabase
 async function cargarExamenesBD() {
+    const select = document.getElementById('tipoExamen');
+    try {
+        const { data, error } = await _supabase
+            .from('config_examenes')
+            .select('token_hex, institucion, descripcion')
+            .eq('plan', 'PRO')
+            .order('institucion', { ascending: true });
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            select.innerHTML = '<option value="" disabled selected class="text-gray-400">No hay exámenes disponibles en BD</option>';
+            return;
+        }
+
+        // 🛑 FILTRO DE EMERGENCIA: Solo dejamos pasar ECOEMS
+        const examenesHabilitados = data.filter(ex => ex.institucion.includes('ECOEMS'));
+
+        const grupos = {};
+        examenesHabilitados.forEach(ex => {
+            if (!grupos[ex.institucion]) grupos[ex.institucion] = [];
+            grupos[ex.institucion].push(ex);
+        });
+
+        select.innerHTML = '<option value="" disabled selected class="text-gray-400">Selecciona tu examen...</option>';
+
+        for (const inst in grupos) {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = `--- ${inst} ---`;
+            grupos[inst].forEach(ex => {
+                const option = document.createElement('option');
+                option.value = ex.token_hex; 
+                option.text = ex.descripcion; 
+                option.dataset.nombreExamen = `${inst} - ${ex.descripcion}`; 
+                optgroup.appendChild(option);
+            });
+            select.appendChild(optgroup);
+        }
+    } catch (err) {
+        console.error("Error conectando a Supabase:", err);
+        select.innerHTML = '<option value="" disabled selected class="text-red-400">Error de red. Recarga la página.</option>';
+    }
+}
+/*async function cargarExamenesBD() {
     const select = document.getElementById('tipoExamen');
     try {
         const { data, error } = await _supabase
@@ -98,7 +143,7 @@ async function cargarExamenesBD() {
         console.error("Error conectando a Supabase:", err);
         select.innerHTML = '<option value="" disabled selected class="text-red-400">Error de red. Recarga la página.</option>';
     }
-}
+}*/
 
 document.addEventListener("DOMContentLoaded", () => {
     generarReferencia();
