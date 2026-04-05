@@ -8,15 +8,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="min-h-screen flex items-center justify-center p-6">
+<body class="min-h-screen flex items-center justify-center p-6 bg-[#050a14]">
     
-    <div class="fixed inset-0 bg-[#050a14] z-[9999] flex flex-col justify-center items-center p-8 text-center lg:hidden">
+    <div class="fixed inset-0 bg-[#050a14] z-[9999] flex flex-col justify-center items-center p-8 text-center md:hidden">
         <i class="fa-solid fa-laptop-code text-5xl text-cyan-500 mb-6"></i>
         <h2 class="text-2xl font-black italic uppercase tracking-tighter text-white mb-2">Entorno Restringido</h2>
-        <p class="text-sm text-gray-400 mb-4 max-w-xs leading-relaxed">SimuTukur requiere un entorno de escritorio. Por favor, ingresa desde una <strong class="text-cyan-400">Computadora o Laptop</strong>.</p>
+        <p class="text-sm text-gray-400 mb-4 max-w-xs leading-relaxed">SimuTukur requiere un entorno de escritorio para la telemetría. Ingresa desde una <strong class="text-cyan-400">Computadora o Laptop</strong>.</p>
     </div>
 
-    <div id="login-box" class="card-glass w-full max-w-md p-8 md:p-10 relative overflow-hidden hidden lg:block bg-gray-900">
+    <div id="login-box" class="card-glass w-full max-w-md p-8 md:p-10 relative overflow-hidden hidden md:block bg-gray-900 shadow-2xl rounded-2xl border border-gray-800">
+        
         <div class="text-center mb-10">
             <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur2.jpeg" class="w-16 h-16 mx-auto rounded-xl border border-cyan-500/30 mb-4" alt="Simu Logo">
             <h1 class="text-3xl font-black italic tracking-tighter text-white uppercase">Acceso <span class="text-cyan-400">Aspirantes</span></h1>
@@ -33,7 +34,7 @@
                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Contraseña</label>
                 <div class="relative">
                     <input type="password" id="password" required class="w-full bg-black/50 border border-gray-700 rounded-lg p-4 pr-12 text-sm text-white outline-none focus:border-cyan-500 transition">
-                    <i class="fa-solid fa-eye password-toggle absolute right-4 top-4" id="togglePassword"></i>
+                    <i class="fa-solid fa-eye password-toggle absolute right-4 top-4 cursor-pointer text-gray-500 hover:text-cyan-400" id="togglePassword"></i>
                 </div>
             </div>
 
@@ -48,7 +49,7 @@
         </div>
     </div>
 
-    <div id="splash-screen" class="hidden flex-col">
+    <div id="splash-screen" class="hidden flex-col fixed inset-0 bg-black z-[9999] justify-center items-center">
         <video id="splash-video" width="100%" height="100%" muted playsinline style="object-fit: cover; max-width: 100vw; max-height: 100vh;">
             <source src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/Intro2.mp4" type="video/mp4">
         </video>
