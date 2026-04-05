@@ -313,7 +313,11 @@ async function generarAnalisisInicialIA(token, puntaje, contexto, email) {
         // CORRECCIÓN 1: El comodín que sí funciona
         const url = `https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/chat-simu`;
         const response = await fetch(url, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseKey}` // <--- El Gafete VIP
+            },
             body: JSON.stringify({ contents: [{ parts: [{ text: promptInvisible }] }], generationConfig: { temperature: 0.4 } })
         });
         
@@ -416,7 +420,11 @@ async function enviarMensajeChat(token) {
     try {
         const url = `https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/chat-simu`;
         const response = await fetch(url, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseKey}` // <--- El Gafete VIP
+            },
             body: JSON.stringify({ contents: [{ parts: [{ text: promptChat }] }], generationConfig: { temperature: 0.4 } })
         });
         
