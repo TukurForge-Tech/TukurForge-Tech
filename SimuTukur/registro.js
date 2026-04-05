@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener('change', validarFormulario);
 
     // ==========================================
-    // LÓGICA DE CUPONES (CON REVERSA Y CHECK)
+    // LÓGICA DE CUPONES (CON EMOJIS UNIVERSALES)
     // ==========================================
     const inputPromo = document.getElementById('codigoPromo');
     const btnAplicar = document.getElementById('btnAplicar');
@@ -178,14 +178,14 @@ document.addEventListener("DOMContentLoaded", () => {
     btnAplicar.addEventListener('click', async () => {
         const codigo = inputPromo.value.trim().toUpperCase();
         if(!codigo) {
-            msgPromo.innerHTML = '<i class="fa-solid fa-circle-exclamation mr-1"></i> Escribe un código primero';
+            msgPromo.innerHTML = '⚠️ Escribe un código primero';
             msgPromo.className = "text-[10px] mt-2 text-red-400 font-bold block";
             revertirStripe();
             validarFormulario();
             return;
         }
         
-        msgPromo.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Validando...';
+        msgPromo.innerHTML = '⏳ Validando...';
         msgPromo.className = "text-[10px] mt-2 text-cyan-400 animate-pulse font-bold block";
 
         try {
@@ -197,8 +197,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 
             if (error || !data) throw new Error("Cupón inválido");
 
-            // CHECK VISUAL DE ÉXITO
-            msgPromo.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> ¡Cupón de ${data.descuento_porcentaje}% aplicado!`;
+            // CHECK VISUAL DE ÉXITO CON EMOJI
+            msgPromo.innerHTML = `✅ ¡Cupón de ${data.descuento_porcentaje}% aplicado!`;
             msgPromo.className = "text-[10px] mt-2 text-green-400 font-bold block";
             
             // Recálculo Matemático
@@ -225,7 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
             btnText.innerText = "Enviar Comprobante";
 
         } catch (err) {
-            msgPromo.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> Cupón inválido o expirado';
+            msgPromo.innerHTML = '❌ Cupón inválido o expirado';
             msgPromo.className = "text-[10px] mt-2 text-red-400 font-bold block";
             revertirStripe(); 
         }
