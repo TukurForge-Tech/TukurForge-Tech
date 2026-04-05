@@ -311,7 +311,7 @@ async function generarAnalisisInicialIA(token, puntaje, contexto, email) {
         }
 
         // CORRECCIÓN 1: El comodín que sí funciona
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+        const url = `https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/chat-simu`;
         const response = await fetch(url, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: promptInvisible }] }], generationConfig: { temperature: 0.4 } })
@@ -414,7 +414,7 @@ async function enviarMensajeChat(token) {
     dibujarBurbujaChat('simu', `<span id="${idBurbujaIA}" class="animate-pulse">Simu está escribiendo...</span>`);
 
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+        const url = `https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/chat-simu`;
         const response = await fetch(url, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: promptChat }] }], generationConfig: { temperature: 0.4 } })
