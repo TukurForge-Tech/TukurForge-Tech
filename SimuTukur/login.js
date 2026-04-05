@@ -2,7 +2,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
     
-    // 1. Función para el Ojo de la contraseña
+    // Función del Ojo de contraseña
     const toggleIcon = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
 
@@ -16,11 +16,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // 2. Intercepción BLINDADA del Formulario (Evita fallos con símbolos como &)
+    // LÓGICA DE LOGIN BLINDADA
     const loginForm = document.getElementById('loginForm');
     
     loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); // ¡ESTO DETIENE LA RECARGA TRAICIONERA DEL NAVEGADOR!
+        e.preventDefault(); // Detiene recargas fantasma
         
         const emailValue = document.getElementById('email').value.trim();
         const passwordValue = passwordInput.value; 
@@ -44,22 +44,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Validamos la contraseña (Soporta &, $, emojis, lo que sea)
+            // Al validar con === los símbolos & o $ no causan ningún problema
             if (data.password_hijo === passwordValue) {
-                
-                // Guardado en Memoria
                 localStorage.setItem('token_hex', data.token_hex);
                 localStorage.setItem('nombre_alumno', data.nombre_alumno);
                 localStorage.setItem('session_email', emailValue); 
                 
-                // EFECTO SPLASH Y REDIRECCIÓN
                 document.getElementById('login-box').classList.add('hidden');
                 const splash = document.getElementById('splash-screen');
                 const video = document.getElementById('splash-video');
                 
                 splash.classList.remove('hidden');
                 video.play();
-                
                 video.onended = () => { window.location.href = 'dashboard.html'; };
                 
             } else {
