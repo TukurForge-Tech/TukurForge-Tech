@@ -49,8 +49,16 @@ async function procesarLogin() {
         // ---> AGREGA ESTA LÍNEA DE RAYOS X AQUÍ <---
         console.log("De la BD llegó:", data.password_hijo, "| Del HTML se lee:", passwordValue);
         
-        // Validación estricta que permite &, $, % y emojis
-        if (data.password_hijo === passwordValue) {
+        // 1. Limpiamos la contraseña de la BD (quitamos espacios invisibles y arreglamos el &)
+        let passwordBDLimpio = data.password_hijo.replace(/&amp;/g, "&").trim();
+        
+        // 2. Limpiamos lo que tecleó el usuario (solo por si se le fue un espacio al final)
+        let passwordTecleadoLimpio = passwordValue.trim();
+        
+        // 3. Validación ultra-blindada
+        if (passwordBDLimpio === passwordTecleadoLimpio) {
+            
+            // Guardado en Memoria
             localStorage.setItem('token_hex', data.token_hex);
             localStorage.setItem('nombre_alumno', data.nombre_alumno);
             localStorage.setItem('session_email', emailValue); 
