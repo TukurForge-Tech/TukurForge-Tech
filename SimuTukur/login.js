@@ -5,18 +5,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const toggleIcon = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
 
-    toggleIcon.addEventListener('click', () => {
-        if (passwordInput.type === "password") {
-            passwordInput.type = "text";
-            toggleIcon.classList.replace('fa-eye', 'fa-eye-slash');
-        } else {
-            passwordInput.type = "password";
-            toggleIcon.classList.replace('fa-eye-slash', 'fa-eye');
-        }
-    });
+    if (toggleIcon && passwordInput) {
+        toggleIcon.addEventListener('click', () => {
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                toggleIcon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                passwordInput.type = "password";
+                toggleIcon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        });
+    }
 });
 
-// Función Principal de Login (Invocada directamente por el botón)
+// Función Principal de Login
 async function procesarLogin() {
     const emailValue = document.getElementById('email').value.trim();
     const passwordInput = document.getElementById('password');
@@ -35,6 +37,7 @@ async function procesarLogin() {
     btn.disabled = true;
 
     try {
+        // Petición a Supabase usando el cliente oficial
         const { data, error } = await _supabase
             .from('usuarios_membresias')
             .select('*')
@@ -46,16 +49,15 @@ async function procesarLogin() {
             return;
         }
 
-        // ---> AGREGA ESTA LÍNEA DE RAYOS X AQUÍ <---
-        console.log("De la BD llegó:", data.password_hijo, "| Del HTML se lee:", passwordValue);
-        
-        // 1. Limpiamos la contraseña de la BD (quitamos espacios invisibles y arreglamos el &)
-        let passwordBDLimpio = data.password_hijo.replace(/&amp;/g, "&").trim();
-        
-        // 2. Limpiamos lo que tecleó el usuario (solo por si se le fue un espacio al final)
+        // ==========================================
+        // BLINDAJE DE CARACTERES ESPECIALES
+        // ==========================================
+        // 1. Limpiamos la BD: Si guardó & como &amp;, lo devolvemos a &.
+        // 2. Usamos trim() en ambos lados para matar espacios invisibles accidentales.
+        let passwordBDLimpio = (data.password_hijo || "").replace(/&amp;/g, "&").trim();
         let passwordTecleadoLimpio = passwordValue.trim();
-        
-        // 3. Validación ultra-blindada
+
+        // Comparación estricta ya limpia
         if (passwordBDLimpio === passwordTecleadoLimpio) {
             
             // Guardado en Memoria
@@ -63,13 +65,19 @@ async function procesarLogin() {
             localStorage.setItem('nombre_alumno', data.nombre_alumno);
             localStorage.setItem('session_email', emailValue); 
             
+            // Transición de éxito
             document.getElementById('login-box').classList.add('hidden');
             const splash = document.getElementById('splash-screen');
             const video = document.getElementById('splash-video');
             
-            splash.classList.remove('hidden');
-            video.play();
-            video.onended = () => { window.location.href = 'dashboard.html'; };
+            if (splash && video) {
+                splash.classList.remove('hidden');
+                video.play();
+                video.onended = () => { window.location.href = 'dashboard.html'; };
+            } else {
+                // Paracaídas por si el video no carga
+                window.location.href = 'dashboard.html';
+            }
             
         } else {
             mostrarError("Contraseña incorrecta", btn, msg);
