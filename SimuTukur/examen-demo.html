@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Evaluación Diagnóstica | SimuTukur</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };</script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#050a14] text-white">
+    
+    <div class="fixed inset-0 bg-[#050a14] z-[9999] flex flex-col justify-center items-center p-8 text-center lg:hidden">
+        <i class="fa-solid fa-laptop-code text-7xl text-cyan-500 mb-6 animate-pulse"></i>
+        <h2 class="text-3xl font-black italic text-cyan-400 tracking-tighter mb-4 uppercase">Modo Escritorio Requerido</h2>
+        <p class="text-gray-400 text-sm max-w-md leading-relaxed border border-cyan-900/50 bg-gray-900/50 p-4 rounded-xl">Por favor ingresa desde una computadora para realizar el diagnóstico.</p>
+    </div>
+    
+    <div id="master-container" class="grid-layout h-screen overflow-hidden">
+        <aside class="bg-slate-900 border-r border-slate-800 p-6 md:p-8 flex flex-col gap-6 h-full overflow-y-auto shrink-0">
+            <div class="bg-black p-4 rounded-xl border border-slate-800 text-center shadow-inner relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] font-black uppercase px-2 py-1 rounded-bl-lg">VERSIÓN DEMO</div>
+                <p class="text-[10px] md:text-xs text-slate-500 uppercase font-black mb-1 italic mt-2">Cronómetro</p>
+                <h2 id="timer" class="text-3xl md:text-4xl font-mono text-cyan-400 font-bold tracking-tighter">15:00</h2>
+            </div>
+            
+            <video id="webcam" autoplay muted playsinline class="w-full aspect-video object-cover bg-black rounded-2xl border border-cyan-500/30 scale-x-[-1]"></video>
+
+            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                <p class="text-[10px] text-slate-600 uppercase font-bold mb-2 italic">Sensor Biométrico IA</p>
+                <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="audio-fill" class="h-full bg-cyan-500 transition-all duration-100" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <div class="mt-auto pt-4 border-t border-slate-800/50 text-center">
+                <p class="text-[10px] text-gray-500 italic mb-2">SimuTukur evalúa tu concentración en tiempo real.</p>
+                <button onclick="window.location.href='index.html'" class="w-full py-3 border border-red-500/30 text-red-500 text-xs font-black uppercase rounded-lg hover:bg-red-500 hover:text-white transition-all italic tracking-widest">
+                    Abandonar Demo
+                </button>
+            </div>
+        </aside>
+
+        <main class="relative p-4 md:p-6 flex flex-col h-full overflow-hidden">
+            
+            <div id="panel-lectura" class="hidden w-full h-auto flex-grow max-h-[35vh] bg-black/30 border-b border-slate-800 p-4 overflow-y-auto shadow-inner mb-4 shrink-0">
+                <div id="texto-lectura-content" class="text-slate-300 leading-relaxed text-sm md:text-base text-justify whitespace-pre-wrap pb-2"></div>
+            </div>
+
+            <div id="panel-preguntas" class="w-full flex-grow flex flex-col overflow-y-auto h-full pr-2">
+                <div id="quiz-ui" class="max-w-4xl mx-auto w-full flex-grow flex flex-col h-full">
+                    <header class="mb-4 shrink-0 pt-2">
+                        <span id="label-materia" class="px-3 py-1 bg-cyan-500/10 text-cyan-400 text-[10px] md:text-xs font-black rounded-full border border-cyan-500/20 uppercase italic">DIAGNÓSTICO AVANZADO</span>
+                        <h1 id="txt-pregunta" class="text-base md:text-lg font-bold mt-3 text-slate-100 italic leading-snug">Calibrando red neuronal...</h1>
+                    </header>
+                    
+                    <div id="opciones-grid" class="space-y-3 shrink-0 mb-6 pb-2"></div>
+                    
+                    <footer class="mt-auto pt-4 pb-2 flex justify-between items-center border-t border-slate-800 shrink-0 bg-[#050a14] sticky bottom-0 z-10">
+                        <p id="progreso-txt" class="text-slate-500 text-xs font-bold italic uppercase tracking-widest"></p>
+                        <button id="btn-confirm" onclick="procesarRespuesta()" disabled class="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 px-6 py-3 rounded-lg font-bold uppercase text-xs transition-all shadow-lg text-white tracking-widest">Confirmar <i class="fa-solid fa-arrow-right ml-2"></i></button>
+                    </footer>
+                </div>
+
+                <div id="modal-ventas" class="hidden flex-grow flex flex-col items-center justify-center h-full text-center p-8">
+                    <i class="fa-solid fa-brain text-6xl text-cyan-500 mb-6 animate-pulse"></i>
+                    <h2 class="text-4xl font-black italic text-white tracking-tighter uppercase mb-2">Diagnóstico Completado</h2>
+                    <p class="text-gray-400 mb-8 max-w-lg mx-auto">La Inteligencia Artificial ha procesado tu patrón de respuestas, tiempos de reacción y nivel de conocimiento.</p>
+                    
+                    <div class="grid grid-cols-2 gap-4 w-full max-w-lg mb-8">
+                        <div class="bg-gray-900 border border-slate-800 p-4 rounded-2xl">
+                            <p class="text-[10px] uppercase text-gray-500 font-bold mb-1">Aciertos Logrados</p>
+                            <p id="score-demo" class="text-3xl font-black text-cyan-400">--%</p>
+                        </div>
+                        <div class="bg-red-900/10 border border-red-500/30 p-4 rounded-2xl relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-10">
+                                <i class="fa-solid fa-lock text-red-400 text-xl"></i>
+                            </div>
+                            <p class="text-[10px] uppercase text-gray-500 font-bold mb-1">Fallas Detectadas</p>
+                            <p class="text-3xl font-black text-red-400 filter blur-sm">9</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-cyan-900/20 border border-cyan-800 p-6 rounded-2xl max-w-lg w-full mb-8 shadow-[0_0_30px_rgba(6,182,212,0.1)]">
+                        <h3 class="text-lg font-bold text-white italic mb-2">No dejes tu futuro al azar.</h3>
+                        <p class="text-sm text-gray-300 mb-6">Para ver tu análisis de fallas completo, recibir explicaciones paso a paso de la IA y entrenar de verdad hasta el día de tu examen, necesitas el plan profesional.</p>
+                        <button onclick="window.location.href='registro.html'" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 px-6 rounded-xl uppercase tracking-widest shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all transform hover:scale-105">
+                            ¡Inscribirme a SimuTukur PRO!
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="supabase-client.js"></script>
+    <script src="examen-demo.js"></script>
+</body>
+</html>
