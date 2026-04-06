@@ -5,6 +5,7 @@ let index = 0;
 let aciertos = 0;
 let seleccionActual = null;
 let tiempoSeg = 15 * 60; // 15 Minutos de Demo
+let timerInterval; // 🛑 NUEVA VARIABLE PARA CONTROLAR EL RELOJ
 
 async function initDemo() {
     try {
@@ -15,11 +16,11 @@ async function initDemo() {
         setupAudioMonitor(stream);
         setupVideoMonitor(videoElement);
         
-        // Extraer 15 reactivos de Nivel Avanzado (ID 3) para asustarlos un poco
+        // Extraer reactivos de Nivel Avanzado (ID 3) para asustarlos un poco
         const { data: todos } = await _supabase.from('reactivos')
             .select('*')
             .eq('nivel', 3)
-            .limit(100); // Traemos un bloque grande
+            .limit(100); 
 
         if (!todos || todos.length === 0) {
             alert("Error conectando con la BD de la demo.");
@@ -27,7 +28,7 @@ async function initDemo() {
             return;
         }
 
-        // Filtramos para evitar lecturas largas en el demo por rapidez
+        // Filtramos para evitar lecturas largas en el demo por rapidez (Estrategia de Ventas)
         const filtrados = todos.filter(r => !r.texto_lectura && !r.id_grupo_lectura);
         
         // Mezclamos y tomamos exactamente 15
@@ -96,7 +97,8 @@ function procesarRespuesta() {
 }
 
 function startTimer() {
-    setInterval(() => {
+    // 🛑 ASIGNAMOS EL INTERVALO A LA VARIABLE
+    timerInterval = setInterval(() => {
         const m = Math.floor(tiempoSeg / 60);
         const s = tiempoSeg % 60;
         document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
@@ -105,6 +107,9 @@ function startTimer() {
 }
 
 function finalizarDemo() {
+    // 🛑 DETENEMOS EL RELOJ
+    clearInterval(timerInterval);
+
     // Apagamos la cámara
     const video = document.getElementById('webcam');
     if(video && video.srcObject) {
