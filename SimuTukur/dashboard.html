@@ -9,26 +9,30 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+      window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
+    </script>
+
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="bg-[#050a14] text-white">
     
     <div class="fixed inset-0 bg-[#050a14] z-[9999] flex flex-col justify-center items-center p-8 text-center lg:hidden">
         <i class="fa-solid fa-laptop-code text-7xl text-cyan-500 mb-6 animate-pulse"></i>
         <h2 class="text-3xl font-black italic text-cyan-400 tracking-tighter mb-4 uppercase">Modo Escritorio Requerido</h2>
         <p class="text-gray-400 text-sm max-w-md leading-relaxed border border-cyan-900/50 bg-gray-900/50 p-4 rounded-xl">
-            El simulador requiere un entorno de evaluación profesional. Para garantizar el correcto funcionamiento de la Inteligencia Artificial y la biometría, <strong class="text-white">por favor ingresa desde una computadora o laptop.</strong>
+            Para garantizar el correcto funcionamiento de la IA, ingresa desde una computadora.
         </p>
     </div>
     
     <header class="p-6 flex flex-col gap-4 border-b border-gray-800 bg-[#050a14]">
         <div class="flex justify-between items-center">
-            
             <div class="flex items-center gap-6">
                 <h1 class="text-3xl font-black italic color-cian tracking-tighter">SIMUTUKUR</h1>
-                
                 <div id="info-usuario" class="border-l border-gray-800 pl-6">
-                    <h2 id="saludo-alumno" class="text-xl font-black italic tracking-tighter text-white leading-none mb-1">Hola, <span class="color-cian italic">Cargando...</span></h2>
+                    <h2 id="saludo-alumno" class="text-xl font-black italic tracking-tighter text-white leading-none mb-1">Hola, <span class="color-cian italic">...</span></h2>
                     <div id="plan-actual-container"></div>
                 </div>
             </div>
@@ -40,17 +44,15 @@
                         <p class="text-[10px] text-gray-500 uppercase font-bold leading-none">Energía IA</p>
                         <p id="creditos-display" class="text-sm font-black text-white leading-none mt-1">--</p>
                     </div>
-                    <button onclick="simularCompra()" class="ml-3 bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] font-black py-1 px-3 rounded uppercase">Comprar</button>
+                    <button onclick="abrirModalEnergia()" class="ml-3 bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] font-black py-1 px-3 rounded uppercase transition">Recargar</button>
                 </div>
                 <button onclick="cerrarSesion()" class="text-red-500 font-bold hover:text-red-400 text-xs uppercase tracking-widest">Cerrar Sesión</button>
             </div>
         </div>
-        
         <div id="pestanas-cursos" class="flex flex-wrap gap-3 mt-1"></div>
     </header>
 
     <main class="grid grid-cols-12 h-[calc(100vh-140px)]">
-        
         <aside class="col-span-3 border-r border-gray-800 p-6 flex flex-col bg-black/20 overflow-hidden">
             <h3 class="text-gray-500 font-bold text-xs uppercase tracking-widest mb-6 italic shrink-0">Línea del Tiempo</h3>
             <div id="contenedor-historial" class="flex-grow overflow-y-auto space-y-4 pr-2"></div>
@@ -65,17 +67,13 @@
                         <span class="text-[9px] text-green-500 font-bold uppercase">En Línea</span>
                     </div>
                 </div>
-                
                 <div id="chat-box" class="flex-grow p-4 overflow-y-auto text-xs text-gray-300 space-y-3">
-                    <p class="bg-gray-800/40 p-4 rounded-xl rounded-tl-none border border-white/5 max-w-[85%] leading-relaxed shadow-sm">
-                        Cargando expediente del aspirante...
-                    </p>
+                    <p class="bg-gray-800/40 p-4 rounded-xl rounded-tl-none border border-white/5 max-w-[85%] leading-relaxed shadow-sm">Cargando expediente...</p>
                 </div>
-                
                 <div class="p-3 border-t border-white/5 bg-black/40 shrink-0">
                     <div class="flex gap-2 bg-gray-900 border border-white/10 rounded-xl p-2 items-center">
-                        <input type="text" id="user-input" placeholder="Pregunte algo a Simu..." class="bg-transparent flex-grow text-xs p-2 outline-none text-white" onkeypress="if(event.key === 'Enter') enviarMensajeChat(localStorage.getItem('token_hex_hijo') || localStorage.getItem('token_hex'))">
-                        <button onclick="enviarMensajeChat(localStorage.getItem('token_hex_hijo') || localStorage.getItem('token_hex'))" class="bg-cyan-500 hover:bg-cyan-400 text-white font-bold py-2 px-4 rounded-xl transition-colors">ENVIAR</button>
+                        <input type="text" id="user-input" placeholder="Pregunte algo a Simu..." class="bg-transparent flex-grow text-xs p-2 outline-none text-white">
+                        <button id="btnEnviar" class="bg-cyan-500 hover:bg-cyan-400 text-white font-bold py-2 px-4 rounded-xl transition-colors">ENVIAR</button>
                     </div>
                 </div>
             </div>
@@ -86,6 +84,53 @@
             <div id="contenedor-niveles" class="space-y-4"></div>
         </aside>
     </main>
+
+    <div id="modalEnergia" class="fixed inset-0 bg-black/90 z-[10000] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-gray-900 border border-cyan-500/30 p-8 rounded-3xl max-w-lg w-full relative shadow-[0_0_50px_rgba(6,182,212,0.2)]">
+            <button onclick="cerrarModalEnergia()" class="absolute top-4 right-6 text-gray-500 hover:text-white text-xl">&times;</button>
+            <div class="text-center mb-8">
+                <i class="fa-solid fa-bolt text-4xl text-yellow-400 mb-4 animate-bounce"></i>
+                <h3 class="text-2xl font-black italic uppercase text-white tracking-tighter">Recarga tu Energía IA</h3>
+                <p class="text-gray-400 text-xs uppercase tracking-widest mt-2">No permitas que tu entrenamiento se detenga</p>
+            </div>
+            
+            <div class="grid gap-4">
+                <button onclick="comprarPaquete(100, 50)" class="flex items-center justify-between bg-black/40 border border-gray-800 p-5 rounded-2xl hover:border-cyan-500 transition-all group">
+                    <div class="text-left">
+                        <p class="text-lg font-black text-white">100 TOKENS</p>
+                        <p class="text-[10px] text-gray-500 uppercase font-bold">Uso estándar</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xl font-black text-cyan-400">$50 <span class="text-[10px] text-gray-500">MXN</span></p>
+                        <p class="text-[9px] bg-cyan-900/30 text-cyan-400 px-2 py-1 rounded-full uppercase font-bold mt-1 opacity-0 group-hover:opacity-100 transition">Elegir</p>
+                    </div>
+                </button>
+                <button onclick="comprarPaquete(200, 100)" class="flex items-center justify-between bg-black/40 border border-gray-800 p-5 rounded-2xl hover:border-cyan-500 transition-all group">
+                    <div class="text-left">
+                        <p class="text-lg font-black text-white">200 TOKENS</p>
+                        <p class="text-[10px] text-gray-500 uppercase font-bold">Uso intensivo</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xl font-black text-cyan-400">$100 <span class="text-[10px] text-gray-500">MXN</span></p>
+                        <p class="text-[9px] bg-cyan-900/30 text-cyan-400 px-2 py-1 rounded-full uppercase font-bold mt-1 opacity-0 group-hover:opacity-100 transition">Elegir</p>
+                    </div>
+                </button>
+                <button onclick="comprarPaquete(400, 200)" class="flex items-center justify-between bg-cyan-900/10 border border-cyan-500/50 p-5 rounded-2xl hover:bg-cyan-900/20 transition-all group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-yellow-500 text-black text-[8px] font-black uppercase px-3 py-1 rounded-bl-lg">Más Popular</div>
+                    <div class="text-left">
+                        <p class="text-lg font-black text-white">400 TOKENS</p>
+                        <p class="text-[10px] text-yellow-500 uppercase font-bold">Plan Profesional</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xl font-black text-cyan-400">$200 <span class="text-[10px] text-gray-500">MXN</span></p>
+                        <p class="text-[9px] bg-cyan-900/30 text-cyan-400 px-2 py-1 rounded-full uppercase font-bold mt-1 opacity-0 group-hover:opacity-100 transition">Elegir</p>
+                    </div>
+                </button>
+            </div>
+            
+            <p class="text-[9px] text-gray-600 text-center mt-6 uppercase font-bold tracking-widest">Pago procesado de forma segura por Stripe®</p>
+        </div>
+    </div>
 
     <script src="supabase-client.js"></script>
     <script src="simu-telemetria.js"></script>
