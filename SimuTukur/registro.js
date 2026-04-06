@@ -357,3 +357,12 @@ async function cargarExamenesBD() {
         select.innerHTML = '<option value="" disabled selected class="text-red-400">Error de red. Recarga la página.</option>';
     }
 }
+
+// Función silenciosa para enviar correos
+async function notificarPorCorreo(nombre, correo, pass, metodo, ref) {
+    try {
+        await _supabase.functions.invoke('notificaciones-email', {
+            body: { alumno_nombre: nombre, alumno_email: correo, password: pass, metodo_pago: metodo, referencia: ref }
+        });
+    } catch(e) { console.log("Notificación en segundo plano:", e); }
+}
