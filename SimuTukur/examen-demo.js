@@ -20,6 +20,7 @@ async function initDemo() {
         const { data: todos } = await _supabase.from('reactivos')
             .select('*')
             .eq('nivel', 3)
+            .eq('tipo_examen', 'ECOEMS') // 🛑 AQUÍ ESTÁ EL NUEVO FILTRO
             .limit(100); 
 
         if (!todos || todos.length === 0) {
