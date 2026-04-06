@@ -36,6 +36,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 localStorage.removeItem('simu_correo');
                 localStorage.removeItem('simu_pass');
                 localStorage.removeItem('simu_token');
+
+                // 4. MANDAMOS EL CORREO DE BIENVENIDA STRIPE
+                notificarPorCorreo("Aspirante", urlParams.get('email_temporal'), "Tu contraseña registrada", "STRIPE", refExito);
             }
         }
         return; 
@@ -274,6 +277,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 });
                 if (dbMembresiaError) throw dbMembresiaError;
 
+                // MANDAMOS CORREO AL ALUMNO Y ALERTA AL ADMIN
+                notificarPorCorreo(
+                    document.getElementById('nombreAlumno').value, 
+                    correo, 
+                    inputPass.value, 
+                    "TRANSFERENCIA", 
+                    referenciaUnica
+                );
+                
                 document.getElementById('contenedor-formulario').classList.add('hidden');
                 document.getElementById('area-transferencia').classList.add('hidden');
                 document.getElementById('ref-exito').innerText = referenciaUnica;
