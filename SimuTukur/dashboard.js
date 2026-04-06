@@ -206,18 +206,50 @@ async function cargarHistorial(token) {
 async function cargarNiveles(institucion, puntajeReal) {
     const contenedor = document.getElementById('contenedor-niveles');
     const { data } = await _supabase.from('reglas_simulador').select('*').eq('institucion', institucion).order('id', { ascending: true });
+    
     const estaBloqueado = puntajeReal < 70;
-    let html = '';
+    
+    // 🛑 EL INSTRUCTIVO DE REGLAS RECUPERADO
+    let html = `
+        <div class="mb-5 bg-cyan-900/20 border border-cyan-800 p-4 rounded-xl shadow-inner">
+            <h4 class="text-cyan-400 font-black text-xs uppercase tracking-widest mb-2"><i class="fa-solid fa-circle-info"></i> Reglas de la IA</h4>
+            <p class="text-xs text-gray-400 leading-relaxed mb-2">Para desbloquear un nivel superior, debes superar al menos <strong class="text-white">3 simulacros con más del 70%</strong> de aciertos.</p>
+            <p class="text-xs text-gray-400 leading-relaxed">Si tu último simulacro es menor a 70%, tu entrenamiento se bloqueará y deberás superar el <strong class="text-red-400">Reto de Repaso</strong>.</p>
+        </div>
+    `;
+
     if (estaBloqueado) {
-        html += `<div class="bg-red-900/20 border border-red-500/50 p-4 rounded-xl mb-4 text-center"><h4 class="text-red-400 font-bold text-sm uppercase mb-1">Entrenamiento Bloqueado</h4><p class="text-[10px] text-gray-400 uppercase font-bold">Supera el Repaso primero.</p></div>
-        <div class="card-glass p-5 nivel-card border-red-500/50 cursor-pointer" onclick="irAlExamen('Repaso', 10, 15)"><h4 class="text-red-400 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-fire mr-1"></i> Reto de Repaso</h4><p class="text-sm font-black text-white">10 Reactivos de tus errores</p></div>`;
+        html += `
+            <div class="bg-red-900/20 border border-red-500/50 p-4 rounded-xl mb-4 text-center">
+                <h4 class="text-red-400 font-bold text-sm uppercase mb-1">Entrenamiento Bloqueado</h4>
+                <p class="text-[10px] text-gray-400 uppercase font-bold">Supera el Repaso primero.</p>
+            </div>
+            <div class="card-glass p-5 nivel-card border-red-500/50 cursor-pointer hover:bg-red-900/20 transition-all" onclick="irAlExamen('Repaso', 10, 15)">
+                <h4 class="text-red-400 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-fire mr-1"></i> Reto de Repaso</h4>
+                <p class="text-sm font-black text-white">10 Reactivos de tus errores</p>
+                <p class="text-[9px] text-cyan-400 font-bold mt-2 uppercase tracking-wide">🎯 Meta: 70% para aprobar</p>
+            </div>
+        `;
     }
+
     if (data) {
         html += data.map(n => {
             const isLocked = estaBloqueado || n.nivel !== 'Principiante'; 
-            return `<div class="card-glass p-5 nivel-card ${isLocked ? 'locked opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-cyan-500'}" onclick="${isLocked ? '' : `irAlExamen('${n.nivel}', ${n.cantidad_preguntas}, ${n.tiempo_minutos})`}">
-                <div class="flex justify-between items-center mb-2"><h4 class="${isLocked ? 'text-gray-500' : 'color-cian'} font-bold text-xs uppercase italic tracking-tighter">${n.nivel}</h4><i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'} text-sm"></i></div>
-                <p class="text-base font-black ${isLocked ? 'text-gray-400' : 'text-white'}">${n.cantidad_preguntas} Reactivos</p></div>`;
+            let textoRequisito = "";
+            if (isLocked) {
+                if (estaBloqueado) textoRequisito = `<p class="text-[9px] text-red-400/80 italic mt-2 uppercase tracking-wide">🔒 Supera el Repaso primero</p>`;
+                else textoRequisito = `<p class="text-[9px] text-gray-500 italic mt-2 uppercase tracking-wide">🔒 Requiere 3 Exámenes > 70%</p>`;
+            }
+
+            return `
+                <div class="card-glass p-5 nivel-card mt-3 ${isLocked ? 'locked opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-cyan-500'}" onclick="${isLocked ? '' : `irAlExamen('${n.nivel}', ${n.cantidad_preguntas}, ${n.tiempo_minutos})`}">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="${isLocked ? 'text-gray-500' : 'color-cian'} font-bold text-xs uppercase italic tracking-tighter">${n.nivel}</h4>
+                        <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'} text-sm ${isLocked ? 'text-gray-600' : 'text-cyan-500'}"></i>
+                    </div>
+                    <p class="text-base font-black ${isLocked ? 'text-gray-400' : 'text-white'}">${n.cantidad_preguntas} Reactivos | ${n.tiempo_minutos} Min</p>
+                    ${textoRequisito}
+                </div>`;
         }).join('');
     }
     contenedor.innerHTML = html;
