@@ -246,7 +246,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 localStorage.setItem('simu_token', tokenSeleccionado);
 
                 const precioBase = 499; 
-                const { data: stripeData, error: stripeError } = await _supabase.functions.invoke('supabase-functions-new-stripe-checkout', {
+                const { data: stripeData, error: stripeError } = await _supabase.functions.invoke('stripe-checkout', {
                     body: {
                         nombre_alumno: document.getElementById('nombreAlumno').value,
                         correo: correo,
