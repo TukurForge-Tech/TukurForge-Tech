@@ -19,7 +19,7 @@ async function inicializarDashboard() {
             
             // Notificamos al usuario
             alert(`✅ ¡Recarga Exitosa! Se han añadido ${tokensAComprar} tokens a tu cuenta.`);
-            // Limpiamos la URL para que no se sumen tokens si refresca
+            // Limpiamos la URL para que no se sumen tokens si refresca la página
             window.history.replaceState({}, document.title, window.location.pathname);
         }
     }
@@ -81,7 +81,6 @@ async function seleccionarCurso(data, btn) {
 
     setTimeout(() => { cargarHistorial(data.token_hex); }, 800);
     
-    // Lógica de carga de historial de chat y niveles...
     const { data: historialBD } = await _supabase.from('resultados_examenes').select('puntaje_obtenido').eq('token_hex', data.token_hex).eq('tipo_prueba', nombrePlan).order('fecha_aplicacion', { ascending: false }).limit(1);
     const ultimoPuntajeBD = (historialBD && historialBD.length > 0) ? historialBD[0].puntaje_obtenido : null;
     const params = new URLSearchParams(window.location.search);
@@ -109,25 +108,25 @@ async function comprarPaquete(tokens, precio) {
     document.getElementById('modalEnergia').classList.add('opacity-50', 'pointer-events-none');
 
     try {
-        // REUTILIZAMOS tu Edge Function stripe-checkout
         const { data, error } = await _supabase.functions.invoke('stripe-checkout', {
             body: {
                 nombre_alumno: nombre,
                 correo: email,
                 tipo_examen: `Recarga ${tokens} Tokens IA`,
                 referencia_pago: ref,
-                precio: precio
+                precio: precio,
+                es_recarga: true,  // <--- LE AVISAMOS A LA NUBE QUE ES UNA RECARGA
+                tokens: tokens     // <--- LE MANDAMOS LA CANTIDAD
             }
         });
 
         if (error) throw error;
         
         if (data && data.url) {
-            // Personalizamos la URL de éxito para que regrese al Dashboard y sepa cuántos tokens sumar
-            const successUrlModificada = data.url.replace('/registro.html', '/dashboard.html') + `&items=${tokens}`;
-            window.location.href = successUrlModificada; 
+            window.location.href = data.url; 
         }
     } catch (err) {
+        console.error(err);
         alert("Error al conectar con el banco. Intenta más tarde.");
         document.getElementById('modalEnergia').classList.remove('opacity-50', 'pointer-events-none');
     }
@@ -174,7 +173,36 @@ function dibujarBurbujaChat(emisor, texto) {
     if (window.MathJax) { window.MathJax.typesetPromise([div]); }
 }
 
-// (Resto de funciones de Niveles, Historial y Chat se mantienen igual...)
+async function cargarHistorial(token) {
+    const contenedor = document.getElementById('contenedor-historial');
+    try {
+        const { data, error } = await _supabase.from('resultados_examenes')
+            .select('tipo_prueba, fecha_aplicacion, puntaje_obtenido')
+            .eq('token_hex', token)
+            .order('fecha_aplicacion', { ascending: false });
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            contenedor.innerHTML = `<div class="card-glass p-6 text-xs text-gray-500 italic border-dashed text-center">Sin actividad registrada.</div>`;
+            return;
+        }
+        
+        contenedor.innerHTML = data.map(reg => `
+            <div class="card-glass p-4 border-l-4 border-cyan-500 bg-white/5 transition-all hover:bg-white/10 mb-3">
+                <div class="flex justify-between items-center text-[10px] sm:text-xs mb-2">
+                    <span class="text-cyan-400 font-black uppercase tracking-tighter">${reg.tipo_prueba}</span>
+                    <span class="text-gray-500">${new Date(reg.fecha_aplicacion).toLocaleDateString()}</span>
+                </div>
+                <p class="text-2xl font-black text-white">${reg.puntaje_obtenido}% <span class="text-xs text-gray-500 font-normal italic">Aciertos</span></p>
+            </div>
+        `).join('');
+    } catch(e) {
+        console.error("Falla al cargar historial:", e);
+        contenedor.innerHTML = `<div class="card-glass p-6 text-xs text-red-500 italic text-center">Error al sincronizar historial.</div>`;
+    }
+}
+
 async function cargarNiveles(institucion, puntajeReal) {
     const contenedor = document.getElementById('contenedor-niveles');
     const { data } = await _supabase.from('reglas_simulador').select('*').eq('institucion', institucion).order('id', { ascending: true });
@@ -200,7 +228,12 @@ async function cargarHistorialChat(token, puntaje, contexto) {
     const email = localStorage.getItem('session_email');
     const { data: historial } = await _supabase.from('chat_historial').select('*').eq('token_hex', token).eq('email', email).order('created_at', { ascending: true });
     chatBox.innerHTML = ''; 
-    if (historial && historial.length > 0) historial.forEach(msg => dibujarBurbujaChat(msg.emisor, msg.mensaje));
+    if (historial && historial.length > 0) {
+        historial.forEach(msg => dibujarBurbujaChat(msg.emisor, msg.mensaje));
+    } else {
+        // Si no hay historial, mandamos un mensaje inicial de la IA
+        dibujarBurbujaChat('simu', "¡Hola! Estoy listo para ayudarte a entrenar. Selecciona un nivel o hazme una pregunta directa.");
+    }
 }
 
 async function enviarMensajeChat(token) {
@@ -219,7 +252,41 @@ async function enviarMensajeChat(token) {
     
     dibujarBurbujaChat('alumno', textoUsuario);
     input.value = '';
-    // (Resto de lógica de llamada a Edge Function chat-simu...)
+    
+    const idBurbujaIA = "typing-" + Date.now();
+    dibujarBurbujaChat('simu', `<span id="${idBurbujaIA}" class="animate-pulse">Simu está analizando...</span>`);
+
+    try {
+        const url = `https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/chat-simu`;
+        const response = await fetch(url, {
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseKey}`
+            },
+            body: JSON.stringify({ contents: [{ parts: [{ text: textoUsuario }] }], generationConfig: { temperature: 0.4 } })
+        });
+        
+        if (!response.ok) throw new Error("Falla de red");
+        
+        const data = await response.json();
+        const respuestaIA = data.candidates[0].content.parts[0].text;
+        
+        const spanBurbuja = document.getElementById(idBurbujaIA);
+        if(spanBurbuja && spanBurbuja.parentElement) {
+            spanBurbuja.parentElement.innerHTML = respuestaIA.replace(/\*\*(.*?)\*\*/g, '<strong class="color-cian">$1</strong>');
+            if (window.MathJax) { window.MathJax.typesetPromise([spanBurbuja.parentElement.parentElement]); }
+        }
+        
+    } catch (e) {
+        const spanBurbuja = document.getElementById(idBurbujaIA);
+        if(spanBurbuja && spanBurbuja.parentElement) spanBurbuja.parentElement.innerHTML = "<em>Error de conexión. Intenta de nuevo.</em>";
+        
+        energia += 1;
+        energiaElement.innerText = energia;
+        localStorage.setItem('simu_creditos', energia);
+        await guardarCreditosEnBD(energia);
+    }
 }
 
 function irAlExamen(nivel, q, t) { localStorage.setItem('simu_nivel', nivel); localStorage.setItem('simu_preguntas', q); localStorage.setItem('simu_tiempo', t); window.location.href = `examen.html?v=${localStorage.getItem('token_hex_hijo')}`; }
