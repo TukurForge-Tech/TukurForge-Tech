@@ -301,3 +301,15 @@ document.getElementById('user-input')?.addEventListener('keypress', (e) => {
 document.getElementById('btnEnviar')?.addEventListener('click', () => {
     enviarMensajeChat(localStorage.getItem('token_hex_hijo'));
 });
+
+// ==========================================
+// PARCHE DE SEGURIDAD UI (Limpieza de Caché del Navegador)
+// ==========================================
+window.addEventListener('pageshow', function(event) {
+    // Si el usuario regresa con el botón "Atrás" desde Stripe, descongelamos la pantalla
+    const modal = document.getElementById('modalEnergia');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('opacity-50', 'pointer-events-none');
+    }
+});
