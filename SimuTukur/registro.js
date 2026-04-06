@@ -20,6 +20,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             
             // 2. CREAMOS LA MEMBRESÍA USANDO LA MEMORIA DEL NAVEGADOR
             const tempCorreo = localStorage.getItem('simu_correo');
+            const tempNombre = localStorage.getItem('simu_alumno') || "Aspirante"; // <-- Rescatamos el nombre
+            
             if(tempCorreo) {
                 await _supabase.from('usuarios_membresias').insert({
                     nombre_tutor: localStorage.getItem('simu_tutor'),
@@ -37,8 +39,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 localStorage.removeItem('simu_pass');
                 localStorage.removeItem('simu_token');
 
-                // 4. MANDAMOS EL CORREO DE BIENVENIDA STRIPE
-                notificarPorCorreo("Aspirante", urlParams.get('email_temporal'), "Tu contraseña registrada", "STRIPE", refExito);
+                // 4. MANDAMOS EL CORREO DE BIENVENIDA STRIPE (Ya con las variables correctas)
+                notificarPorCorreo(tempNombre, tempCorreo, "Tu contraseña (la que creaste en el registro)", "STRIPE", refExito);
             }
         }
         return; 
