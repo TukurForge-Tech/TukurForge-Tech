@@ -4,19 +4,48 @@
     <meta charset="UTF-8">
     <title>Términos de Servicio | SimuTukur</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050a14; }
+        ::-webkit-scrollbar-thumb { background: #06b6d4; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0891b2; }
+    </style>
 </head>
-<body class="bg-[#050a14] text-gray-300 antialiased p-8 md:p-16">
-    <div class="max-w-3xl mx-auto bg-gray-900 border border-gray-800 p-8 rounded-2xl">
-        <h1 class="text-3xl font-black text-white mb-6 uppercase text-cyan-400">Términos de Servicio</h1>
-        <div class="space-y-4 text-sm leading-relaxed">
-            <h2 class="text-xl font-bold text-white mt-6">1. Responsabilidad Tecnológica</h2>
-            <p>El acceso a SimuTukur requiere equipo de cómputo (PC o Laptop) con conexión a internet estable. SimuTukur no se hace responsable por fallas de conectividad local, cortes de energía o hardware incompatible que impidan la culminación de un examen.</p>
-            <h2 class="text-xl font-bold text-white mt-6">2. Inteligencia Artificial</h2>
-            <p>El Tutor IA es una herramienta generativa de apoyo educativo. El usuario comprende que la IA puede presentar intermitencias o generar información inexacta ("alucinaciones"). SimuTukur no garantiza la infalibilidad de la IA y el usuario la utiliza bajo su propio criterio.</p>
-            <h2 class="text-xl font-bold text-white mt-6">3. Uso de la Cuenta</h2>
-            <p>Las Claves Únicas de Acceso son personales e intransferibles. El sistema detectará intentos de acceso simultáneo o patrones inusuales, reservándose el derecho de suspender la cuenta sin previo aviso en caso de sospecha de piratería o uso compartido indebido.</p>
+<body class="bg-[#050a14] text-gray-300 antialiased p-4 md:p-8 flex justify-center">
+    
+    <div class="max-w-4xl w-full bg-gray-900 border border-gray-800 p-8 md:p-12 rounded-2xl shadow-2xl relative">
+        <div class="border-b border-gray-700 pb-6 mb-8 text-center">
+            <h1 class="text-3xl font-black text-white uppercase tracking-wider text-cyan-400 mb-2">Términos de Servicio y Reglas de Uso</h1>
+            <p class="text-xs text-gray-500 uppercase tracking-widest">Reglamento Operativo de la Plataforma | SimuTukur</p>
         </div>
-        <a href="javascript:window.close();" class="inline-block mt-8 text-cyan-500 font-bold hover:underline">Cerrar pestaña</a>
+
+        <div class="space-y-6 text-sm leading-relaxed text-gray-400 text-justify overflow-y-auto pr-4 h-[65vh] scroll-smooth">
+            
+            <p>Las presentes normas rigen el uso técnico y operativo de la plataforma SimuTukur. Su aceptación es obligatoria para la utilización del servicio.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">1. Requisitos Técnicos y Responsabilidad del Usuario</h3>
+            <p>Para un rendimiento óptimo, EL SISTEMA requiere ser ejecutado en un equipo de cómputo (PC o Laptop) con un navegador web moderno actualizado (Google Chrome, Edge, Safari) y una conexión a internet de banda ancha estable. <strong>SimuTukur no se hace responsable por fallas de conectividad local del usuario, desconexiones, cortes de energía eléctrica o incompatibilidad de hardware local</strong> que impidan la correcta culminación de un simulacro.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">2. Política Antifraude y Uso de Cuenta</h3>
+            <p>Las credenciales de acceso son <strong>estrictamente personales e intransferibles</strong>. El sistema cuenta con herramientas de monitoreo de direcciones IP y sesiones. Si se detectan intentos de acceso simultáneo desde diferentes ubicaciones geográficas, o patrones de compartición de contraseñas, la cuenta será <strong>suspendida inmediatamente de forma permanente sin derecho a reembolso</strong>.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">3. Uso Aceptable de la Inteligencia Artificial</h3>
+            <p>El "Tutor IA" es una herramienta de asistencia educativa diseñada para brindar explicaciones y pistas. Queda prohibido el uso de ingeniería de comandos (prompt injection) para intentar vulnerar el sistema, extraer respuestas directas del código fuente, o usar el motor de IA para resolver exámenes ajenos a la plataforma. El abuso del sistema de Energía IA resultará en la restricción del chat.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">4. Derechos de Propiedad y Prevención de Piratería</h3>
+            <p>El usuario se compromete a no utilizar bots, scripts automatizados, extensiones de raspado de pantalla (web scraping) ni software de grabación de pantalla con el fin de extraer la base de datos de reactivos. Cualquier intento de violar la seguridad del sitio web o sobrecargar los servidores (ataques DDoS) será reportado a las autoridades cibernéticas correspondientes.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">5. Modificaciones al Servicio</h3>
+            <p>TukurForge Tech se reserva el derecho de actualizar, modificar o descontinuar temporalmente partes de la interfaz, el contenido de los exámenes o los algoritmos de IA para aplicar mejoras de rendimiento, sin previo aviso a los usuarios, garantizando siempre mantener el núcleo del servicio contratado.</p>
+
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-gray-800 text-center">
+            <button onclick="window.close();" class="text-cyan-500 hover:text-cyan-400 font-bold uppercase tracking-widest text-sm transition-colors">
+                <i class="fa-solid fa-xmark mr-2"></i> Cerrar Documento
+            </button>
+        </div>
     </div>
 </body>
 </html>
