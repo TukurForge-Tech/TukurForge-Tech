@@ -116,10 +116,13 @@
             </div>
         </div>
         
-        <button onclick="document.getElementById('demo-chat-panel').classList.toggle('hidden')" class="bg-cyan-600 hover:bg-cyan-500 text-white p-4 rounded-full shadow-lg flex items-center justify-center animate-bounce shadow-[0_0_20px_rgba(6,182,212,0.4)] group relative">
-            <i class="fa-solid fa-robot text-2xl"></i>
-            <span class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center" id="demo-tokens">2</span>
-        </button>
+        <div id="demo-chat-bubble" onclick="toggleChatDemo()" 
+             class="fixed bottom-6 right-6 w-16 h-16 bg-gray-900 border border-cyan-500/30 rounded-full flex items-center justify-center cursor-pointer shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:border-cyan-400 transition-all z-40 overflow-hidden group">
+            
+            <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur2.jpeg" alt="Simu" class="w-12 h-12 object-contain p-1 group-hover:scale-110 transition-transform">
+            
+            <span id="demo-tokens" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">2</span>
+        </div>
     </div>
     
     <script src="supabase-client.js"></script>
