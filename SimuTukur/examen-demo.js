@@ -150,4 +150,54 @@ async function setupVideoMonitor(videoElement) {
     } catch (error) { console.warn(error); }
 }
 
+// ==========================================
+// MOTOR DE CHAT IA PARA DEMO (2 TOKENS)
+// ==========================================
+let tokensDemo = 2;
+
+async function enviarChatDemo() {
+    const input = document.getElementById('demo-chat-input');
+    const box = document.getElementById('demo-chat-box');
+    const texto = input.value.trim();
+    
+    if (!texto) return;
+    if (tokensDemo <= 0) {
+        box.innerHTML += `<div class="bg-red-900/30 border border-red-500/50 p-3 rounded-lg text-red-400 text-xs">Tokens agotados. Inscríbete al plan PRO para desbloquear Energía IA ilimitada.</div>`;
+        box.scrollTop = box.scrollHeight;
+        return;
+    }
+
+    // Descontar token y mostrar mensaje usuario
+    tokensDemo--;
+    document.getElementById('demo-tokens').innerText = tokensDemo;
+    box.innerHTML += `<div class="flex justify-end"><div class="bg-cyan-900/40 border border-cyan-500/30 p-2 rounded-lg text-white max-w-[85%]">${texto}</div></div>`;
+    input.value = '';
+    
+    const idBurbuja = "typing-" + Date.now();
+    box.innerHTML += `<div class="bg-gray-800 p-3 rounded-lg text-gray-300 max-w-[85%]"><span id="${idBurbuja}" class="animate-pulse">Analizando...</span></div>`;
+    box.scrollTop = box.scrollHeight;
+
+    try {
+        const url = `https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/chat-simu`;
+        const response = await fetch(url, {
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ contents: [{ parts: [{ text: texto }] }] })
+        });
+        
+        const data = await response.json();
+        const respuestaIA = data.candidates[0].content.parts[0].text;
+        document.getElementById(idBurbuja).parentElement.innerHTML = respuestaIA.replace(/\*\*(.*?)\*\*/g, '<strong class="text-cyan-400">$1</strong>');
+        if (window.MathJax) { window.MathJax.typesetPromise(); }
+    } catch (e) {
+        document.getElementById(idBurbuja).innerText = "Error de conexión en el Demo.";
+        tokensDemo++; // Le regresamos el token si falla
+        document.getElementById('demo-tokens').innerText = tokensDemo;
+    }
+}
+
+document.getElementById('demo-chat-input')?.addEventListener('keypress', (e) => {
+    if(e.key === 'Enter') enviarChatDemo();
+});
+
 window.onload = initDemo;
