@@ -101,6 +101,27 @@
         </main>
     </div>
 
+    <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        <div id="demo-chat-panel" class="hidden mb-4 w-80 bg-gray-900 border border-cyan-500/50 rounded-2xl shadow-[0_0_30px_rgba(6,182,212,0.3)] overflow-hidden flex flex-col h-96">
+            <div class="bg-cyan-900/40 p-3 border-b border-cyan-500/30 flex justify-between items-center">
+                <span class="text-xs font-black italic uppercase text-cyan-400"><i class="fa-solid fa-brain mr-2"></i> Tutor IA (Modo Demo)</span>
+                <button onclick="document.getElementById('demo-chat-panel').classList.add('hidden')" class="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <div id="demo-chat-box" class="flex-grow p-4 overflow-y-auto text-xs space-y-3">
+                <div class="bg-gray-800 p-3 rounded-lg text-gray-300">¡Hola! Soy Simu. Te regalo <strong class="text-cyan-400">2 Tokens</strong> de Energía IA para que pruebes mi capacidad. ¿En qué pregunta te ayudo?</div>
+            </div>
+            <div class="p-2 border-t border-gray-800 bg-black/50 flex gap-2">
+                <input type="text" id="demo-chat-input" placeholder="Pregunta algo..." class="w-full bg-transparent text-xs p-2 text-white outline-none">
+                <button onclick="enviarChatDemo()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-3 rounded-lg"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+        
+        <button onclick="document.getElementById('demo-chat-panel').classList.toggle('hidden')" class="bg-cyan-600 hover:bg-cyan-500 text-white p-4 rounded-full shadow-lg flex items-center justify-center animate-bounce shadow-[0_0_20px_rgba(6,182,212,0.4)] group relative">
+            <i class="fa-solid fa-robot text-2xl"></i>
+            <span class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center" id="demo-tokens">2</span>
+        </button>
+    </div>
+    
     <script src="supabase-client.js"></script>
     <script src="examen-demo.js"></script>
 </body>
