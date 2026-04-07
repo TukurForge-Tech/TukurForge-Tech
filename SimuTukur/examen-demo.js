@@ -194,8 +194,10 @@ Pregunta del alumno: ${texto}`;
         const url = `https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/chat-simu`;
         const response = await fetch(url, {
             method: 'POST', 
-            headers: { 'Content-Type': 'application/json' },
-            // Enviamos el prompt blindado en lugar del texto crudo
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseKey}` // 🛑 AQUÍ ESTÁ LA LLAVE QUE SE ME OLVIDÓ PONER
+            },
             body: JSON.stringify({ contents: [{ parts: [{ text: promptBlindado }] }] })
         });
         
