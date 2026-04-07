@@ -147,11 +147,16 @@ async function procesarRecuperacion() {
         if (updateError) throw updateError;
 
         // 4. Llamar al nuevo cartero (Edge Function)
-        await fetch('https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/recuperar-pass', {
+        const response = await fetch('https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/recuperar-pass', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseKey}` // 🛑 AQUÍ ESTÁ EL GAFETE QUE OLVIDÉ
+            },
             body: JSON.stringify({ email: email, nombre: data.nombre_alumno, nueva_pass: nuevaPass })
         });
+
+        if (!response.ok) throw new Error("No se pudo enviar el correo de recuperación.");
 
         msg.innerText = "✅ ¡Listo! Revisa tu bandeja de entrada o Spam.";
         msg.className = "text-xs mt-4 text-green-400 block font-bold";
