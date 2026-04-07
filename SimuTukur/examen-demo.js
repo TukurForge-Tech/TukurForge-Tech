@@ -151,7 +151,7 @@ async function setupVideoMonitor(videoElement) {
 }
 
 // ==========================================
-// MOTOR DE CHAT IA PARA DEMO (2 TOKENS)
+// MOTOR DE CHAT IA PARA DEMO (BLINDADO)
 // ==========================================
 let tokensDemo = 2;
 
@@ -178,11 +178,25 @@ async function enviarChatDemo() {
     box.scrollTop = box.scrollHeight;
 
     try {
+        // 🛑 CANDADO DE SEGURIDAD Y AHORRO 🛑
+        // Extraemos la pregunta exacta que el alumno está viendo en pantalla
+        const preguntaActual = reactivos[index] ? reactivos[index].pregunta : "Pregunta no detectada";
+        
+        // Inyectamos un "System Prompt" oculto para obligar a la IA a ser breve y enfocada
+        const promptBlindado = `Eres Simu, un tutor muy directo. El alumno está viendo esta pregunta de su examen: "${preguntaActual}".
+REGLAS ESTRICTAS:
+1. Tu respuesta debe tener MÁXIMO 3 renglones. Sé extremadamente conciso y al grano.
+2. Si el alumno te pregunta algo que NO tiene relación con la pregunta del examen que está viendo, responde ÚNICAMENTE: "Solo estoy autorizado para ayudarte con la pregunta actual del simulacro."
+3. Nunca des la respuesta correcta directa, solo una pista.
+
+Pregunta del alumno: ${texto}`;
+
         const url = `https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/chat-simu`;
         const response = await fetch(url, {
             method: 'POST', 
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
-            body: JSON.stringify({ contents: [{ parts: [{ text: texto }] }] })
+            headers: { 'Content-Type': 'application/json' },
+            // Enviamos el prompt blindado en lugar del texto crudo
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptBlindado }] }] })
         });
         
         const data = await response.json();
