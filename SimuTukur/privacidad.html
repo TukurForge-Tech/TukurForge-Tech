@@ -2,20 +2,50 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Aviso de Privacidad | SimuTukur</title>
+    <title>Aviso de Privacidad Integral | SimuTukur</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050a14; }
+        ::-webkit-scrollbar-thumb { background: #06b6d4; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0891b2; }
+    </style>
 </head>
-<body class="bg-[#050a14] text-gray-300 antialiased p-8 md:p-16">
-    <div class="max-w-3xl mx-auto bg-gray-900 border border-gray-800 p-8 rounded-2xl">
-        <h1 class="text-3xl font-black text-white mb-6 uppercase text-cyan-400">Aviso de Privacidad</h1>
-        <div class="space-y-4 text-sm leading-relaxed">
-            <p>En <strong>SimuTukur</strong> valoramos su privacidad. Los datos personales recabados (nombre, correo electrónico y número de teléfono) serán utilizados única y exclusivamente para la creación de cuentas de acceso, validación de pagos y comunicación de soporte.</p>
-            <h2 class="text-xl font-bold text-white mt-6">Uso de Biometría (Cámara y Micrófono)</h2>
-            <p>Nuestro sistema de telemetría requiere acceso a su cámara y micrófono durante la ejecución del simulador. <strong>Ningún video o audio es grabado, almacenado ni transmitido a terceros.</strong> El análisis se realiza de forma efímera en tiempo real para generar reportes estadísticos de atención.</p>
-            <h2 class="text-xl font-bold text-white mt-6">Protección de Datos</h2>
-            <p>No vendemos, alquilamos ni compartimos su información con bases de datos externas o agencias de publicidad. Su información está resguardada bajo estándares modernos de encriptación.</p>
+<body class="bg-[#050a14] text-gray-300 antialiased p-4 md:p-8 flex justify-center">
+    
+    <div class="max-w-4xl w-full bg-gray-900 border border-gray-800 p-8 md:p-12 rounded-2xl shadow-2xl relative">
+        <div class="border-b border-gray-700 pb-6 mb-8 text-center">
+            <h1 class="text-3xl font-black text-white uppercase tracking-wider text-cyan-400 mb-2">Aviso de Privacidad Integral</h1>
+            <p class="text-xs text-gray-500 uppercase tracking-widest">TukurForge Tech | Cumplimiento LFPDPPP</p>
         </div>
-        <a href="javascript:window.close();" class="inline-block mt-8 text-cyan-500 font-bold hover:underline">Cerrar pestaña</a>
+
+        <div class="space-y-6 text-sm leading-relaxed text-gray-400 text-justify overflow-y-auto pr-4 h-[65vh] scroll-smooth">
+            
+            <p>En cumplimiento con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP) de los Estados Unidos Mexicanos, <strong>TukurForge Tech</strong> (en adelante "El Responsable"), con domicilio en la Ciudad de México, emite el presente Aviso de Privacidad.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">1. Datos Personales Recabados</h3>
+            <p>Para la prestación de nuestros servicios de simulación académica, recabamos los siguientes datos personales: Nombre completo del aspirante, nombre completo del tutor legal (en caso de menores), correo electrónico y número de teléfono (WhatsApp). <strong>No recabamos datos financieros directamente</strong>; los pagos con tarjeta son procesados mediante tokens seguros por nuestro proveedor pasarela (Stripe, Inc.).</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">2. Datos Biométricos y Telemetría (Cámara/Audio)</h3>
+            <p>La plataforma SimuTukur requiere el uso de cámara web y micrófono para funciones de supervisión automatizada ("Proctoring") y análisis de atención. <strong>El Responsable declara categóricamente que NINGUNA transmisión de video, imagen fotográfica o flujo de audio es grabada, almacenada en bases de datos, ni vendida a terceros.</strong> El procesamiento es efímero, en tiempo real, y se destruye en la memoria volátil del dispositivo local del usuario, generando únicamente datos estadísticos de concentración.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">3. Finalidad del Tratamiento</h3>
+            <p>Sus datos serán utilizados para: (I) Creación y gestión de claves de acceso; (II) Validación de pagos y facturación; (III) Envío de notificaciones operativas, recuperación de contraseñas y soporte técnico; (IV) Prevención de fraudes y bloqueos por accesos simultáneos irregulares.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">4. Transferencia de Datos a Terceros</h3>
+            <p>Para la operatividad de la nube, compartimos datos mínimos cifrados con proveedores de infraestructura esencial: proveedores de base de datos (Supabase), pasarelas de pago (Stripe) y servicios de correo (Resend). Estas empresas operan bajo normativas internacionales estrictas de protección de datos (GDPR / SOC2) y no tienen autorización de usar su información para fines publicitarios propios.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">5. Derechos ARCO</h3>
+            <p>Usted tiene derecho a conocer qué datos personales tenemos (Acceso), solicitar su corrección (Rectificación), pedir su eliminación de nuestros registros (Cancelación) o negarse a su uso para fines específicos (Oposición). Para ejercer sus derechos ARCO, envíe una solicitud formal a nuestro centro de atención oficial.</p>
+
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-gray-800 text-center">
+            <button onclick="window.close();" class="text-cyan-500 hover:text-cyan-400 font-bold uppercase tracking-widest text-sm transition-colors">
+                <i class="fa-solid fa-xmark mr-2"></i> Cerrar Documento
+            </button>
+        </div>
     </div>
 </body>
 </html>
