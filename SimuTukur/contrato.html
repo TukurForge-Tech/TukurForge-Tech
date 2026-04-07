@@ -2,24 +2,83 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Contrato Digital | SimuTukur</title>
+    <title>Términos, Condiciones y Contrato Digital | SimuTukur</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos para el scroll del contrato */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050a14; }
+        ::-webkit-scrollbar-thumb { background: #06b6d4; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0891b2; }
+    </style>
 </head>
-<body class="bg-[#050a14] text-gray-300 antialiased p-8 md:p-16">
-    <div class="max-w-3xl mx-auto bg-gray-900 border border-gray-800 p-8 rounded-2xl">
-        <h1 class="text-3xl font-black text-white mb-6 uppercase text-cyan-400">Contrato Digital de Compra</h1>
-        <div class="space-y-4 text-sm leading-relaxed">
-            <p>Al procesar el pago y hacer clic en "Enviar Comprobante", el Usuario acepta el presente Contrato Digital con SimuTukur.</p>
-            <h2 class="text-xl font-bold text-white mt-6">A. Política de No Reembolso</h2>
-            <p>Debido a la naturaleza de los bienes digitales y al consumo inmediato de recursos de servidor (Energía IA), <strong>todas las transacciones son finales. No se emitirán reembolsos ni parciales ni totales</strong> una vez que el pago haya sido verificado y las claves de acceso hayan sido enviadas.</p>
-            <h2 class="text-xl font-bold text-white mt-6">B. Adquisición de Tokens</h2>
-            <p>El pago inicial incluye un paquete cerrado de Tokens IA. Una vez agotados, la plataforma continuará funcionando en su modalidad de simulador estándar. El chat interactivo requerirá microtransacciones adicionales a voluntad del usuario. SimuTukur se reserva el derecho de modificar los costos de recarga por inflación o costos de API.</p>
-            <h2 class="text-xl font-bold text-white mt-6">C. Garantía de Servicio</h2>
-            <p>SimuTukur no garantiza la admisión a ninguna institución educativa. Nuestra plataforma es una herramienta de preparación. Los resultados en el examen oficial son responsabilidad exclusiva del esfuerzo del aspirante.</p>
-            <h2 class="text-xl font-bold text-white mt-6">D. Pagos Promocionales y Comisiones</h2>
-            <p>Con el objetivo de ofrecer los mayores beneficios a nuestros usuarios recomendados, los pagos realizados bajo códigos de descuento promocionales (ej. convenios escolares o grupos scout) se procesarán exclusivamente mediante transferencia bancaria directa. Esto elimina las comisiones de pasarelas de pago de terceros, permitiéndonos trasladar ese ahorro directamente al usuario final. Los pagos a precio regular se procesarán mediante pasarela segura externa (Stripe).</p>
+<body class="bg-[#050a14] text-gray-300 antialiased p-4 md:p-8 flex justify-center">
+    
+    <div class="max-w-4xl w-full bg-gray-900 border border-gray-800 p-8 md:p-12 rounded-2xl shadow-2xl relative">
+        
+        <div class="border-b border-gray-700 pb-6 mb-8 text-center">
+            <h1 class="text-3xl font-black text-white uppercase tracking-wider text-cyan-400 mb-2">Términos, Condiciones y Contrato de Servicio</h1>
+            <p class="text-xs text-gray-500 uppercase tracking-widest">Última actualización: Abril de 2026 | TukurForge Tech</p>
         </div>
-        <a href="javascript:window.close();" class="inline-block mt-8 text-cyan-500 font-bold hover:underline">Cerrar pestaña</a>
+
+        <div class="space-y-6 text-sm leading-relaxed text-gray-400 text-justify overflow-y-auto pr-4 h-[65vh] scroll-smooth">
+            
+            <p class="font-bold text-gray-300">
+                Al procesar el pago, crear una cuenta, iniciar sesión o hacer uso de la plataforma SimuTukur (en adelante "EL SISTEMA"), el usuario (en adelante "EL USUARIO" o "EL ASPIRANTE") y su tutor legal, en caso de ser menor de edad, aceptan de manera expresa, voluntaria e irrevocable el presente Contrato Digital con TukurForge Tech (en adelante "LA EMPRESA").
+            </p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">Cláusula Primera: Objeto del Servicio y Licencia</h3>
+            <p>1.1. LA EMPRESA otorga a EL USUARIO una licencia de uso temporal, personal, no exclusiva e intransferible para acceder a EL SISTEMA, consistente en una plataforma de Software as a Service (SaaS) diseñada para la simulación de exámenes de admisión y tutoría digital.</p>
+            <p>1.2. Esta licencia es estrictamente para uso personal y educativo. Queda prohibido compartir credenciales, revender el acceso, o usar la plataforma con fines de lucro comercial.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">Cláusula Segunda: Pagos, Facturación y No Reembolsos</h3>
+            <p>2.1. <strong>Bienes Digitales:</strong> Debido a la naturaleza del software como servicio y al consumo inmediato de recursos de infraestructura en la nube (Energía IA, ancho de banda, almacenamiento), <strong>todas las transacciones son finales. No se emitirán reembolsos parciales ni totales</strong> una vez que el pago haya sido procesado y el acceso haya sido otorgado.</p>
+            <p>2.2. <strong>Pasarela de Pago (Stripe):</strong> Los pagos realizados mediante tarjeta de crédito o débito son procesados de manera encriptada a través de Stripe, Inc. LA EMPRESA no almacena, procesa ni tiene acceso a datos bancarios sensibles (PAN, CVV, fechas de expiración).</p>
+            <p>2.3. <strong>Transferencias (SPEI):</strong> Los pagos mediante transferencia interbancaria están sujetos a conciliación bancaria en un plazo máximo de 48 horas hábiles. En caso de falsificación de comprobantes de pago, LA EMPRESA suspenderá el acceso de forma permanente sin previo aviso.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">Cláusula Tercera: Inteligencia Artificial y Limitación de Responsabilidad</h3>
+            <p>3.1. <strong>Uso de IA Generativa:</strong> EL SISTEMA integra modelos de Inteligencia Artificial de terceros para la función de "Tutor IA". EL USUARIO comprende que la Inteligencia Artificial es una tecnología probabilística y experimental.</p>
+            <p>3.2. <strong>Alucinaciones e Inexactitudes:</strong> LA EMPRESA no garantiza la exactitud, veracidad o fiabilidad absoluta de las respuestas generadas por la Inteligencia Artificial. Las respuestas de la IA son estrictamente orientativas. EL USUARIO exime a LA EMPRESA de cualquier responsabilidad derivada de respuestas incorrectas, inexactas o "alucinaciones" generadas por el modelo matemático.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">Cláusula Cuarta: Sistema de Tokens (Energía IA)</h3>
+            <p>4.1. El pago por acceso a EL SISTEMA incluye un paquete limitado de "Tokens" o "Energía IA". Dichos tokens representan unidades de cómputo para interactuar con la Inteligencia Artificial.</p>
+            <p>4.2. Los Tokens carecen de valor monetario en el mundo real, no son dinero fiduciario, no generan intereses, no son transferibles entre cuentas y no pueden ser canjeados por dinero en efectivo. LA EMPRESA se reserva el derecho de modificar el costo de las futuras recargas de Tokens de acuerdo a la inflación y costos operativos de la API (Application Programming Interface).</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">Cláusula Quinta: Monitoreo, Privacidad y Datos Biométricos</h3>
+            <p>5.1. <strong>Sensores y Periféricos:</strong> Para garantizar la integridad de las simulaciones, EL SISTEMA requiere acceso a la cámara web y micrófono del dispositivo de EL USUARIO. </p>
+            <p>5.2. <strong>Procesamiento en Tiempo Real:</strong> EL USUARIO autoriza a LA EMPRESA a procesar señales de video y audio exclusivamente en tiempo real para funciones de "Proctoring" (supervisión de atención). LA EMPRESA garantiza que las imágenes y el audio <strong>no se graban, no se almacenan en servidores y no se comercializan a terceros</strong>.</p>
+            <p>5.3. El tratamiento de los datos de registro (nombre, correo) se realiza en estricto apego a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP) vigente en México.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">Cláusula Sexta: Promociones y Códigos de Descuento</h3>
+            <p>6.1. Los códigos promocionales no son acumulables y tienen fecha de caducidad. Aplican única y exclusivamente sobre el precio de lista al momento de la inscripción.</p>
+            <p>6.2. Por motivos de seguridad antifraude y estructuración de costos, los registros realizados con códigos de descuento superiores al 10% <strong>solo podrán ser pagados mediante Transferencia Electrónica (SPEI)</strong>. El uso de la pasarela Stripe queda inhabilitado para evitar comisiones de terceros, permitiendo a LA EMPRESA absorber el descuento otorgado.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">Cláusula Séptima: Exención de Garantías Académicas</h3>
+            <p>7.1. EL SISTEMA es una herramienta de diagnóstico, preparación y simulación académica. LA EMPRESA <strong>no garantiza en ningún momento ni bajo ninguna circunstancia la admisión de EL USUARIO a ninguna institución educativa pública o privada</strong> (UNAM, IPN, UAM, COMIPEMS, entre otras).</p>
+            <p>7.2. El resultado obtenido en los exámenes oficiales es responsabilidad única y exclusiva del esfuerzo, estudio y capacidad de EL ASPIRANTE.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">Cláusula Octava: Propiedad Intelectual</h3>
+            <p>8.1. Todos los contenidos alojados en EL SISTEMA, incluyendo pero no limitado a: reactivos, exámenes, código fuente, algoritmos, logotipos, diseño de interfaz (UI/UX) y marcas (SimuTukur, TukurForge Tech) son propiedad intelectual exclusiva de LA EMPRESA.</p>
+            <p>8.2. Queda estrictamente prohibida la reproducción, copia, distribución, raspado de datos (web scraping), captura de pantalla masiva o comercialización de los reactivos de evaluación. LA EMPRESA se reserva el derecho de ejercer acciones legales civiles y penales contra quienes violen esta disposición.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">Cláusula Novena: Disponibilidad del Servicio</h3>
+            <p>9.1. LA EMPRESA realizará sus mejores esfuerzos para mantener EL SISTEMA en línea. Sin embargo, no se garantiza una disponibilidad del 100%. EL USUARIO acepta que el servicio puede sufrir interrupciones temporales debido a mantenimientos programados, caídas de servidores de terceros (Cloud providers), actualizaciones o causas de fuerza mayor.</p>
+
+            <h3 class="text-lg font-bold text-white mt-8 mb-2 uppercase border-l-4 border-cyan-500 pl-3">Cláusula Décima: Jurisdicción y Leyes Aplicables</h3>
+            <p>10.1. Para la interpretación, cumplimiento y ejecución del presente Contrato, las partes se someten expresamente a las leyes federales vigentes en los Estados Unidos Mexicanos y a la jurisdicción de los tribunales competentes de la <strong>Ciudad de México</strong>, renunciando a cualquier otro fuero que pudiera corresponderles en razón de sus domicilios presentes o futuros.</p>
+
+        </div>
+
+        <div class="mt-8 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-gray-800 pt-6">
+            <p class="text-xs text-cyan-500/70 italic flex-1 text-center md:text-left">
+                La creación de una cuenta implica la lectura, comprensión y aceptación total de estas cláusulas.
+            </p>
+            <button onclick="window.close();" class="w-full md:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-8 rounded-lg shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all uppercase tracking-widest text-sm">
+                Comprendo y Acepto
+            </button>
+        </div>
+
     </div>
+
 </body>
 </html>
