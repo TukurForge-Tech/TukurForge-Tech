@@ -57,15 +57,13 @@
         <div id="mensajeExito" class="hidden text-center mt-6">
             <i class="fa-solid fa-circle-check text-4xl text-green-400 mb-2"></i>
             <h3 class="text-lg font-bold text-white">¡Lugar Reservado!</h3>
-            <p class="text-sm text-gray-400 mt-2">Te enviaremos la liga de Google Meet a tu correo horas antes del evento.</p>
+            <p class="text-sm text-gray-400 mt-2">Te enviaremos la liga oficial de Google Meet a tu correo este <span class="text-cyan-400 font-bold">viernes</span>. ¡Mantente atento a tu bandeja de entrada!</p>
         </div>
     </div>
 
-    <script>
-        const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
-        const SUPABASE_ANON_KEY = 'TU_LLAVE_ANONIMA';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+   <script src="supabase-client.js"></script>
 
+    <script>
         document.getElementById('formSimulacro').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btnRegistro');
@@ -77,7 +75,7 @@
             const dia = document.getElementById('diaElegido').value;
 
             try {
-                // Inserta en la base de datos
+                // Usamos _supabase que ya viene de tu archivo supabase-client.js
                 const { error } = await _supabase.from('prospectos_simulacro').insert([
                     { nombre_tutor: nombre, correo: correo, dia_elegido: dia }
                 ]);
