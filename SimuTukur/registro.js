@@ -241,33 +241,44 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
             if (dbPagosError) throw dbPagosError;
 
-            // BIFURCACIÓN DE RUTAS
-            if (metodoPago === "STRIPE") {
-                // GUARDAMOS DATOS EN MEMORIA Y VOLAMOS A STRIPE
-                localStorage.setItem('simu_tutor', document.getElementById('nombreTutor').value);
-                localStorage.setItem('simu_alumno', document.getElementById('nombreAlumno').value);
-                localStorage.setItem('simu_correo', correo);
-                localStorage.setItem('simu_pass', inputPass.value);
-                localStorage.setItem('simu_token', tokenSeleccionado);
-
-                const precioBase = 499; 
-                const { data: stripeData, error: stripeError } = await _supabase.functions.invoke('stripe-checkout', {
-                    body: {
-                        nombre_alumno: document.getElementById('nombreAlumno').value,
-                        correo: correo,
-                        tipo_examen: nombreExamenFinanzas,
-                        referencia_pago: referenciaUnica,
-                        precio: precioBase
+            // ...código anterior...
+            if(metodoPago === 'STRIPE') {
+                btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando con banco...';
+                try {
+                    const selectExamen = document.getElementById('tipoExamen');
+                    const nombreExamenFinanzas = selectExamen.options[selectExamen.selectedIndex].dataset.nombreExamen;
+                    
+                    // =========================================================
+                    // ✂️ TRUCO DEL SPLIT (Funciona hoy para ECOEMS y mañana para las Universidades)
+                    // Toma "ECOEMS - CENEVAL" y se queda solo con "ECOEMS"
+                    // =========================================================
+                    const institucionLimpia = nombreExamenFinanzas.split(' - ')[0];
+            
+                    const { data: stripeData, error: stripeError } = await _supabase.functions.invoke('stripe-checkout', {
+                        body: {
+                            nombre_alumno: document.getElementById('nombreAlumno').value,
+                            correo: correo,
+                            tipo_examen: institucionLimpia, // 👈 Enviamos la palabra limpia
+                            referencia_pago: referenciaUnica,
+                            precio: 499 // Stripe ignorará esto y usará el precio de tu catálogo
+                        }
+                    });
+            
+                    if (stripeError) throw stripeError;
+                    if (stripeData?.url) {
+                        window.location.href = stripeData.url; 
+                    } else {
+                        throw new Error("No se generó URL de pago");
                     }
-                });
-
-                if (stripeError) throw stripeError;
-                if (stripeData && stripeData.url) {
-                    window.location.href = stripeData.url; 
-                } else {
-                    throw new Error("Error de conexión bancaria. Intenta más tarde.");
+                } catch(err) {
+                    console.error("Error Stripe:", err);
+                    alert("Hubo un problema al iniciar el pago seguro. Intenta de nuevo.");
+                    btnSubmit.innerHTML = '<i class="fa-brands fa-stripe"></i> Pagar Seguro';
+                    btnSubmit.disabled = false;
                 }
-            } else {
+            }
+            // ...resto del código... 
+            else {
                 // SI ES TRANSFERENCIA, CREAMOS LA MEMBRESÍA DE CORTESÍA AHORA MISMO
                 const { error: dbMembresiaError } = await _supabase.from('usuarios_membresias').insert({
                     nombre_tutor: document.getElementById('nombreTutor').value,
@@ -354,7 +365,17 @@ async function cargarExamenesBD() {
         if (error) throw error;
         if (!data || data.length === 0) { select.innerHTML = '<option value="" disabled selected class="text-gray-400">No hay exámenes disponibles en BD</option>'; return; }
 
-        const examenesHabilitados = data.filter(ex => ex.institucion.includes('ECOEMS'));
+        // =========================================================
+        // 🔒 CANDADO DE FASE 1 (SOLO ECOEMS)
+        // =========================================================
+        // El día que quieras lanzar los exámenes de la Universidad:
+        // 1. Ponle doble diagonal // al inicio de la LÍNEA A para apagarla.
+        // 2. Quítale la doble diagonal // a la LÍNEA B para encenderla.
+        
+        const examenesHabilitados = data.filter(ex => ex.institucion.includes('ECOEMS')); // <-- LÍNEA A (Activada hoy)
+        // const examenesHabilitados = data; // <-- LÍNEA B (Activada en el futuro)
+        // =========================================================
+
         const grupos = {};
         examenesHabilitados.forEach(ex => { if (!grupos[ex.institucion]) grupos[ex.institucion] = []; grupos[ex.institucion].push(ex); });
 
