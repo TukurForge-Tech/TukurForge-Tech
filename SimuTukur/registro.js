@@ -372,8 +372,8 @@ async function cargarExamenesBD() {
         // 1. Ponle doble diagonal // al inicio de la LÍNEA A para apagarla.
         // 2. Quítale la doble diagonal // a la LÍNEA B para encenderla.
         
-        //const examenesHabilitados = data.filter(ex => ex.institucion.includes('ECOEMS')); // <-- LÍNEA A (Activada hoy)
-         const examenesHabilitados = data; // <-- LÍNEA B (Activada en el futuro)
+        const examenesHabilitados = data.filter(ex => ex.institucion.includes('ECOEMS' 'UNAM')); // <-- LÍNEA A (Activada hoy)
+        //const examenesHabilitados = data; // <-- LÍNEA B (Activada en el futuro)
         // =========================================================
 
         const grupos = {};
