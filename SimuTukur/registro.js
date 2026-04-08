@@ -361,7 +361,7 @@ function generarReferencia() {
 async function cargarExamenesBD() {
     const select = document.getElementById('tipoExamen');
     try {
-        const { data, error } = await _supabase.from('config_examenes').select('token_hex, institucion, descripcion').eq('plan', 'PRO').order('institucion', { ascending: true });
+        const { data, error } = await _supabase.from('config_examenes').select('token_hex, institucion, descripcion').eq('plan', 'PRO').order('institucion', { ascending: true }).order('descripcion', { ascending: true });
         if (error) throw error;
         if (!data || data.length === 0) { select.innerHTML = '<option value="" disabled selected class="text-gray-400">No hay exámenes disponibles en BD</option>'; return; }
 
