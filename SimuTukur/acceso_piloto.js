@@ -21,7 +21,7 @@ async function validarLoginPiloto() {
         const { data, error } = await _supabase
             .from('prospectos_simulacro')
             .select('*')
-            .eq('email', email)
+            .eq('correo', email)
             .maybeSingle();
 
         if (error || !data) {
