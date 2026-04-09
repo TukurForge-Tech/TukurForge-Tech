@@ -5,203 +5,140 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centro de Operaciones Piloto | SimuTukur</title>
     <link rel="icon" type="image/jpeg" href="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur2.jpeg">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body { font-family: 'Roboto', sans-serif; }
-        .locked-visual { filter: grayscale(1) opacity(0.5); cursor: not-allowed !all; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-    </style>
+    
+    <link rel="stylesheet" href="style.css"> 
 </head>
-<body class="bg-[#050a14] text-slate-300 font-sans h-screen flex flex-col overflow-hidden">
-
-    <nav class="bg-black/40 border-b border-slate-800 backdrop-blur-sm sticky top-0 z-[999]">
-        <div class="w-full mx-auto px-4 md:px-8 py-2">
-            <div class="flex justify-between items-center h-16">
+<body class="bg-[#050a14] text-white">
+    
+    <div class="fixed inset-0 bg-[#050a14] z-[9999] flex flex-col justify-center items-center p-8 text-center lg:hidden">
+        <i class="fa-solid fa-laptop-code text-7xl text-cyan-500 mb-6 animate-pulse"></i>
+        <h2 class="text-3xl font-black italic text-cyan-400 tracking-tighter mb-4 uppercase">Modo Escritorio Requerido</h2>
+        <p class="text-gray-400 text-sm max-w-md leading-relaxed border border-cyan-900/50 bg-gray-900/50 p-4 rounded-xl">
+            Para garantizar el correcto funcionamiento de la IA, ingresa desde una computadora.
+        </p>
+    </div>
+    
+    <header class="p-6 flex flex-col gap-4 border-b border-gray-800 bg-[#050a14]">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-6">
+                <h1 class="text-3xl font-black italic color-cian tracking-tighter">ECOEMS GENERAL</h1>
                 
-                <div class="flex items-center gap-4">
-                    <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur2.jpeg" alt="Logo" class="w-10 h-10 rounded-xl border border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
-                    <div class="text-xs text-cyan-400 font-bold uppercase tracking-widest hidden sm:block">ECOEMS GENERAL</div>
-                </div>
-
-                <div class="flex-grow max-w-xl mx-8 relative locked-visual">
-                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-600"></i>
-                    <input type="text" placeholder="Buscar reactivo o tema..." class="w-full bg-black/40 border border-slate-800 rounded-xl py-3 pl-12 pr-4 text-sm text-slate-300 locked-visual" disabled>
-                </div>
-
-                <div class="flex items-center gap-5">
-                    <button class="bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 px-4 py-2 rounded-xl text-xs font-bold uppercase hover:bg-cyan-600/40 transition locked-visual cursor-not-allowed">
-                        <i class="fa-solid fa-plus mr-2"></i> Recargar
-                    </button>
-                    <div class="flex gap-4 border-l border-slate-700 pl-5 locked-visual">
-                        <i class="fa-solid fa-question-circle text-slate-500 hover:text-cyan-400 text-lg cursor-not-allowed"></i>
-                        <i class="fa-solid fa-right-from-bracket text-slate-500 hover:text-red-400 text-lg cursor-not-allowed"></i>
+                <div id="info-usuario" class="border-l border-gray-800 pl-6">
+                    <h2 class="text-xl font-black italic tracking-tighter text-white leading-none mb-1">Hola, <span class="color-cian italic" id="nombre-span">...</span></h2>
+                    
+                    <div id="plan-actual-container">
+                        <p class="text-[10px] uppercase font-bold text-gray-500 italic tracking-widest leading-none">Plan Activo: <span class="text-white">ECOEMS GENERAL</span></p>
                     </div>
                 </div>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-3 bg-gray-900 border border-cyan-900/50 rounded-lg p-2 px-4 shadow-sm">
+                    <i class="fa-solid fa-bolt text-yellow-400"></i>
+                    <div>
+                        <p class="text-[10px] text-gray-500 uppercase font-bold leading-none">Energía IA</p>
+                        <p class="text-sm font-black text-white leading-none mt-1">2</p>
+                    </div>
+                    <button class="ml-3 bg-gray-800 text-gray-500 text-[10px] font-black py-1 px-3 rounded uppercase transition cursor-not-allowed">Recargar</button>
+                </div>
+                <button class="text-gray-600 font-bold hover:text-gray-600 text-xs uppercase tracking-widest cursor-not-allowed">Cerrar Sesión</button>
+                <button class="text-gray-600 hover:text-gray-600 text-xs uppercase tracking-widest font-bold flex items-center gap-2 transition mr-4 cursor-not-allowed">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> Ayuda
+                </button>            
             </div>
         </div>
-    </nav>
+    </header>
 
-    <main class="flex-grow flex h-full max-w-[1920px] mx-auto w-full overflow-hidden">
+    <main class="grid grid-cols-12 h-[calc(100vh-140px)]">
         
-        <aside class="w-[380px] bg-black/30 border-r border-slate-800 p-6 flex flex-col shrink-0 overflow-hidden">
-            
-            <div class="flex items-center gap-4 border-b border-slate-800 pb-6 mb-6">
-                <div class="w-14 h-14 rounded-full border-2 border-cyan-500 flex items-center justify-center bg-cyan-950 p-1 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
-                    <i class="fa-solid fa-user text-3xl text-cyan-400"></i>
-                </div>
-                <div>
-                    <h2 id="username-display" class="text-lg font-black italic uppercase text-white tracking-tighter">Cargando...</h2>
-                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-1">Aspirante ECOEMS VIP</p>
-                </div>
-            </div>
-
-            <div class="space-y-4 mb-6">
-                <div class="bg-black/50 border border-slate-800 p-4 rounded-xl flex items-center gap-3">
-                    <i class="fa-solid fa-id-card text-cyan-600 text-2xl"></i>
-                    <div>
-                        <p class="text-[9px] text-gray-600 uppercase">Plan Activo</p>
-                        <p class="text-sm font-bold text-white uppercase italic">ECOEMS GENERAL</p>
-                    </div>
-                </div>
-                <div class="bg-black/50 border border-slate-800 p-4 rounded-xl flex items-center gap-3">
-                    <i class="fa-solid fa-bolt text-yellow-600 text-2xl"></i>
-                    <div>
-                        <p class="text-[9px] text-gray-600 uppercase">Energía IA</p>
-                        <p class="text-xl font-black text-yellow-400 drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]">2 <span class="text-xs text-yellow-600">⚡ Tokens</span></p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex-grow bg-slate-950/50 rounded-2xl border border-slate-800 flex flex-col overflow-hidden relative">
-                <div class="p-4 border-b border-slate-800 bg-black/40 flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
-                    <span class="text-xs font-bold text-cyan-400 uppercase tracking-widest">Búho IA - Asistente VIP</span>
-                </div>
+        <aside class="col-span-3 border-r border-gray-800 p-6 flex flex-col bg-black/20 overflow-hidden">
+            <h3 class="text-gray-500 font-bold text-xs uppercase tracking-widest mb-6 italic shrink-0">Línea del Tiempo</h3>
+            <div id="contenedor-historial" class="flex-grow overflow-y-auto space-y-4 pr-2">
                 
-                <div class="flex-grow overflow-y-auto p-4 space-y-4 text-sm scroll-area">
-                    <div class="flex justify-start">
-                        <div class="bg-slate-800 text-slate-300 rounded-2xl rounded-tl-none p-3 max-w-[90%]">
-                            ¡Hola Aspirante! Tienes 2 tokens de energía. Te recomiendo realizar tu Simulacro Piloto.
-                        </div>
+                <div class="card-glass p-4 border-l-4 border-cyan-500 bg-white/5 mb-3">
+                    <div class="flex justify-between items-center text-[10px] sm:text-xs mb-2">
+                        <span class="text-cyan-400 font-black uppercase tracking-tighter">REGISTRO PILOTO</span>
+                        <span class="text-gray-500">Completado</span>
                     </div>
+                    <p class="text-2xl font-black text-white text-base">Acceso VIP <span class="text-xs text-gray-500 font-normal italic block">Cuenta Operativa</span></p>
                 </div>
 
-                <div class="p-4 border-t border-slate-800 bg-black/60 sticky bottom-0 z-10">
-                    <div class="flex gap-2">
-                        <input type="text" placeholder="IA bloqueada en el Piloto..." class="flex-grow bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm locked-visual" disabled>
-                        <button class="bg-cyan-600 text-white rounded-xl w-10 h-10 flex items-center justify-center locked-visual" disabled><i class="fa-solid fa-paper-plane text-xs"></i></button>
+                <div class="card-glass p-4 border-l-4 border-gray-700 bg-black/40 mb-3 opacity-50">
+                    <div class="flex justify-between items-center text-[10px] sm:text-xs mb-2">
+                        <span class="text-gray-500 font-black uppercase tracking-tighter">SIMULACRO</span>
+                        <span class="text-gray-600">Pendiente</span>
                     </div>
+                    <p class="text-2xl font-black text-gray-500 text-base">Prueba 60Q <span class="text-xs text-gray-600 font-normal italic block">No realizado</span></p>
                 </div>
+
             </div>
         </aside>
 
-        <div class="flex-1 p-8 pb-32 h-full overflow-y-auto">
-            <h1 class="text-4xl font-black italic uppercase mb-2 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">Módulo ECOEMS</h1>
-            <p class="text-xs text-gray-400 mb-8 uppercase tracking-widest border-b border-slate-800 pb-4">Centro de Entrenamiento Piloto</p>
-
-            <div class="bg-black/30 border border-slate-800 p-8 rounded-3xl mb-10 relative overflow-hidden">
-                <div class="absolute -top-10 -right-10 w-40 h-40 bg-cyan-900 rounded-full filter blur-3xl opacity-20"></div>
+        <section class="col-span-6 p-8 flex flex-col h-full bg-[#050a14] overflow-hidden">
+            <div class="card-glass flex-grow flex flex-col overflow-hidden h-full">
+                <div class="p-3 border-b border-white/5 bg-white/5 flex items-center gap-3 shrink-0">
+                    <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur2.jpeg" class="w-10 h-10 rounded-lg object-cover border border-cyan-500/30" alt="Simu">
+                    <div>
+                        <span class="text-[11px] font-black uppercase color-cian italic block leading-none">Asistente IA Simu</span>
+                        <span class="text-[9px] text-green-500 font-bold uppercase">En Línea (Piloto)</span>
+                    </div>
+                </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
-                    <div class="border-t-4 border-cyan-500 pt-3 relative">
-                        <span class="w-3 h-3 bg-cyan-500 rounded-full absolute -top-1.5 left-1/2 -translate-x-1/2"></span>
-                        <p class="text-sm font-bold text-white uppercase italic">Registro</p>
-                        <p class="text-[9px] text-cyan-400 font-bold uppercase tracking-widest">Cuenta Validada</p>
+                <div id="chat-box" class="flex-grow p-4 overflow-y-auto text-xs text-gray-300 space-y-3">
+                    <div class="mb-3">
+                        <div class="bg-gray-800/60 p-4 rounded-xl rounded-tl-none border border-white/5 max-w-[85%] shadow-sm text-sm text-gray-200">
+                            <strong class="color-cian font-black italic text-[10px] uppercase flex items-center gap-2 mb-1"><i class="fa-solid fa-brain"></i> Tutor Simu</strong>
+                            <p class="leading-relaxed">¡Bienvenido Aspirante! Tu cuenta está lista. Para este piloto, tienes habilitado tu Simulacro Diagnóstico de 60 reactivos en el panel derecho. Mucho éxito.</p>
+                        </div>
                     </div>
-                    <div class="border-t-4 border-slate-800 pt-3 relative">
-                        <span class="w-3 h-3 bg-slate-800 rounded-full absolute -top-1.5 left-1/2 -translate-x-1/2"></span>
-                        <p class="text-sm font-bold text-slate-500 uppercase italic">Simulacro Diagnóstico</p>
-                        <p class="text-[9px] text-gray-600 font-bold uppercase tracking-widest">No Realizado</p>
-                    </div>
-                    <div class="border-t-4 border-slate-800 pt-3 relative">
-                        <span class="w-3 h-3 bg-slate-800 rounded-full absolute -top-1.5 left-1/2 -translate-x-1/2"></span>
-                        <p class="text-sm font-bold text-slate-500 uppercase italic">Plan Adaptive</p>
-                        <p class="text-[9px] text-gray-600 font-bold uppercase tracking-widest">En Pausa</p>
-                    </div>
-                    <div class="border-t-4 border-slate-800 pt-3 relative">
-                        <span class="w-3 h-3 bg-slate-800 rounded-full absolute -top-1.5 left-1/2 -translate-x-1/2"></span>
-                        <p class="text-sm font-bold text-slate-500 uppercase italic">Nivel Superior</p>
-                        <p class="text-[9px] text-gray-600 font-bold uppercase tracking-widest">Pre-Matrícula</p>
+                </div>
+
+                <div class="p-3 border-t border-white/5 bg-black/40 shrink-0 opacity-50">
+                    <div class="flex gap-2 bg-gray-900 border border-white/10 rounded-xl p-2 items-center cursor-not-allowed">
+                        <input type="text" placeholder="Chat inhabilitado durante el Piloto..." class="bg-transparent flex-grow text-xs p-2 outline-none text-white cursor-not-allowed" disabled>
+                        <button class="bg-gray-800 text-gray-600 font-bold py-2 px-4 rounded-xl cursor-not-allowed" disabled>ENVIAR</button>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <aside class="col-span-3 p-6 border-l border-gray-800 bg-black/20 overflow-y-auto">
+            <h3 class="text-gray-500 font-bold text-xs uppercase tracking-widest mb-6 italic">Entrenamientos</h3>
+            <div id="contenedor-niveles" class="space-y-4">
 
-                <div class="bg-black/60 border border-cyan-500 rounded-3xl p-6 relative group overflow-hidden shadow-[0_0_20px_rgba(6,182,212,0.1)] flex flex-col">
-                    <div class="absolute top-0 right-0 bg-cyan-500 text-black text-[10px] font-black uppercase px-3 py-1 rounded-bl-lg animate-pulse z-10">Piloto VIP</div>
-                    
-                    <div class="flex justify-between items-start mb-4 relative z-10">
-                        <div class="w-12 h-12 rounded-2xl bg-cyan-900/50 border border-cyan-500/50 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.4)]">
-                            <i class="fa-solid fa-crosshairs text-xl"></i>
-                        </div>
-                    </div>
-                    
-                    <h3 class="text-xl font-black italic text-white uppercase mb-1 relative z-10">Simulacro Piloto</h3>
-                    <p class="text-[10px] text-cyan-400 uppercase font-bold tracking-widest mb-4 relative z-10">Alta Complejidad (IN/2,3)</p>
-                    
-                    <div class="flex gap-4 mb-6 relative z-10 text-center">
-                        <div class="bg-black/40 border border-slate-800 rounded-lg px-3 py-2">
-                            <i class="fa-solid fa-list-ol text-gray-500 text-xs mb-1 block"></i>
-                            <span class="text-xs font-bold text-white">60Q</span>
-                        </div>
-                        <div class="bg-black/40 border border-slate-800 rounded-lg px-3 py-2">
-                            <i class="fa-solid fa-clock text-gray-500 text-xs mb-1 block"></i>
-                            <span class="text-xs font-bold text-white">90m</span>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-auto relative z-10">
-                        <button onclick="iniciarSimulacro()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black uppercase py-3 rounded-xl transition shadow-lg group-hover:scale-[1.02]">
-                            Iniciar Examen
-                        </button>
-                    </div>
-                    
-                    <div class="absolute -bottom-10 -right-10 text-cyan-900 opacity-20 pointer-events-none transform rotate-12 transition group-hover:scale-110">
-                        <i class="fa-solid fa-crosshairs text-9xl"></i>
-                    </div>
+                <div class="card-glass p-5 nivel-card border-cyan-500 cursor-pointer hover:bg-cyan-900/20 transition-all relative overflow-hidden" onclick="iniciarSimulacro()">
+                    <div class="absolute top-0 right-0 bg-cyan-500 text-black text-[9px] font-black uppercase px-2 py-1 rounded-bl-lg animate-pulse">ACTIVO</div>
+                    <h4 class="text-cyan-400 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-crosshairs mr-1"></i> Simulacro Piloto</h4>
+                    <p class="text-sm font-black text-white">60 Reactivos | 90 min</p>
+                    <p class="text-[9px] text-cyan-400 font-bold mt-2 uppercase tracking-wide">🎯 Prueba Diagnóstica Oficial</p>
                 </div>
 
-                <div class="bg-black/30 border border-slate-800 rounded-3xl p-6 relative flex flex-col locked-visual">
-                    <i class="fa-solid fa-lock text-gray-600 absolute top-4 right-4"></i>
-                    <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-gray-500 mb-4">
-                        <i class="fa-solid fa-comments text-xl"></i>
-                    </div>
-                    <h3 class="text-xl font-black italic text-gray-500 uppercase mb-1">Habilidad Verbal</h3>
-                    <p class="text-[10px] text-gray-700 uppercase mb-4">Reactivos: 16 | Nivel Intermedio</p>
-                    <button class="w-full bg-slate-800 text-gray-600 font-bold uppercase py-3 rounded-xl cursor-not-allowed locked-visual" disabled>Entrenar</button>
+                <div class="card-glass p-5 nivel-card border-gray-800 opacity-50 cursor-not-allowed">
+                    <h4 class="text-gray-500 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-bolt mr-1"></i> Examen Rápido</h4>
+                    <p class="text-sm font-black text-gray-600">30 Reactivos | 45 min</p>
+                    <p class="text-[9px] text-gray-700 font-bold mt-2 uppercase"><i class="fa-solid fa-lock"></i> Bloqueado</p>
                 </div>
 
-                <div class="bg-black/30 border border-slate-800 rounded-3xl p-6 relative flex flex-col locked-visual">
-                    <i class="fa-solid fa-lock text-gray-600 absolute top-4 right-4"></i>
-                    <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-gray-500 mb-4">
-                        <i class="fa-solid fa-calculator text-xl"></i>
-                    </div>
-                    <h3 class="text-xl font-black italic text-gray-500 uppercase mb-1">Habilidad Matemática</h3>
-                    <p class="text-[10px] text-gray-700 uppercase mb-4">Reactivos: 16 | Nivel Intermedio</p>
-                    <button class="w-full bg-slate-800 text-gray-600 font-bold uppercase py-3 rounded-xl cursor-not-allowed locked-visual" disabled>Entrenar</button>
+                <div class="card-glass p-5 nivel-card border-gray-800 opacity-50 cursor-not-allowed">
+                    <h4 class="text-gray-500 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-fire mr-1"></i> Intermedio</h4>
+                    <p class="text-sm font-black text-gray-600">94 Reactivos | 90 min</p>
+                    <p class="text-[9px] text-gray-700 font-bold mt-2 uppercase"><i class="fa-solid fa-lock"></i> Bloqueado</p>
                 </div>
-                
-                <div class="bg-black/30 border border-slate-800 rounded-3xl p-6 relative flex flex-col locked-visual">
-                    <i class="fa-solid fa-lock text-gray-600 absolute top-4 right-4"></i>
-                    <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-gray-500 mb-4">
-                        <i class="fa-solid fa-subscript text-xl"></i>
-                    </div>
-                    <h3 class="text-xl font-black italic text-gray-500 uppercase mb-1">Matemáticas</h3>
-                    <p class="text-[10px] text-gray-700 uppercase mb-4">Reactivos: 12 | Nivel Intermedio</p>
-                    <button class="w-full bg-slate-800 text-gray-600 font-bold uppercase py-3 rounded-xl cursor-not-allowed locked-visual" disabled>Entrenar</button>
+
+                <div class="card-glass p-5 nivel-card border-gray-800 opacity-50 cursor-not-allowed">
+                    <h4 class="text-gray-500 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-skull mr-1"></i> Examen Completo</h4>
+                    <p class="text-sm font-black text-gray-600">128 Reactivos | 180 min</p>
+                    <p class="text-[9px] text-gray-700 font-bold mt-2 uppercase"><i class="fa-solid fa-lock"></i> Bloqueado</p>
                 </div>
 
             </div>
-        </div>
+        </aside>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
     <script src="simulacro_dash.js"></script>
 </body>
