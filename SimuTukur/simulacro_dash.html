@@ -2,46 +2,217 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Acceso Piloto | SimuTukur</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Operaciones Piloto | SimuTukur</title>
+    <link rel="icon" type="image/jpeg" href="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur2.jpeg">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .locked { filter: grayscale(1) opacity(0.5); cursor: not-allowed; }
-        .neon-border { border: 2px solid #06b6d4; box-shadow: 0 0 15px #06b6d4; }
+        /* Efectos originales */
+        .neon-glow { text-shadow: 0 0 10px rgba(6, 182, 212, 0.8); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
     </style>
 </head>
-<body class="bg-[#050a14] text-white font-sans">
-    <div class="max-w-4xl mx-auto py-10 px-6">
-        <header class="flex justify-between items-center mb-12">
-            <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur2.jpeg" class="w-12 rounded-lg">
-            <div class="text-right">
-                <p id="user-display" class="text-cyan-400 font-black italic uppercase">Validando Aspirante...</p>
-                <p class="text-[10px] text-gray-500 uppercase tracking-widest">Tokens de Energía: <span id="tokens">2</span> ⚡</p>
-            </div>
-        </header>
+<body class="bg-[#050a14] text-white font-sans overflow-x-hidden flex flex-col h-screen">
 
-        <h2 class="text-4xl font-black italic mb-8 uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">
-            Centro de Evaluaciones
-        </h2>
+    <nav class="bg-black/50 border-b border-slate-800 backdrop-blur-md sticky top-0 z-50 shrink-0">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-4">
+                    <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur2.jpeg" alt="Logo" class="w-10 h-10 rounded-xl border border-cyan-500/30">
+                    <div class="hidden md:block">
+                        <span class="text-xs text-gray-500 uppercase tracking-widest block font-bold">ECOEMS GENERAL</span>
+                        <h1 class="text-xl font-black italic tracking-tighter text-cyan-400 uppercase">SimuTukur <span class="text-white text-[10px] bg-cyan-600 px-2 py-1 rounded-md ml-1">PILOTO</span></h1>
+                    </div>
+                </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-black/40 border-2 border-cyan-500 p-6 rounded-3xl relative overflow-hidden group">
-                <div class="absolute top-0 right-0 bg-cyan-500 text-black text-[10px] font-black px-4 py-1 rounded-bl-xl uppercase animate-pulse">Activo Ahora</div>
-                <h3 class="text-2xl font-black italic mb-2 uppercase">Gran Simulacro Piloto ECOEMS</h3>
-                <p class="text-gray-400 text-xs mb-6 uppercase">60 Reactivos Proporcionales | Complejidad Media-Alta | 90 Minutos</p>
-                <button onclick="iniciarSimulacro()" class="w-full bg-cyan-600 hover:bg-cyan-400 text-white font-black py-4 rounded-xl uppercase transition-all transform hover:scale-105">
-                    Comenzar Evaluación
-                </button>
-            </div>
+                <div class="flex items-center gap-6">
+                    <div class="text-right hidden md:block">
+                        <p class="text-xs text-gray-400 uppercase font-bold">Energía IA</p>
+                        <p class="text-lg font-black text-yellow-400 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]">2 <i class="fa-solid fa-bolt text-yellow-500"></i></p>
+                    </div>
+                    
+                    <button class="bg-cyan-600/20 text-cyan-400 border border-cyan-500/50 px-4 py-2 rounded-xl text-xs font-bold uppercase hover:bg-cyan-600/40 transition flex items-center cursor-not-allowed locked">
+                        <i class="fa-solid fa-plus mr-2"></i> Recargar
+                    </button>
 
-            <div class="locked bg-black/20 border border-white/10 p-6 rounded-3xl relative">
-                <i class="fa-solid fa-lock absolute top-4 right-4 text-gray-600"></i>
-                <h3 class="text-xl font-bold italic mb-2 uppercase text-gray-500">Banco de Reactivos</h3>
-                <p class="text-[10px] uppercase text-gray-600">Disponible solo en cuenta PRO</p>
+                    <div class="flex items-center gap-3 border-l border-slate-700 pl-6">
+                        <div class="w-8 h-8 rounded-full bg-cyan-900 flex items-center justify-center border border-cyan-500">
+                            <i class="fa-solid fa-user text-cyan-400"></i>
+                        </div>
+                        <div class="hidden sm:block text-right">
+                            <p id="user-display" class="text-sm font-bold text-white uppercase italic">Validando...</p>
+                            <p class="text-[10px] text-gray-500 uppercase">Aspirante VIP</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+    </nav>
+
+    <main class="flex-grow flex flex-col lg:flex-row overflow-hidden h-full max-w-screen-2xl mx-auto w-full">
+        
+        <div class="w-full lg:w-[400px] bg-black/30 border-r border-slate-800 flex flex-col h-full shrink-0">
+            <div class="p-6 border-b border-slate-800 shrink-0">
+                <h3 class="text-[10px] text-cyan-500 font-bold uppercase tracking-widest mb-4">Progreso de la Forja</h3>
+                <div class="relative pl-6 space-y-4">
+                    <div class="absolute left-2.5 top-2 bottom-2 w-0.5 bg-slate-800"></div>
+                    <div class="relative">
+                        <div class="absolute -left-[27px] bg-cyan-500 w-4 h-4 rounded-full border-4 border-[#050a14] shadow-[0_0_10px_#06b6d4]"></div>
+                        <p class="text-xs font-bold text-white uppercase">Registro Exitoso</p>
+                        <p class="text-[10px] text-gray-500">Cuenta creada y validada.</p>
+                    </div>
+                    <div class="relative">
+                        <div class="absolute -left-[27px] bg-slate-700 w-4 h-4 rounded-full border-4 border-[#050a14]"></div>
+                        <p class="text-xs font-bold text-gray-400 uppercase">Simulacro Diagnóstico</p>
+                        <p class="text-[10px] text-gray-600">Pendiente de realizar.</p>
+                    </div>
+                    <div class="relative">
+                        <div class="absolute -left-[27px] bg-slate-700 w-4 h-4 rounded-full border-4 border-[#050a14]"></div>
+                        <p class="text-xs font-bold text-gray-400 uppercase">Plan de Entrenamiento</p>
+                        <p class="text-[10px] text-gray-600">La IA creará tu ruta.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-grow flex flex-col bg-slate-900/20 overflow-hidden relative">
+                <div class="absolute inset-0 flex items-center justify-center z-10 pointer-events-none opacity-10">
+                    <i class="fa-solid fa-brain text-9xl text-cyan-500"></i>
+                </div>
+                
+                <div class="p-4 border-b border-slate-800 bg-black/40 flex justify-between items-center shrink-0">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
+                        <span class="text-xs font-bold text-cyan-400 uppercase tracking-widest">Búho IA - Asistente</span>
+                    </div>
+                </div>
+                
+                <div id="chat-box" class="flex-grow overflow-y-auto p-4 space-y-4 z-20">
+                    <div class="flex justify-start">
+                        <div class="bg-slate-800 text-slate-300 rounded-2xl rounded-tl-none p-3 max-w-[85%] text-sm shadow-md border border-slate-700">
+                            <p class="font-bold text-cyan-400 text-xs mb-1 uppercase"><i class="fa-solid fa-robot mr-1"></i> Búho IA</p>
+                            ¡Hola! Veo que estás listo para tu Simulacro Piloto. Tienes 2 tokens de energía disponibles. Te recomiendo que comiences el examen lo antes posible.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 border-t border-slate-800 bg-black/60 shrink-0 z-20">
+                    <div class="flex gap-2">
+                        <input type="text" placeholder="Escribe aquí tu duda..." class="flex-grow bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 locked cursor-not-allowed" disabled>
+                        <button class="bg-cyan-600 text-white rounded-xl w-10 h-10 flex items-center justify-center hover:bg-cyan-500 transition shadow-[0_0_10px_rgba(6,182,212,0.3)] locked cursor-not-allowed">
+                            <i class="fa-solid fa-paper-plane text-xs"></i>
+                        </button>
+                    </div>
+                    <p class="text-[9px] text-gray-500 text-center mt-2">Costo: 1 <i class="fa-solid fa-bolt text-yellow-500"></i> Token de Energía por pregunta.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-grow flex flex-col p-6 lg:p-10 overflow-y-auto">
+            <h2 class="text-3xl font-black italic uppercase mb-2 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">Cámaras de Simulación</h2>
+            <p class="text-sm text-gray-400 mb-8 uppercase tracking-widest border-b border-slate-800 pb-4">Selecciona tu entrenamiento</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <div class="bg-black/60 border border-cyan-500 rounded-3xl p-6 relative group overflow-hidden shadow-[0_0_20px_rgba(6,182,212,0.1)] flex flex-col">
+                    <div class="absolute top-0 right-0 bg-cyan-500 text-black text-[10px] font-black uppercase px-3 py-1 rounded-bl-lg animate-pulse z-10">Piloto VIP</div>
+                    
+                    <div class="flex justify-between items-start mb-4 relative z-10">
+                        <div class="w-12 h-12 rounded-2xl bg-cyan-900/50 border border-cyan-500/50 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+                            <i class="fa-solid fa-crosshairs text-xl"></i>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-xl font-black italic text-white uppercase mb-1 relative z-10">Simulacro Piloto</h3>
+                    <p class="text-[10px] text-cyan-400 uppercase font-bold tracking-widest mb-4 relative z-10">Alta Complejidad</p>
+                    
+                    <div class="flex gap-4 mb-6 relative z-10">
+                        <div class="bg-black/40 border border-slate-800 rounded-lg px-3 py-2 text-center">
+                            <i class="fa-solid fa-list-ol text-gray-500 text-xs mb-1 block"></i>
+                            <span class="text-xs font-bold text-white">60</span>
+                        </div>
+                        <div class="bg-black/40 border border-slate-800 rounded-lg px-3 py-2 text-center">
+                            <i class="fa-solid fa-clock text-gray-500 text-xs mb-1 block"></i>
+                            <span class="text-xs font-bold text-white">90m</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-auto relative z-10">
+                        <button onclick="iniciarSimulacro()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black uppercase tracking-widest py-3 rounded-xl transition-all shadow-lg hover:shadow-cyan-500/50 flex justify-center items-center group-hover:scale-[1.02]">
+                            Iniciar Combate <i class="fa-solid fa-play ml-2"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="absolute -bottom-10 -right-10 text-cyan-900 opacity-20 pointer-events-none transform rotate-12 transition-transform group-hover:scale-110">
+                        <i class="fa-solid fa-crosshairs text-9xl"></i>
+                    </div>
+                </div>
+
+                <div class="bg-black/40 border border-slate-800 rounded-3xl p-6 relative flex flex-col locked">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-gray-500">
+                            <i class="fa-solid fa-bolt text-xl"></i>
+                        </div>
+                        <i class="fa-solid fa-lock text-gray-600"></i>
+                    </div>
+                    <h3 class="text-xl font-black italic text-gray-400 uppercase mb-1">Simulacro Rápido</h3>
+                    <p class="text-[10px] text-gray-600 uppercase font-bold tracking-widest mb-4">Nivel Fácil</p>
+                    <div class="flex gap-4 mb-6">
+                        <div class="bg-black/40 border border-slate-800 rounded-lg px-3 py-2 text-center">
+                            <span class="text-xs font-bold text-gray-500">30 Q</span>
+                        </div>
+                        <div class="bg-black/40 border border-slate-800 rounded-lg px-3 py-2 text-center">
+                            <span class="text-xs font-bold text-gray-500">45m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-black/40 border border-slate-800 rounded-3xl p-6 relative flex flex-col locked">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-gray-500">
+                            <i class="fa-solid fa-fire text-xl"></i>
+                        </div>
+                        <i class="fa-solid fa-lock text-gray-600"></i>
+                    </div>
+                    <h3 class="text-xl font-black italic text-gray-400 uppercase mb-1">Entrenamiento</h3>
+                    <p class="text-[10px] text-gray-600 uppercase font-bold tracking-widest mb-4">Nivel Intermedio</p>
+                    <div class="flex gap-4 mb-6">
+                        <div class="bg-black/40 border border-slate-800 rounded-lg px-3 py-2 text-center">
+                            <span class="text-xs font-bold text-gray-500">94 Q</span>
+                        </div>
+                        <div class="bg-black/40 border border-slate-800 rounded-lg px-3 py-2 text-center">
+                            <span class="text-xs font-bold text-gray-500">90m</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-black/40 border border-slate-800 rounded-3xl p-6 relative flex flex-col locked">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-gray-500">
+                            <i class="fa-solid fa-skull text-xl"></i>
+                        </div>
+                        <i class="fa-solid fa-lock text-gray-600"></i>
+                    </div>
+                    <h3 class="text-xl font-black italic text-gray-400 uppercase mb-1">Simulacro Oficial</h3>
+                    <p class="text-[10px] text-gray-600 uppercase font-bold tracking-widest mb-4">Nivel Real (128Q)</p>
+                    <div class="flex gap-4 mb-6">
+                        <div class="bg-black/40 border border-slate-800 rounded-lg px-3 py-2 text-center">
+                            <span class="text-xs font-bold text-gray-500">128 Q</span>
+                        </div>
+                        <div class="bg-black/40 border border-slate-800 rounded-lg px-3 py-2 text-center">
+                            <span class="text-xs font-bold text-gray-500">180m</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
 
     <script src="supabase-client.js"></script>
     <script src="simulacro_dash.js"></script>
