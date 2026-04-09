@@ -15,7 +15,7 @@ async function validarAccesoPilotoDash() {
         // ya que el prompt del socio tenía un error de redundancia.
         const { data, error } = await _supabase
             .from('prospectos_simulacro')
-            .select('nombre_papa') 
+            .select('nombre_tutor') 
             .eq('correo', email) // 'correo' es el nombre real de tu columna
             .maybeSingle();
 
