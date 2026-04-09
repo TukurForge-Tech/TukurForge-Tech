@@ -1,7 +1,4 @@
 // acceso_piloto.js
-const SUPABASE_URL = "https://pcuopqvmucmhtcdeswxh.supabase.co";
-const SUPABASE_KEY = "TU_KEY_AQUÍ"; // Pon tu llave
-const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function validarLoginPiloto() {
     const input = document.getElementById('email_input');
@@ -20,6 +17,7 @@ async function validarLoginPiloto() {
     errorMsg.classList.add('hidden');
 
     try {
+        // Aquí usamos _supabase directo porque viene heredado del client
         const { data, error } = await _supabase
             .from('prospectos_simulacro')
             .select('*')
@@ -29,7 +27,6 @@ async function validarLoginPiloto() {
         if (error || !data) {
             mostrarError("Acceso denegado. Este correo no está registrado en el grupo Piloto.");
         } else {
-            // Guardamos sesión y lo mandamos al dashboard aislado
             localStorage.setItem('session_email', email);
             window.location.href = 'simulacro_dash.html';
         }
