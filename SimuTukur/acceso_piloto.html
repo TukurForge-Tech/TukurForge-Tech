@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Oficial | SimuTukur Piloto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .neon-glow { text-shadow: 0 0 10px rgba(6, 182, 212, 0.8); }
+    </style>
+</head>
+<body class="bg-[#050a14] min-h-screen flex items-center justify-center p-4 font-sans text-white">
+
+    <div class="bg-black/60 border border-cyan-900 rounded-3xl p-8 max-w-md w-full shadow-[0_0_40px_rgba(6,182,212,0.1)] relative overflow-hidden">
+        
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+
+        <div class="text-center mb-8">
+            <img src="https://echyplrboxmckxljtkgg.supabase.co/storage/v1/object/public/assets/SimuTukur/SimuTukur2.jpeg" alt="Logo" class="w-20 h-20 rounded-2xl mx-auto mb-4 border border-cyan-500/30">
+            <h1 class="text-3xl font-black italic uppercase tracking-tighter text-cyan-400 neon-glow">SimuTukur</h1>
+            <p class="text-gray-400 text-sm mt-2 uppercase tracking-widest">Portal de Evaluación Piloto</p>
+        </div>
+
+        <div class="space-y-6">
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Correo de Registro (Tutor)</label>
+                <div class="relative">
+                    <i class="fa-solid fa-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-cyan-500"></i>
+                    <input type="email" id="email_input" placeholder="ejemplo@correo.com" 
+                        class="w-full bg-slate-900/50 border border-slate-700 text-white rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all placeholder-slate-600">
+                </div>
+            </div>
+
+            <button id="btn_ingresar" onclick="validarLoginPiloto()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 rounded-xl uppercase tracking-widest transition-all transform hover:scale-[1.02] shadow-lg flex justify-center items-center">
+                <span id="btn_text">Acceder al Simulador</span>
+                <i id="btn_spinner" class="fa-solid fa-circle-notch fa-spin hidden ml-2"></i>
+            </button>
+        </div>
+
+        <p id="error_msg" class="text-red-400 text-sm font-bold text-center mt-4 hidden bg-red-900/20 py-2 rounded-lg"></p>
+    </div>
+
+    <script src="acceso_piloto.js"></script> 
+</body>
+</html>
