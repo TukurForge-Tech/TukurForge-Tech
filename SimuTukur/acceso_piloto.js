@@ -22,7 +22,7 @@ async function validarLoginPiloto() {
             .from('prospectos_simulacro')
             .select('*')
             .eq('email', email)
-            .single();
+            .maybeSingle();
 
         if (error || !data) {
             mostrarError("Acceso denegado. Este correo no está registrado en el grupo Piloto.");
