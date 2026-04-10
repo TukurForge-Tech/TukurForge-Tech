@@ -113,6 +113,12 @@
             <h3 class="text-gray-500 font-bold text-xs uppercase tracking-widest mb-6 italic">Entrenamientos</h3>
             <div id="contenedor-niveles" class="space-y-4">
 
+                <div class="mb-5 bg-cyan-900/20 border border-cyan-800 p-4 rounded-xl shadow-inner">
+                    <h4 class="text-cyan-400 font-black text-xs uppercase tracking-widest mb-2"><i class="fa-solid fa-circle-info"></i> Reglas de la IA</h4>
+                    <p class="text-xs text-gray-400 leading-relaxed mb-2">Para desbloquear un nivel superior, debes superar al menos <strong class="text-white">3 simulacros con más del 70%</strong> de aciertos.</p>
+                    <p class="text-xs text-gray-400 leading-relaxed">Si tu último simulacro es menor a 70%, tu entrenamiento se bloqueará y deberás superar el <strong class="text-red-400">Reto de Repaso</strong>.</p>
+                </div>
+                
                 <div class="card-glass p-5 nivel-card border-cyan-500 cursor-pointer hover:bg-cyan-900/20 transition-all relative overflow-hidden" onclick="iniciarSimulacro()">
                     <div class="absolute top-0 right-0 bg-cyan-500 text-black text-[9px] font-black uppercase px-2 py-1 rounded-bl-lg animate-pulse">ACTIVO</div>
                     <h4 class="text-cyan-400 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-crosshairs mr-1"></i> Simulacro Piloto</h4>
