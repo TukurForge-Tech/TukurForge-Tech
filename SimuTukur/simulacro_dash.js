@@ -27,7 +27,7 @@ async function validarAccesoPilotoDash() {
 
         // Adecuación 2: Ponemos el nombre del papa en el saludo
         const saludoSpan = document.getElementById('username-display');
-        saludoSpan.innerText = `Saludo, ${data.nombre_papa || email}`;
+        saludoSpan.innerText = `Saludo, ${data.nombre_tutor || email}`;
 
     } catch (err) {
         console.error("Error en validación dash:", err);
