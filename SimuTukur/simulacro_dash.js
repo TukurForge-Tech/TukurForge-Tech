@@ -64,18 +64,20 @@ async function checarSiTerminoExamen() {
                 <div class="bg-gray-800/80 p-5 rounded-2xl rounded-tl-none border border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.2)] text-gray-200">
                     <strong class="color-cian font-black italic text-[11px] uppercase flex items-center gap-2 mb-4 border-b border-white/10 pb-2"><i class="fa-solid fa-brain"></i> Análisis Oficial ECOEMS</strong>
                     
-                    <div class="text-center mb-6">
+                    <div class="text-center mb-4">
                         <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Tu Puntaje Global</p>
                         <p class="text-4xl font-black ${colorCalif}">${aciertos} <span class="text-lg text-gray-500">/ 60</span></p>
                     </div>
                     
-                    <div class="bg-black/60 p-3 rounded-xl border border-slate-700 mb-2 flex justify-between items-center">
-                        <span class="text-[9px] uppercase font-bold text-gray-400"><i class="fa-solid fa-microphone mr-1"></i> Audio:</span>
-                        <span class="text-[10px] uppercase font-bold">${semaforoAudio}</span>
-                    </div>
-                    <div class="bg-black/60 p-3 rounded-xl border border-slate-700 mb-6 flex justify-between items-center">
-                        <span class="text-[9px] uppercase font-bold text-gray-400"><i class="fa-solid fa-camera mr-1"></i> Video:</span>
-                        <span class="text-[10px] uppercase font-bold">${semaforoVideo}</span>
+                    <div class="grid grid-cols-2 gap-2 mb-6">
+                        <div class="bg-black/60 p-3 rounded-xl border border-slate-700 flex flex-col items-center text-center justify-center">
+                            <span class="text-[9px] uppercase font-bold text-gray-400 mb-1"><i class="fa-solid fa-microphone"></i> Audio</span>
+                            <span class="text-[10px] uppercase font-bold">${semaforoAudio}</span>
+                        </div>
+                        <div class="bg-black/60 p-3 rounded-xl border border-slate-700 flex flex-col items-center text-center justify-center">
+                            <span class="text-[9px] uppercase font-bold text-gray-400 mb-1"><i class="fa-solid fa-camera"></i> Video</span>
+                            <span class="text-[10px] uppercase font-bold">${semaforoVideo}</span>
+                        </div>
                     </div>
 
                     <p class="text-[10px] uppercase text-cyan-400 font-black mb-3 tracking-widest"><i class="fa-solid fa-bullseye mr-1"></i> Áreas de Oportunidad</p>
