@@ -257,7 +257,7 @@ function iniciarEscuchaMaestra() {
                     pregunta: reactivos[index].pregunta,
                     materia: reactivos[index].materia,
                     tu_respuesta: "No contestada (Tiempo finalizado)",
-                    correcta: reactivos[index].correcta
+                    correcta: reactivos[index].respuesta_correcta
                 });
                 index++;
             }
@@ -275,14 +275,14 @@ function procesarRespuesta() {
     if (!seleccionActual) return;
     const item = reactivos[index];
     
-    if (seleccionActual === item.correcta) {
+    if (seleccionActual === item.respuesta_correcta) {
         aciertos++;
     } else {
         reactivosFallados.push({
             pregunta: item.pregunta,
             materia: item.materia,
             tu_respuesta: seleccionActual,
-            correcta: item.correcta
+            correcta: item.respuesta_correcta
         });
     }
     
