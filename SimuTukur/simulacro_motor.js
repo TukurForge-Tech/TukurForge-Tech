@@ -10,7 +10,28 @@ let syncInterval;
 let masterCheckInterval;
 let ultimoAvisoRuido = 0;
 
+// ==========================================
+// ESCUDO ANTI-TRAMPAS (Botón Atrás)
+// ==========================================
+history.pushState(null, null, location.href);
+window.onpopstate = function () {
+    history.go(1);
+    alert("⛔ ACCIÓN DENEGADA: No puedes retroceder durante una evaluación oficial.");
+};
+
 async function init() {
+    // ==========================================
+    // ESCUDO ANTI-F5 (Detección de Recarga)
+    // ==========================================
+    if (sessionStorage.getItem('mina_terrestre_activa') === 'true') {
+        alert("⛔ ALERTA: Recargaste la página. El examen ha sido cancelado por seguridad.");
+        registrarIncidencia('video', 'ALERTA ROJA: El alumno recargó la página (F5).');
+        await finalizarExamenPiloto(); 
+        return; // Detiene todo
+    }
+    // Activamos la mina para que si recarga, truene.
+    sessionStorage.setItem('mina_terrestre_activa', 'true');
+
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         const videoElement = document.getElementById('webcam'); 
@@ -354,6 +375,7 @@ async function finalizarExamenPiloto() {
         // Cuando tú oprimas "Finalizar y Liberar Dash" en tu control_mando.html
         if (data && data.estado === 'finalizado') {
             clearInterval(masterCheckInterval);
+            sessionStorage.removeItem('mina_terrestre_activa');
             window.location.href = 'simulacro_dash.html'; // Los teletransporta a todos al mismo tiempo
         }
     }, 5000); // Revisa cada 5 segundos para que el cambio sea casi instantáneo en el Meet
