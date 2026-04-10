@@ -128,9 +128,51 @@ async function pedirExplicacionIA(preguntaCodificada, respuestaCodificada) {
         <div class="mb-3 text-center"><i class="fa-solid fa-circle-notch fa-spin text-cyan-500"></i></div>
     `;
 
-    // AQUI HACES TU LLAMADA REAL AL BACKEND (Gemini)
-    // Cuando conteste, reemplazas el spinner con la respuesta y agregas:
-    setTimeout(() => {
+    try {
+        const { data, error } = await _supabase.functions.invoke('explicacion_ia', {
+            body: { 
+                pregunta: pregunta, 
+                correcta: correcta 
+            }
+        });
+
+        if (error) throw error;
+        
+        const respuestaLibreIA = data.respuesta;
+
+        chatBox.lastElementChild.remove(); // Quita spinner
+        
+        // Inyectamos la respuesta libre de la IA al chat
+        chatBox.innerHTML += `
+            <div class="mb-3 animate-fade-in">
+                <div class="bg-gray-800/60 p-5 rounded-2xl rounded-tl-none border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)] text-sm text-gray-200">
+                    <strong class="color-cian font-black italic text-[11px] uppercase flex items-center gap-2 mb-3 border-b border-white/10 pb-2"><i class="fa-solid fa-brain"></i> Análisis Profundo IA</strong>
+                    
+                    <div class="leading-relaxed space-y-2">
+                        ${respuestaLibreIA}
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-t border-white/10 flex justify-between items-center">
+                        <span class="text-[9px] text-gray-500 uppercase tracking-widest">Explicación Generada</span>
+                        <span class="text-[10px] text-yellow-500 font-bold bg-yellow-900/20 px-2 py-1 rounded-md">⚡ Te quedan ${tokens} tokens</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+    } catch (error) {
+        console.error("Error conectando con la IA:", error);
+        chatBox.lastElementChild.remove();
+        chatBox.innerHTML += `<div class="text-red-500 text-xs text-center p-2 bg-red-900/20 rounded">Error de conexión con el Búho IA. Intenta de nuevo.</div>`;
+        
+        // Le regresamos su token porque hubo error
+        tokens++;
+        localStorage.setItem('simu_creditos', tokens);
+        document.getElementById('energia-display').innerText = tokens;
+    }
+
+    /*setTimeout(() => {
         chatBox.lastElementChild.remove(); // Quita spinner
         chatBox.innerHTML += `
             <div class="mb-3">
@@ -143,7 +185,7 @@ async function pedirExplicacionIA(preguntaCodificada, respuestaCodificada) {
             </div>
         `;
         chatBox.scrollTop = chatBox.scrollHeight;
-    }, 2000); // Simulación de tiempo de respuesta
+    }, 2000); // Simulación de tiempo de respuesta*/
 }
 
 // Iniciar protocolo al cargar
