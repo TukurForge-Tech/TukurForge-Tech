@@ -2,36 +2,30 @@
 
 async function validarAccesoPilotoDash() {
     const email = localStorage.getItem('session_email');
-    
-    // Lo pateamos a la puerta del piloto si no hay sesión
-    if (!email) { 
-        window.location.href = 'acceso_piloto.html'; 
-        return; 
-    }
+    if (!email) { window.location.href = 'acceso_piloto.html'; return; }
 
     try {
-
         const { data, error } = await _supabase
             .from('prospectos_simulacro')
             .select('nombre_tutor') 
-            .eq('correo', email) // 'correo' es el nombre real de tu columna
+            .eq('correo', email) 
             .maybeSingle();
 
         if (error || !data) {
-            // Si por algo no existe, lo sacamos
             window.location.href = 'acceso_piloto.html';
             return;
         }
 
-        // Adecuación 2: Ponemos el nombre del papa en el saludo
-        const saludoSpan = document.getElementById('nombre-span');// username-display
-        if (saludoSpan) {
-            saludoSpan.innerText = data.nombre_tutor || email;
-        }
+        const saludoSpan = document.getElementById('nombre-span');
+        if (saludoSpan) saludoSpan.innerText = data.nombre_tutor || email;
 
-    } catch (err) {
-        console.error("Error en validación dash:", err);
-    }
+        // INCIDENCIA 4c: Asegurar que tengan sus 2 tokens al entrar al dash
+        if (!localStorage.getItem('simu_creditos')) {
+            localStorage.setItem('simu_creditos', 2);
+        }
+        document.getElementById('energia-display').innerText = localStorage.getItem('simu_creditos');
+
+    } catch (err) { console.error("Error en validación dash:", err); }
 }
 
 // Adecuación 9: Iniciar el Simulacro Piloto a motor.html
@@ -45,50 +39,60 @@ function iniciarSimulacro() {
 async function checarSiTerminoExamen() {
     if (localStorage.getItem('simu_terminado') === 'true') {
         
-        // 1. Ocultar los entrenamientos viejos
-        document.getElementById('contenedor-niveles').innerHTML = '';
+        // Bloqueamos el botón de examen para que no lo vuelva a hacer
+        document.getElementById('contenedor-niveles').innerHTML = `
+            <div class="card-glass p-5 border-gray-800 opacity-50">
+                <h4 class="text-gray-500 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-check mr-1"></i> Simulacro Piloto</h4>
+                <p class="text-sm font-black text-gray-600">Evaluación Completada</p>
+                <p class="text-[9px] text-gray-700 font-bold mt-2 uppercase"><i class="fa-solid fa-lock"></i> Finalizado</p>
+            </div>
+        `;
         
-        // 2. Extraer información local
         const aciertos = localStorage.getItem('simu_aciertos') || 0;
         const fallas = JSON.parse(localStorage.getItem('simu_fallas') || '[]');
         const incAudio = JSON.parse(localStorage.getItem('simu_inc_audio') || '[]').length;
         const incVideo = JSON.parse(localStorage.getItem('simu_inc_video') || '[]').length;
 
-        // 3. Lógica de Semáforos
-        const semaforoAudio = incAudio <= 2 ? '🟢 Excelente' : (incAudio <= 5 ? '🟡 Precaución' : '🔴 Crítico (Riesgo Cancelación)');
-        const semaforoVideo = incVideo <= 2 ? '🟢 Excelente' : (incVideo <= 5 ? '🟡 Precaución' : '🔴 Crítico (Riesgo Cancelación)');
+        const semaforoAudio = incAudio <= 2 ? '🟢 Excelente' : (incAudio <= 5 ? '🟡 Precaución' : '🔴 Crítico');
+        const semaforoVideo = incVideo <= 2 ? '🟢 Excelente' : (incVideo <= 5 ? '🟡 Precaución' : '🔴 Crítico');
         const colorCalif = aciertos >= 40 ? 'text-green-500' : 'text-red-500';
 
-        // 4. Renderizar Panel de Resultados
-        document.getElementById('contenedor-niveles').innerHTML = `
-            <div class="card-glass p-6 border-cyan-500 mb-6">
-                <h3 class="text-xl font-black italic text-cyan-400 uppercase mb-4">Resultados Oficiales</h3>
-                <p class="text-3xl font-black ${colorCalif} mb-4">${aciertos} / 60 Aciertos</p>
-                
-                <div class="bg-black/50 p-4 rounded-xl border border-slate-700 mb-2 flex justify-between">
-                    <span class="text-xs uppercase font-bold text-gray-400">Proctoring Audio:</span>
-                    <span class="text-xs uppercase font-bold">${semaforoAudio} (${incAudio} alertas)</span>
-                </div>
-                <div class="bg-black/50 p-4 rounded-xl border border-slate-700 flex justify-between">
-                    <span class="text-xs uppercase font-bold text-gray-400">Proctoring Video:</span>
-                    <span class="text-xs uppercase font-bold">${semaforoVideo} (${incVideo} alertas)</span>
+        // INCIDENCIA 4a: Pintamos los resultados ADENTRO del Chat de la IA
+        const chatBox = document.getElementById('chat-box');
+        chatBox.innerHTML = `
+            <div class="mb-3 animate-fade-in">
+                <div class="bg-gray-800/80 p-5 rounded-2xl rounded-tl-none border border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.2)] text-gray-200">
+                    <strong class="color-cian font-black italic text-[11px] uppercase flex items-center gap-2 mb-4 border-b border-white/10 pb-2"><i class="fa-solid fa-brain"></i> Análisis Oficial ECOEMS</strong>
+                    
+                    <div class="text-center mb-6">
+                        <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Tu Puntaje Global</p>
+                        <p class="text-4xl font-black ${colorCalif}">${aciertos} <span class="text-lg text-gray-500">/ 60</span></p>
+                    </div>
+                    
+                    <div class="bg-black/60 p-3 rounded-xl border border-slate-700 mb-2 flex justify-between items-center">
+                        <span class="text-[9px] uppercase font-bold text-gray-400"><i class="fa-solid fa-microphone mr-1"></i> Audio:</span>
+                        <span class="text-[10px] uppercase font-bold">${semaforoAudio}</span>
+                    </div>
+                    <div class="bg-black/60 p-3 rounded-xl border border-slate-700 mb-6 flex justify-between items-center">
+                        <span class="text-[9px] uppercase font-bold text-gray-400"><i class="fa-solid fa-camera mr-1"></i> Video:</span>
+                        <span class="text-[10px] uppercase font-bold">${semaforoVideo}</span>
+                    </div>
+
+                    <p class="text-[10px] uppercase text-cyan-400 font-black mb-3 tracking-widest"><i class="fa-solid fa-bullseye mr-1"></i> Áreas de Oportunidad</p>
+                    <div id="lista-fallas" class="space-y-3 max-h-64 overflow-y-auto pr-2 scroll-smooth"></div>
                 </div>
             </div>
-
-            <h3 class="text-gray-500 font-bold text-xs uppercase tracking-widest mb-4 italic">Tus Áreas de Oportunidad</h3>
-            <div id="lista-fallas" class="space-y-3 max-h-96 overflow-y-auto pr-2"></div>
         `;
 
-        // 5. Renderizar Lista de Fallas
         const listaHtml = document.getElementById('lista-fallas');
-        fallas.forEach((falla, idx) => {
+        fallas.forEach((falla) => {
             listaHtml.innerHTML += `
-                <div class="bg-black/40 border border-red-900/50 p-4 rounded-xl text-xs">
-                    <span class="bg-red-900 text-red-200 px-2 py-1 rounded-md text-[10px] font-bold uppercase mb-2 inline-block">${falla.materia}</span>
-                    <p class="text-gray-300 italic mb-2">${falla.pregunta.substring(0, 80)}...</p>
+                <div class="bg-black/50 border border-slate-700/50 p-3 rounded-xl">
+                    <span class="text-red-400 text-[8px] font-black uppercase mb-1 block tracking-widest">${falla.materia}</span>
+                    <p class="text-gray-300 text-xs italic mb-2 line-clamp-2">${falla.pregunta}</p>
                     <button onclick="pedirExplicacionIA('${encodeURIComponent(falla.pregunta)}', '${encodeURIComponent(falla.correcta)}')" 
-                            class="mt-2 text-cyan-400 font-bold uppercase hover:text-cyan-300 transition w-full text-left bg-cyan-900/20 p-2 rounded-lg">
-                        <i class="fa-solid fa-brain mr-1"></i> Explicar con IA (Consume 1 ⚡)
+                            class="text-cyan-400 font-bold uppercase hover:text-cyan-300 transition w-full text-center border border-cyan-900 bg-cyan-900/20 py-1.5 rounded-lg text-[9px] tracking-wider">
+                        <i class="fa-solid fa-brain mr-1"></i> Explicar con IA (1⚡)
                     </button>
                 </div>
             `;
