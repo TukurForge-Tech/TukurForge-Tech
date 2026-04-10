@@ -191,9 +191,18 @@ function startTimer() {
     
     const interval = setInterval(() => {
         tiempoSeg--;
-        let m = Math.floor(tiempoSeg / 60);
+        
+        // Nuevo cálculo de formato hh:mm:ss
+        let h = Math.floor(tiempoSeg / 3600);
+        let m = Math.floor((tiempoSeg % 3600) / 60);
         let s = tiempoSeg % 60;
-        el.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        
+        // Solo mostramos horas si hay más de 1 hora
+        if (h > 0) {
+            el.innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        } else {
+            el.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        }
         
         if (tiempoSeg <= 300) { el.classList.add('text-red-500'); } // 5 mins rojo
         if (tiempoSeg <= 0) {
