@@ -10,9 +10,7 @@ async function validarAccesoPilotoDash() {
     }
 
     try {
-        // Obtenemos el nombre real de la base de datos
-        // NOTA: Asumo que la columna es 'nombre_papa' de la tabla 'prospectos_simulacro'
-        // ya que el prompt del socio tenía un error de redundancia.
+
         const { data, error } = await _supabase
             .from('prospectos_simulacro')
             .select('nombre_tutor') 
