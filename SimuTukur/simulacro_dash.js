@@ -26,7 +26,7 @@ async function validarAccesoPilotoDash() {
         }
 
         // Adecuación 2: Ponemos el nombre del papa en el saludo
-        const saludoSpan = document.getElementById('username-display');
+        const saludoSpan = document.getElementById('nombre-span');// username-display
         if (saludoSpan) {
             saludoSpan.innerText = data.nombre_tutor || email;
         }
