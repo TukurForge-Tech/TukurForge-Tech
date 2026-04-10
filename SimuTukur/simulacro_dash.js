@@ -99,6 +99,11 @@ async function checarSiTerminoExamen() {
                 </div>
             `;
         });
+
+        // NUEVO: Renderizar matemáticas de la lista de errores
+        if (typeof MathJax !== 'undefined') {
+            MathJax.typesetPromise();
+        }
     }
 }
 
@@ -162,6 +167,11 @@ async function pedirExplicacionIA(preguntaCodificada, respuestaCodificada) {
             </div>
         `;
         chatBox.scrollTop = chatBox.scrollHeight;
+
+        // NUEVO: Renderizar matemáticas de la respuesta de la IA
+        if (typeof MathJax !== 'undefined') {
+            MathJax.typesetPromise();
+        }
 
     } catch (error) {
         console.error("Error conectando con la IA:", error);
