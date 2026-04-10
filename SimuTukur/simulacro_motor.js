@@ -1,333 +1,153 @@
-const cantQ = parseInt(localStorage.getItem('simu_preguntas'));
-let reactivos = [];         
-let reactivosFallados = []; 
-let incidenciasAudio = [];
-let incidenciasVideo = [];
-let index = 0;
-let aciertos = 0;
-let seleccionActual = null;
-let syncInterval;
-let masterCheckInterval;
-let ultimoAvisoRuido = 0;
+// simulacro_dash.js (Lógica corregida y aislada)
 
-async function init() {
+async function validarAccesoPilotoDash() {
+    const email = localStorage.getItem('session_email');
+    if (!email) { window.location.href = 'acceso_piloto.html'; return; }
+
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        const videoElement = document.getElementById('webcam'); 
-        videoElement.srcObject = stream;
-        setupAudioMonitor(stream);
-        setupVideoMonitor(videoElement);
-        
-        const reactivosBrutos = await cargarReactivosPiloto();
-        reactivos = reactivosBrutos;
-        
-        render();
-        iniciarEscuchaMaestra(); 
-
-    } catch (err) {
-        alert("Necesitas dar permisos de cámara y micrófono.");
-    }
-}
-
-// ==========================================
-// 2. COSECHA ESPECIAL PILOTO (60 Reactivos)
-// ==========================================
-async function cargarReactivosPiloto() {
-    document.getElementById('txt-pregunta').innerHTML = "Construyendo Matriz del Simulacro...";
-    
-    const materias = [
-        { nombre: 'Habilidad Matemática', cant: 8 },
-        { nombre: 'Español', cant: 6 },
-        { nombre: 'Matemáticas', cant: 6 },
-        { nombre: 'Física', cant: 6 },
-        { nombre: 'Historia', cant: 6 },
-        { nombre: 'Biología', cant: 5 },
-        { nombre: 'Química', cant: 5 },
-        { nombre: 'Geografía', cant: 5 },
-        { nombre: 'Cívica y Ética', cant: 5 }
-    ];
-
-    let poolFinal = [];
-
-    for (const m of materias) {
         const { data, error } = await _supabase
-            .from('reactivos')
-            .select('*')
-            .eq('tipo_examen', 'ECOEMS')
-            .eq('materia', m.nombre)
-            .in('complejidad', [2, 3]) 
-            .limit(m.cant);
-        
-        if (data) poolFinal.push(...data);
-    }
+            .from('prospectos_simulacro')
+            .select('nombre_tutor') 
+            .eq('correo', email) 
+            .maybeSingle();
 
-    // Habilidad Verbal (Bloques de lectura)
-    const { data: lecturas } = await _supabase
-        .from('reactivos')
-        .select('*')
-        .eq('materia', 'Habilidad Verbal')
-        .limit(8); 
-    
-    if (lecturas) poolFinal.push(...lecturas);
+        if (error || !data) {
+            window.location.href = 'acceso_piloto.html';
+            return;
+        }
 
-    return poolFinal;
+        const saludoSpan = document.getElementById('nombre-span');
+        if (saludoSpan) saludoSpan.innerText = data.nombre_tutor || email;
+
+        // INCIDENCIA 4c: Asegurar que tengan sus 2 tokens al entrar al dash
+        if (!localStorage.getItem('simu_creditos')) {
+            localStorage.setItem('simu_creditos', 2);
+        }
+        document.getElementById('energia-display').innerText = localStorage.getItem('simu_creditos');
+
+    } catch (err) { console.error("Error en validación dash:", err); }
 }
 
-// ==========================================
-// 3. RENDERIZADO Y CONTROL
-// ==========================================
-function render() {
-    if (index >= reactivos.length || index >= cantQ) { finalizarExamenPiloto(); return; }
+// Adecuación 9: Iniciar el Simulacro Piloto a motor.html
+function iniciarSimulacro() {
+    localStorage.setItem('simu_nivel', 'PILOTO_VIP'); // Nivel adaptativo Medio-Alto
+    localStorage.setItem('simu_preguntas', 60);
+    localStorage.setItem('simu_tiempo', 90);
+    window.location.href = 'simulacro_motor.html'; // Tu motor aislado
+}
 
-    const item = reactivos[index];
-    seleccionActual = null;
-    
-    document.getElementById('label-materia').innerText = item.materia;
-    document.getElementById('progreso-txt').innerText = `Q. ${index + 1} / ${Math.min(reactivos.length, cantQ)}`;
-    
-    const wBar = ((index) / Math.min(reactivos.length, cantQ)) * 100;
-    document.getElementById('progress-bar').style.width = wBar + "%";
-    
-    const btnConfirm = document.getElementById('btn-confirm');
-    btnConfirm.disabled = true;
-
-    // Manejo de JSON de Lectura
-    let textoHtml = "";
-    if (item.texto_lectura && item.texto_lectura.trim() !== "") {
-        textoHtml = `<div class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-sm text-slate-300 mb-4 max-h-48 overflow-y-auto italic">
-                        <i class="fa-solid fa-book-open text-cyan-500 mr-2"></i> ${item.texto_lectura}
-                     </div>`;
-    }
-
-    let preguntaTex = typeof MathJax !== 'undefined' ? item.pregunta : item.pregunta; 
-    document.getElementById('txt-pregunta').innerHTML = textoHtml + preguntaTex;
-
-    const divOpciones = document.getElementById('opciones-grid');
-    divOpciones.innerHTML = '';
-    
-    const letras = ['A', 'B', 'C', 'D'];
-    [item.opcion_a, item.opcion_b, item.opcion_c, item.opcion_d].forEach((op, i) => {
-        if (!op) return;
+async function checarSiTerminoExamen() {
+    if (localStorage.getItem('simu_terminado') === 'true') {
         
-        const btn = document.createElement('button');
-        btn.className = 'w-full text-left bg-black/40 border border-slate-700 p-4 rounded-xl hover:border-cyan-500 transition-all text-sm md:text-base flex items-start gap-4 focus:outline-none op-btn';
-        
-        let opTex = typeof MathJax !== 'undefined' ? op : op;
-        
-        btn.innerHTML = `
-            <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center font-bold shrink-0 mt-0.5 border border-slate-700">${letras[i]}</div>
-            <div class="flex-1 pt-1 overflow-x-auto latex-container">${opTex}</div>
+        // Bloqueamos el botón de examen para que no lo vuelva a hacer
+        document.getElementById('contenedor-niveles').innerHTML = `
+            <div class="card-glass p-5 border-gray-800 opacity-50">
+                <h4 class="text-gray-500 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-check mr-1"></i> Simulacro Piloto</h4>
+                <p class="text-sm font-black text-gray-600">Evaluación Completada</p>
+                <p class="text-[9px] text-gray-700 font-bold mt-2 uppercase"><i class="fa-solid fa-lock"></i> Finalizado</p>
+            </div>
         `;
         
-        btn.onclick = () => {
-            document.querySelectorAll('.op-btn').forEach(b => {
-                b.classList.remove('border-cyan-500', 'bg-cyan-900/20');
-                b.querySelector('div').classList.remove('bg-cyan-500', 'text-black', 'border-cyan-400');
-            });
-            btn.classList.add('border-cyan-500', 'bg-cyan-900/20');
-            btn.querySelector('div').classList.add('bg-cyan-500', 'text-black', 'border-cyan-400');
-            seleccionActual = letras[i];
-            btnConfirm.disabled = false;
-        };
-        divOpciones.appendChild(btn);
-    });
+        const aciertos = localStorage.getItem('simu_aciertos') || 0;
+        const fallas = JSON.parse(localStorage.getItem('simu_fallas') || '[]');
+        const incAudio = JSON.parse(localStorage.getItem('simu_inc_audio') || '[]').length;
+        const incVideo = JSON.parse(localStorage.getItem('simu_inc_video') || '[]').length;
 
-    if(typeof MathJax !== 'undefined') MathJax.typesetPromise();
-}
+        const semaforoAudio = incAudio <= 2 ? '🟢 Excelente' : (incAudio <= 5 ? '🟡 Precaución' : '🔴 Crítico');
+        const semaforoVideo = incVideo <= 2 ? '🟢 Excelente' : (incVideo <= 5 ? '🟡 Precaución' : '🔴 Crítico');
+        const colorCalif = aciertos >= 40 ? 'text-green-500' : 'text-red-500';
 
-// ==========================================
-// 5. MÓDULOS DE VIGILANCIA (Audio/Video)
-// ==========================================
-function setupAudioMonitor(stream) {
-    const actx = new (window.AudioContext || window.webkitAudioContext)();
-    const src = actx.createMediaStreamSource(stream);
-    const analyzer = actx.createAnalyser();
-    analyzer.fftSize = 256;
-    src.connect(analyzer);
-    const dataArray = new Uint8Array(analyzer.frequencyBinCount);
-    const meter = document.getElementById('audio-meter');
+        // INCIDENCIA 4a: Pintamos los resultados ADENTRO del Chat de la IA
+        const chatBox = document.getElementById('chat-box');
+        chatBox.innerHTML = `
+            <div class="mb-3 animate-fade-in">
+                <div class="bg-gray-800/80 p-5 rounded-2xl rounded-tl-none border border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.2)] text-gray-200">
+                    <strong class="color-cian font-black italic text-[11px] uppercase flex items-center gap-2 mb-4 border-b border-white/10 pb-2"><i class="fa-solid fa-brain"></i> Análisis Oficial ECOEMS</strong>
+                    
+                    <div class="text-center mb-6">
+                        <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Tu Puntaje Global</p>
+                        <p class="text-4xl font-black ${colorCalif}">${aciertos} <span class="text-lg text-gray-500">/ 60</span></p>
+                    </div>
+                    
+                    <div class="bg-black/60 p-3 rounded-xl border border-slate-700 mb-2 flex justify-between items-center">
+                        <span class="text-[9px] uppercase font-bold text-gray-400"><i class="fa-solid fa-microphone mr-1"></i> Audio:</span>
+                        <span class="text-[10px] uppercase font-bold">${semaforoAudio}</span>
+                    </div>
+                    <div class="bg-black/60 p-3 rounded-xl border border-slate-700 mb-6 flex justify-between items-center">
+                        <span class="text-[9px] uppercase font-bold text-gray-400"><i class="fa-solid fa-camera mr-1"></i> Video:</span>
+                        <span class="text-[10px] uppercase font-bold">${semaforoVideo}</span>
+                    </div>
 
-    setInterval(() => {
-        analyzer.getByteFrequencyData(dataArray);
-        let sum = dataArray.reduce((a, b) => a + b, 0);
-        let avg = sum / dataArray.length;
-        let p = Math.min((avg / 128) * 100, 100);
-        
-        if(meter) meter.style.width = p + "%";
-        
-        if (p > 40) { // Umbral de ruido
-            const ahora = Date.now();
-            if (ahora - ultimoAvisoRuido > 10000) { 
-                // CORRECCIÓN: Usa la nueva función en lugar del push viejo
-                registrarIncidencia('audio', `Ruido detectado en el minuto ${document.getElementById('timer').innerText}`);
-                ultimoAvisoRuido = ahora;
-            }
-        }
-    }, 200);
-}
-
-async function setupVideoMonitor(videoElement) {
-    try {
-        const MODEL_URL = 'https://vladmandic.github.io/face-api/model/';
-        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-
-        setInterval(async () => {
-            if (videoElement.paused || videoElement.ended) return;
-
-            const detections = await faceapi.detectAllFaces(videoElement, new faceapi.TinyFaceDetectorOptions());
-            const tiempoActual = document.getElementById('timer').innerText;
-
-            if (detections.length === 0) {
-                // CORRECCIÓN: Usa la nueva función de guardado local
-                registrarIncidencia('video', `Ausencia detectada en cámara en el minuto ${tiempoActual}`);
-            } else if (detections.length > 1) {
-                // CORRECCIÓN: Usa la nueva función de guardado local
-                registrarIncidencia('video', `Múltiples personas en cámara en el minuto ${tiempoActual}`);
-            }
-        }, 5000); 
-
-    } catch (error) {
-        console.warn("La vigilancia de video falló al iniciar.", error);
-    }
-}
-
-// 1. ESCUCHA AL MAESTRO (Tu Control de Mando)
-function iniciarEscuchaMaestra() {
-    const el = document.getElementById('timer');
-    let examenIniciadoLocal = false;
-
-    masterCheckInterval = setInterval(async () => {
-        const { data } = await _supabase.from('control_simulacro').select('estado, tiempo_restante').eq('id', 1).single();
-        
-        if (data.estado === 'en_curso' && !examenIniciadoLocal) {
-            examenIniciadoLocal = true;
-            document.getElementById('lbl-estado').innerText = "Supervisión Activa";
-            iniciarGuardadoPorLotes(); // Arranca los 10 mins
-        }
-        
-        if (data.estado === 'en_curso') {
-            let m = Math.floor(data.tiempo_restante / 60);
-            let s = data.tiempo_restante % 60;
-            el.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-        }
-
-        if (data.estado === 'finalizado') {
-            clearInterval(masterCheckInterval);
-            clearInterval(syncInterval);
-            await sincronizarConBD(); // Último guardado de emergencia
-            finalizarExamenPiloto();
-        }
-    }, 15000); // Revisa cada 15 segs
-}
-
-// 2. GUARDADO LOCAL Y POR LOTES (Cada 10 mins)
-function procesarRespuesta() {
-    if (!seleccionActual) return;
-    const item = reactivos[index];
-    
-    if (seleccionActual === item.correcta) {
-        aciertos++;
-    } else {
-        reactivosFallados.push({
-            pregunta: item.pregunta,
-            materia: item.materia,
-            tu_respuesta: seleccionActual,
-            correcta: item.correcta
-        });
-    }
-    
-    // Guardado Local Inmediato (Anti-apagones)
-    localStorage.setItem('simu_fallas', JSON.stringify(reactivosFallados));
-    localStorage.setItem('simu_aciertos', aciertos);
-    
-    index++;
-    render();
-}
-
-function iniciarGuardadoPorLotes() {
-    syncInterval = setInterval(async () => {
-        await sincronizarConBD();
-    }, 600000); // 600,000 ms = 10 minutos
-}
-
-async function sincronizarConBD() {
-    const email = localStorage.getItem('session_email');
-    if (!email) return;
-    
-    // Vaciamos el localStorage a Supabase
-    await _supabase.from('simulacros_resultados').upsert([{
-        email: email,
-        aciertos: parseInt(localStorage.getItem('simu_aciertos')) || 0,
-        incidencias_audio: JSON.parse(localStorage.getItem('simu_inc_audio') || '[]'),
-        incidencias_video: JSON.parse(localStorage.getItem('simu_inc_video') || '[]'),
-        ultimo_guardado: new Date().toISOString()
-    }], { onConflict: 'email' });
-}
-
-// 3. VIGILANCIA MODIFICADA (Guarda localmente)
-function registrarIncidencia(tipo, mensaje) {
-    if (tipo === 'audio') {
-        incidenciasAudio.push(mensaje);
-        localStorage.setItem('simu_inc_audio', JSON.stringify(incidenciasAudio));
-    } else {
-        incidenciasVideo.push(mensaje);
-        localStorage.setItem('simu_inc_video', JSON.stringify(incidenciasVideo));
-    }
-}
-
-// ==========================================
-// 4. EL CRONÓMETRO Y FINALIZACIÓN (MODIFICADO PARA ESPERA ESTRATÉGICA)
-// ==========================================
-
-async function finalizarExamenPiloto() {
-    // 1. Forzamos el último guardado por si terminó antes
-    await sincronizarConBD(); 
-    localStorage.setItem('simu_terminado', 'true');
-    
-    // 2. Detenemos la cámara y micrófono para no seguir gastando batería/recursos
-    const videoEl = document.getElementById('webcam');
-    if(videoEl && videoEl.srcObject) {
-        videoEl.srcObject.getTracks().forEach(track => track.stop());
-    }
-
-    // 3. Pintamos la PANTALLA DE ESPERA (Sala de control)
-    document.body.innerHTML = `
-        <div class="fixed inset-0 bg-[#050a14] flex flex-col justify-center items-center text-center p-10 z-[9999]">
-            <i class="fa-solid fa-lock text-6xl text-cyan-500 mb-6 animate-pulse"></i>
-            <h2 class="text-4xl font-black text-cyan-400 mb-4 uppercase tracking-tighter">Evaluación Concluida</h2>
-            <p class="text-xl text-slate-300 mb-8 max-w-lg">
-                Tus respuestas, video y audio han sido encriptados y enviados a la base de datos central.
-            </p>
-            
-            <div class="bg-black/50 p-8 rounded-3xl border border-cyan-500/30 mb-8 shadow-[0_0_30px_rgba(6,182,212,0.1)]">
-                <p class="text-sm uppercase tracking-widest text-cyan-500 font-bold mb-2">Protocolo de Seguridad</p>
-                <p class="text-lg text-white">Esperando autorización del Director para liberar resultados...</p>
-                <div class="mt-6 flex justify-center space-x-2">
-                    <div class="w-3 h-3 bg-cyan-500 rounded-full animate-bounce"></div>
-                    <div class="w-3 h-3 bg-cyan-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                    <div class="w-3 h-3 bg-cyan-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                    <p class="text-[10px] uppercase text-cyan-400 font-black mb-3 tracking-widest"><i class="fa-solid fa-bullseye mr-1"></i> Áreas de Oportunidad</p>
+                    <div id="lista-fallas" class="space-y-3 max-h-64 overflow-y-auto pr-2 scroll-smooth"></div>
                 </div>
             </div>
-            
-            <p class="text-gray-500 italic text-xs uppercase tracking-widest">
-                <i class="fa-solid fa-triangle-exclamation text-yellow-500 mr-1"></i> Por favor, llama a tu tutor o padre de familia a la pantalla.
-            </p>
+        `;
+
+        const listaHtml = document.getElementById('lista-fallas');
+        fallas.forEach((falla) => {
+            listaHtml.innerHTML += `
+                <div class="bg-black/50 border border-slate-700/50 p-3 rounded-xl">
+                    <span class="text-red-400 text-[8px] font-black uppercase mb-1 block tracking-widest">${falla.materia}</span>
+                    <p class="text-gray-300 text-xs italic mb-2 line-clamp-2">${falla.pregunta}</p>
+                    <button onclick="pedirExplicacionIA('${encodeURIComponent(falla.pregunta)}', '${encodeURIComponent(falla.correcta)}')" 
+                            class="text-cyan-400 font-bold uppercase hover:text-cyan-300 transition w-full text-center border border-cyan-900 bg-cyan-900/20 py-1.5 rounded-lg text-[9px] tracking-wider">
+                        <i class="fa-solid fa-brain mr-1"></i> Explicar con IA (1⚡)
+                    </button>
+                </div>
+            `;
+        });
+    }
+}
+
+// 6. La Función Monitoreada por Tokens
+async function pedirExplicacionIA(preguntaCodificada, respuestaCodificada) {
+    let tokens = parseInt(localStorage.getItem('simu_creditos')) || 0;
+    if (tokens <= 0) {
+        alert("No tienes Energía IA suficiente. Debes recargar.");
+        return;
+    }
+
+    // Cobrar Token
+    tokens--;
+    localStorage.setItem('simu_creditos', tokens);
+    document.getElementById('energia-display').innerText = tokens;
+    // Aquí actualizarías el número en tu HTML: document.getElementById('tokens-display').innerText = tokens;
+    
+    const pregunta = decodeURIComponent(preguntaCodificada);
+    const correcta = decodeURIComponent(respuestaCodificada);
+
+    // Mandar mensaje al chat de la izquierda
+    const chatBox = document.getElementById('chat-box');
+    chatBox.innerHTML += `
+        <div class="mb-3 flex justify-end">
+            <div class="bg-cyan-900/40 p-3 rounded-xl rounded-tr-none border border-cyan-500/30 max-w-[85%] text-sm text-cyan-100">
+                Por favor, explícame por qué la respuesta a "${pregunta.substring(0, 30)}..." es correcta.
+            </div>
         </div>
+        <div class="mb-3 text-center"><i class="fa-solid fa-circle-notch fa-spin text-cyan-500"></i></div>
     `;
 
-    // 4. EL TRUCO DE MAGIA: Seguir escuchando tu Control Maestro
-    // Usamos el mismo masterCheckInterval que ya teníamos
-    clearInterval(masterCheckInterval); // Limpiamos el anterior por seguridad
-    
-    masterCheckInterval = setInterval(async () => {
-        const { data } = await _supabase.from('control_simulacro').select('estado').eq('id', 1).single();
-        
-        // Cuando tú oprimas "Finalizar y Liberar Dash" en tu control_mando.html
-        if (data && data.estado === 'finalizado') {
-            clearInterval(masterCheckInterval);
-            window.location.href = 'simulacro_dash.html'; // Los teletransporta a todos al mismo tiempo
-        }
-    }, 5000); // Revisa cada 5 segundos para que el cambio sea casi instantáneo en el Meet
+    // AQUI HACES TU LLAMADA REAL AL BACKEND (Gemini)
+    // Cuando conteste, reemplazas el spinner con la respuesta y agregas:
+    setTimeout(() => {
+        chatBox.lastElementChild.remove(); // Quita spinner
+        chatBox.innerHTML += `
+            <div class="mb-3">
+                <div class="bg-gray-800/60 p-4 rounded-xl rounded-tl-none border border-white/5 max-w-[85%] shadow-sm text-sm text-gray-200">
+                    <strong class="color-cian font-black italic text-[10px] uppercase flex items-center gap-2 mb-2"><i class="fa-solid fa-brain"></i> Tutor Simu</strong>
+                    <p>La respuesta correcta es <strong>${correcta}</strong> porque... [AQUÍ VA LA RESPUESTA DE TU IA].</p>
+                    <hr class="border-white/10 my-2">
+                    <p class="text-[10px] text-yellow-500">⚡ Te quedan ${tokens} tokens. Selecciona otra pregunta en el panel derecho si deseas otra explicación.</p>
+                </div>
+            </div>
+        `;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }, 2000); // Simulación de tiempo de respuesta
 }
-// Arrancar el motor al cargar la página
-window.onload = init;
+
+// Iniciar protocolo al cargar
+window.onload = async () => {
+    await validarAccesoPilotoDash(); // Checa quién entró
+    await checarSiTerminoExamen();   // Checa si viene regresando del examen
+};
