@@ -80,8 +80,17 @@ async function seleccionarCurso(data, btn) {
     actualizarDisplayCreditos();
 
     setTimeout(() => { cargarHistorial(data.token_hex); }, 800);
-    
-    const { data: historialBD } = await _supabase.from('resultados_examenes').select('puntaje_obtenido').eq('token_hex', data.token_hex).eq('tipo_prueba', nombrePlan).order('fecha_aplicacion', { ascending: false }).limit(1);
+
+    const emailPadre = localStorage.getItem('session_email');
+    const { data: historialBD } = await _supabase.from('resultados_examenes')
+    .select('puntaje_obtenido')
+    .eq('token_hex', data.token_hex)
+    .eq('tipo_prueba', nombrePlan)
+    .eq('email', emailPadre)               // CANDADO 1
+    .eq('nombre_alumno', data.nombre_alumno) // CANDADO 2
+    .order('fecha_aplicacion', { ascending: false })
+    .limit(1);
+    //const { data: historialBD } = await _supabase.from('resultados_examenes').select('puntaje_obtenido').eq('token_hex', data.token_hex).eq('tipo_prueba', nombrePlan).order('fecha_aplicacion', { ascending: false }).limit(1);
     const ultimoPuntajeBD = (historialBD && historialBD.length > 0) ? historialBD[0].puntaje_obtenido : null;
     const params = new URLSearchParams(window.location.search);
     const puntajeReciente = params.get('res');
@@ -175,11 +184,24 @@ function dibujarBurbujaChat(emisor, texto) {
 
 async function cargarHistorial(token) {
     const contenedor = document.getElementById('contenedor-historial');
+    const emailPadre = localStorage.getItem('session_email');
+    const nombreAlumno = localStorage.getItem('nombre_alumno'); // Lo guardaste en seleccionarCurso
+
     try {
         const { data, error } = await _supabase.from('resultados_examenes')
             .select('tipo_prueba, fecha_aplicacion, puntaje_obtenido')
             .eq('token_hex', token)
+            .eq('email', emailPadre)           // CANDADO 1
+            .eq('nombre_alumno', nombreAlumno) // CANDADO 2
             .order('fecha_aplicacion', { ascending: false });
+
+/*async function cargarHistorial(token) {
+    const contenedor = document.getElementById('contenedor-historial');
+    try {
+        const { data, error } = await _supabase.from('resultados_examenes')
+            .select('tipo_prueba, fecha_aplicacion, puntaje_obtenido')
+            .eq('token_hex', token)
+            .order('fecha_aplicacion', { ascending: false });*/
 
         if (error) throw error;
 
