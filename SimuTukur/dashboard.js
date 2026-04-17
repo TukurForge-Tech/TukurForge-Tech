@@ -151,7 +151,17 @@ async function guardarCreditosEnBD(creditosNuevos) {
     const email = localStorage.getItem('session_email');
     const token = localStorage.getItem('token_hex_hijo');
     if (_supabase && email && token) {
-        await _supabase.from('usuarios_membresias').update({ intentos_simulacro_restantes: creditosNuevos }).eq('email', email).eq('token_hex', token);
+        const { data, error } = await _supabase.from('usuarios_membresias')
+            .update({ intentos_simulacro_restantes: creditosNuevos })
+            .eq('email', email)
+            .eq('token_hex', token);
+            
+        if (error) {
+            console.error("❌ ERROR AL DESCONTAR TOKEN:", error);
+            alert("Error de BD: No se pudo descontar el token. Revisa la consola.");
+        } else {
+            console.log("✅ Token descontado correctamente en la BD.");
+        }
     }
 }
 
@@ -298,24 +308,28 @@ async function enviarMensajeChat(token) {
     let energia = parseInt(energiaElement.innerText) || 0;
     if (energia <= 0) { dibujarBurbujaChat('simu', "Te has quedado sin Energía IA. Usa el botón 'Recargar'."); return; }
 
-    // 1. DESCONTAMOS EL TOKEN (Esto ya funcionaba)
+    // 1. DESCONTAMOS EL TOKEN
     energia -= 1;
     energiaElement.innerText = energia;
     localStorage.setItem('simu_creditos', energia);
     await guardarCreditosEnBD(energia);
     
-    // 2. Pintamos la burbuja del alumno
     dibujarBurbujaChat('alumno', textoUsuario);
     input.value = '';
 
-    // 💾 3. GUARDAMOS EN SUPABASE (El registro del Alumno)
-    await _supabase.from('chat_historial').insert([{
+    // 💾 2. GUARDAMOS EN SUPABASE (El registro del Alumno)
+    const { error: errorAlumno } = await _supabase.from('chat_historial').insert([{
         token_hex: token,
         email: email,
         nombre_alumno: nombreHijo,
         emisor: 'alumno',
         mensaje: textoUsuario
     }]);
+
+    if (errorAlumno) {
+        console.error("❌ ERROR GUARDANDO CHAT ALUMNO:", errorAlumno);
+        alert(`Error guardando chat: ${errorAlumno.message}`);
+    }
     
     const idBurbujaIA = "typing-" + Date.now();
     dibujarBurbujaChat('simu', `<span id="${idBurbujaIA}" class="animate-pulse">Simu está analizando...</span>`);
@@ -326,7 +340,7 @@ async function enviarMensajeChat(token) {
             method: 'POST', 
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseKey}` // Ojo: Asegúrate que supabaseKey siga definida
+                'Authorization': `Bearer ${supabaseKey}`
             },
             body: JSON.stringify({ contents: [{ parts: [{ text: textoUsuario }] }], generationConfig: { temperature: 0.4 } })
         });
@@ -342,20 +356,22 @@ async function enviarMensajeChat(token) {
             if (window.MathJax) { window.MathJax.typesetPromise([spanBurbuja.parentElement.parentElement]); }
         }
 
-        // 💾 4. GUARDAMOS EN SUPABASE (El registro de la IA)
-        await _supabase.from('chat_historial').insert([{
+        // 💾 3. GUARDAMOS EN SUPABASE (El registro de la IA)
+        const { error: errorIA } = await _supabase.from('chat_historial').insert([{
             token_hex: token,
             email: email,
             nombre_alumno: nombreHijo,
             emisor: 'simu',
             mensaje: respuestaIA
         }]);
+
+        if (errorIA) console.error("❌ ERROR GUARDANDO CHAT IA:", errorIA);
         
     } catch (e) {
         const spanBurbuja = document.getElementById(idBurbujaIA);
         if(spanBurbuja && spanBurbuja.parentElement) spanBurbuja.parentElement.innerHTML = "<em>Error de conexión. Intenta de nuevo.</em>";
         
-        // 🔄 Si la IA falla, le devolvemos su token al niño (Excelente práctica operativa)
+        // Reembolso del token
         energia += 1;
         energiaElement.innerText = energia;
         localStorage.setItem('simu_creditos', energia);
