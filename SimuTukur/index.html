@@ -41,14 +41,24 @@
         <p class="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
             El único simulador con Inteligencia Artificial que entrena al aspirante como un maestro particular 24/7. Telemetría de atención, retos personalizados y explicaciones paso a paso.
         </p>
-        <div class="flex flex-col sm:flex-row justify-center gap-4">
-            <a href="examen-demo.html" class="bg-glass hover:bg-white/10 text-white font-black py-4 px-8 rounded-full transition border border-gray-700">
-                Hacer Examen Demo
-            </a>
-            <a href="registro.html" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 px-8 rounded-full transition transform hover:scale-105 shadow-[0_0_20px_rgba(6,182,212,0.4)]">
-                Ver Planes e Inscribirse
-            </a>
+
+        <div class="flex flex-col sm:flex-row justify-center items-stretch gap-4 w-full max-w-2xl mx-auto mt-6">
+            <div class="flex flex-col gap-2 w-full sm:w-1/2 relative">
+                <select id="exam-dropdown" class="bg-black/50 border border-gray-700 text-cyan-400 text-sm font-bold p-3 rounded-2xl focus:ring-2 focus:ring-cyan-500 outline-none w-full text-center appearance-none cursor-pointer transition shadow-inner">
+                    <option value="" disabled selected>Cargando instituciones...</option>
+                </select>
+                <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-gray-500 text-xs pointer-events-none"></i>              
+                <button id="start-demo-btn" class="bg-glass hover:bg-white/10 text-white font-black py-4 px-4 rounded-2xl transition border border-gray-700 w-full h-full">
+                    Hacer Examen Demo
+                </button>
+            </div>        
+            <div class="w-full sm:w-1/2 flex items-end">
+                <a href="registro.html" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 px-4 rounded-2xl transition transform hover:scale-105 shadow-[0_0_20px_rgba(6,182,212,0.4)] w-full text-center flex items-center justify-center h-[58px]">
+                    Ver Planes e Inscribirse
+                </a>
+            </div>        
         </div>
+        
         <div class="mt-10 flex flex-col items-center justify-center gap-3">
             <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Pagos 100% Seguros Procesados por</p>
             <div class="flex items-center gap-4 text-gray-400 opacity-70 hover:opacity-100 transition-opacity">
@@ -153,6 +163,8 @@
     <footer class="bg-[#02050a] py-12 border-t border-gray-800 text-center">
         <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-4">SimuTukur © 2026. Todos los derechos reservados.</p>
     </footer>
+
+    <script src="index.js"></script>
 
 </body>
 </html>
