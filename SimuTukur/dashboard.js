@@ -12,14 +12,11 @@ async function inicializarDashboard() {
             let creditosActuales = parseInt(localStorage.getItem('simu_creditos')) || 0;
             const nuevosCreditos = creditosActuales + tokensAComprar;
             
-            // Actualizamos Local y BD
             localStorage.setItem('simu_creditos', nuevosCreditos);
             await guardarCreditosEnBD(nuevosCreditos);
             actualizarDisplayCreditos();
             
-            // Notificamos al usuario
             alert(`✅ ¡Recarga Exitosa! Se han añadido ${tokensAComprar} tokens a tu cuenta.`);
-            // Limpiamos la URL para que no se sumen tokens si refresca la página
             window.history.replaceState({}, document.title, window.location.pathname);
         }
     }
@@ -59,38 +56,39 @@ async function inicializarDashboard() {
 }
 
 async function seleccionarCurso(data, btn) {
-    document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-
+    const emailPadre = localStorage.getItem('session_email');
+    localStorage.setItem('plan_institucion', data.institucion);
+    localStorage.setItem('nombre_alumno', data.nombre_alumno); 
+    
     const conf = data.config_examenes; 
     const nombrePlan = conf.area ? `${conf.institucion} ${conf.area}` : conf.institucion;
+
+    // 🔒 Filtro estricto consolidado (Una sola consulta)
+    const { data: historialBD } = await _supabase
+        .from('resultados_examenes')
+        .select('puntaje_obtenido')
+        .eq('token_hex', data.token_hex)
+        .eq('tipo_prueba', nombrePlan)
+        .eq('email', emailPadre)
+        .eq('nombre_alumno', data.nombre_alumno)
+        .order('fecha_aplicacion', { ascending: false })
+        .limit(1);
+
+    document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
 
     document.getElementById('saludo-alumno').innerHTML = `Hola, <span class="color-cian italic">${data.nombre_alumno}</span>`;
     document.getElementById('plan-actual-container').innerHTML = `<p class="text-[10px] uppercase font-bold text-gray-500 italic tracking-widest leading-none">Plan Activo: <span class="text-white">${nombrePlan}</span></p>`;
     
     const esPro = data.config_examenes.plan === 'PRO';
-    localStorage.setItem('nombre_alumno', data.nombre_alumno);
     localStorage.setItem('token_hex_hijo', data.token_hex);
-    localStorage.setItem('plan_institucion', conf.institucion);
-    localStorage.setItem('plan_area', conf.area);               
+     localStorage.setItem('plan_area', conf.area);               
     localStorage.setItem('plan_nombre_completo', nombrePlan);   
     localStorage.setItem('es_pro', esPro);
-
     localStorage.setItem('simu_creditos', data.intentos_simulacro_restantes || 0);
+    
     actualizarDisplayCreditos();
-
-    setTimeout(() => { cargarHistorial(data.token_hex); }, 800);
-
-    const emailPadre = localStorage.getItem('session_email');
-    const { data: historialBD } = await _supabase.from('resultados_examenes')
-    .select('puntaje_obtenido')
-    .eq('token_hex', data.token_hex)
-    .eq('tipo_prueba', nombrePlan)
-    .eq('email', emailPadre)               // CANDADO 1
-    .eq('nombre_alumno', data.nombre_alumno) // CANDADO 2
-    .order('fecha_aplicacion', { ascending: false })
-    .limit(1);
-    //const { data: historialBD } = await _supabase.from('resultados_examenes').select('puntaje_obtenido').eq('token_hex', data.token_hex).eq('tipo_prueba', nombrePlan).order('fecha_aplicacion', { ascending: false }).limit(1);
+    
     const ultimoPuntajeBD = (historialBD && historialBD.length > 0) ? historialBD[0].puntaje_obtenido : null;
     const params = new URLSearchParams(window.location.search);
     const puntajeReciente = params.get('res');
@@ -99,6 +97,7 @@ async function seleccionarCurso(data, btn) {
     
     cargarNiveles(palabraBusqueda, puntajeFinal);
     cargarHistorialChat(data.token_hex, puntajeFinal, puntajeReciente ? "reciente" : "historico");
+    setTimeout(() => { cargarHistorial(data.token_hex, data.nombre_alumno); }, 800);
 }
 
 // ==========================================
@@ -113,7 +112,6 @@ async function comprarPaquete(tokens, precio) {
     const nombre = localStorage.getItem('nombre_alumno');
     const ref = `RECARGA-${Date.now()}`;
 
-    // Desactivamos el modal mientras procesa
     document.getElementById('modalEnergia').classList.add('opacity-50', 'pointer-events-none');
 
     try {
@@ -124,13 +122,12 @@ async function comprarPaquete(tokens, precio) {
                 tipo_examen: `Recarga ${tokens} Tokens IA`,
                 referencia_pago: ref,
                 precio: precio,
-                es_recarga: true,  // <--- LE AVISAMOS A LA NUBE QUE ES UNA RECARGA
-                tokens: tokens     // <--- LE MANDAMOS LA CANTIDAD
+                es_recarga: true,
+                tokens: tokens
             }
         });
 
-        if (error) throw error;
-        
+        if (error) throw error;        
         if (data && data.url) {
             window.location.href = data.url; 
         }
@@ -178,30 +175,21 @@ function dibujarBurbujaChat(emisor, texto) {
     chatBox.appendChild(div);
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    // 🚀 ACTIVAMOS MATHJAX PARA ESTA BURBUJA
     if (window.MathJax) { window.MathJax.typesetPromise([div]); }
 }
 
-async function cargarHistorial(token) {
+async function cargarHistorial(token, nombreHijo) {
     const contenedor = document.getElementById('contenedor-historial');
     const emailPadre = localStorage.getItem('session_email');
-    const nombreAlumno = localStorage.getItem('nombre_alumno'); // Lo guardaste en seleccionarCurso
-
+    
     try {
-        const { data, error } = await _supabase.from('resultados_examenes')
+        const { data, error } = await _supabase
+            .from('resultados_examenes')
             .select('tipo_prueba, fecha_aplicacion, puntaje_obtenido')
             .eq('token_hex', token)
             .eq('email', emailPadre)           // CANDADO 1
-            .eq('nombre_alumno', nombreAlumno) // CANDADO 2
+            .eq('nombre_alumno', nombreHijo)   // 🔒 CANDADO 2
             .order('fecha_aplicacion', { ascending: false });
-
-/*async function cargarHistorial(token) {
-    const contenedor = document.getElementById('contenedor-historial');
-    try {
-        const { data, error } = await _supabase.from('resultados_examenes')
-            .select('tipo_prueba, fecha_aplicacion, puntaje_obtenido')
-            .eq('token_hex', token)
-            .order('fecha_aplicacion', { ascending: false });*/
 
         if (error) throw error;
 
@@ -219,8 +207,8 @@ async function cargarHistorial(token) {
                 <p class="text-2xl font-black text-white">${reg.puntaje_obtenido}% <span class="text-xs text-gray-500 font-normal italic">Aciertos</span></p>
             </div>
         `).join('');
-    } catch(e) {
-        console.error("Falla al cargar historial:", e);
+    } catch (err) { 
+        console.error(err); 
         contenedor.innerHTML = `<div class="card-glass p-6 text-xs text-red-500 italic text-center">Error al sincronizar historial.</div>`;
     }
 }
@@ -246,7 +234,7 @@ async function cargarNiveles(institucion, puntajeReal) {
                 <h4 class="text-red-400 font-bold text-sm uppercase mb-1">Entrenamiento Bloqueado</h4>
                 <p class="text-[10px] text-gray-400 uppercase font-bold">Supera el Repaso primero.</p>
             </div>
-            <div class="card-glass p-5 nivel-card border-red-500/50 cursor-pointer hover:bg-red-900/20 transition-all" onclick="irAlExamen('Repaso', 10, 15)">
+            <div class="card-glass p-5 nivel-card border-red-500/50 cursor-pointer hover:bg-red-900/20 transition-all" onclick="irARepaso(10, 15)">
                 <h4 class="text-red-400 font-bold text-xs uppercase italic tracking-tighter mb-2"><i class="fa-solid fa-fire mr-1"></i> Reto de Repaso</h4>
                 <p class="text-sm font-black text-white">10 Reactivos de tus errores</p>
                 <p class="text-[9px] text-cyan-400 font-bold mt-2 uppercase tracking-wide">🎯 Meta: 70% para aprobar</p>
@@ -280,12 +268,20 @@ async function cargarNiveles(institucion, puntajeReal) {
 async function cargarHistorialChat(token, puntaje, contexto) {
     const chatBox = document.getElementById('chat-box');
     const email = localStorage.getItem('session_email');
-    const { data: historial } = await _supabase.from('chat_historial').select('*').eq('token_hex', token).eq('email', email).order('created_at', { ascending: true });
+    const nombreHijo = localStorage.getItem('nombre_alumno'); // 🔒 Candado de hermanos
+
+    const { data: historial } = await _supabase
+        .from('chat_historial')
+        .select('*')
+        .eq('token_hex', token)
+        .eq('email', email)
+        .eq('nombre_alumno', nombreHijo) // Filtramos para que no se mezcle con el hermanito
+        .order('created_at', { ascending: true });
+
     chatBox.innerHTML = ''; 
     if (historial && historial.length > 0) {
         historial.forEach(msg => dibujarBurbujaChat(msg.emisor, msg.mensaje));
     } else {
-        // Si no hay historial, mandamos un mensaje inicial de la IA
         dibujarBurbujaChat('simu', "¡Hola! Estoy listo para ayudarte a entrenar. Selecciona un nivel o hazme una pregunta directa.");
     }
 }
@@ -295,17 +291,31 @@ async function enviarMensajeChat(token) {
     const textoUsuario = input.value.trim();
     if (!textoUsuario) return;
     
+    const email = localStorage.getItem('session_email');
+    const nombreHijo = localStorage.getItem('nombre_alumno');
+
     let energiaElement = document.getElementById('creditos-display');
     let energia = parseInt(energiaElement.innerText) || 0;
     if (energia <= 0) { dibujarBurbujaChat('simu', "Te has quedado sin Energía IA. Usa el botón 'Recargar'."); return; }
 
+    // 1. DESCONTAMOS EL TOKEN (Esto ya funcionaba)
     energia -= 1;
     energiaElement.innerText = energia;
     localStorage.setItem('simu_creditos', energia);
     await guardarCreditosEnBD(energia);
     
+    // 2. Pintamos la burbuja del alumno
     dibujarBurbujaChat('alumno', textoUsuario);
     input.value = '';
+
+    // 💾 3. GUARDAMOS EN SUPABASE (El registro del Alumno)
+    await _supabase.from('chat_historial').insert([{
+        token_hex: token,
+        email: email,
+        nombre_alumno: nombreHijo,
+        emisor: 'alumno',
+        mensaje: textoUsuario
+    }]);
     
     const idBurbujaIA = "typing-" + Date.now();
     dibujarBurbujaChat('simu', `<span id="${idBurbujaIA}" class="animate-pulse">Simu está analizando...</span>`);
@@ -316,7 +326,7 @@ async function enviarMensajeChat(token) {
             method: 'POST', 
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseKey}`
+                'Authorization': `Bearer ${supabaseKey}` // Ojo: Asegúrate que supabaseKey siga definida
             },
             body: JSON.stringify({ contents: [{ parts: [{ text: textoUsuario }] }], generationConfig: { temperature: 0.4 } })
         });
@@ -331,11 +341,21 @@ async function enviarMensajeChat(token) {
             spanBurbuja.parentElement.innerHTML = respuestaIA.replace(/\*\*(.*?)\*\*/g, '<strong class="color-cian">$1</strong>');
             if (window.MathJax) { window.MathJax.typesetPromise([spanBurbuja.parentElement.parentElement]); }
         }
+
+        // 💾 4. GUARDAMOS EN SUPABASE (El registro de la IA)
+        await _supabase.from('chat_historial').insert([{
+            token_hex: token,
+            email: email,
+            nombre_alumno: nombreHijo,
+            emisor: 'simu',
+            mensaje: respuestaIA
+        }]);
         
     } catch (e) {
         const spanBurbuja = document.getElementById(idBurbujaIA);
         if(spanBurbuja && spanBurbuja.parentElement) spanBurbuja.parentElement.innerHTML = "<em>Error de conexión. Intenta de nuevo.</em>";
         
+        // 🔄 Si la IA falla, le devolvemos su token al niño (Excelente práctica operativa)
         energia += 1;
         energiaElement.innerText = energia;
         localStorage.setItem('simu_creditos', energia);
@@ -343,12 +363,24 @@ async function enviarMensajeChat(token) {
     }
 }
 
-function irAlExamen(nivel, q, t) { localStorage.setItem('simu_nivel', nivel); localStorage.setItem('simu_preguntas', q); localStorage.setItem('simu_tiempo', t); window.location.href = `examen.html?v=${localStorage.getItem('token_hex_hijo')}`; }
-function cerrarSesion() { localStorage.clear(); window.location.href = 'index.html'; }
+function irAlExamen(nivel, q, t) { 
+    localStorage.setItem('simu_nivel', nivel);
+    localStorage.setItem('simu_tipo_examen', 'Normal'); 
+    localStorage.setItem('simu_preguntas', q); 
+    localStorage.setItem('simu_tiempo', t); 
+    window.location.href = `examen.html?v=${localStorage.getItem('token_hex_hijo')}`; 
+}
 
+function irARepaso(q, t) {
+    localStorage.setItem('simu_tipo_examen', 'Repaso'); 
+    localStorage.setItem('simu_preguntas', q); 
+    localStorage.setItem('simu_tiempo', t); 
+    window.location.href = `examen.html?v=${localStorage.getItem('token_hex_hijo')}`; 
+}
+
+function cerrarSesion() { localStorage.clear(); window.location.href = 'index.html'; }
 window.onload = inicializarDashboard;
 
-// Listener para el botón enviar con Enter
 document.getElementById('user-input')?.addEventListener('keypress', (e) => {
     if(e.key === 'Enter') enviarMensajeChat(localStorage.getItem('token_hex_hijo'));
 });
@@ -356,14 +388,11 @@ document.getElementById('btnEnviar')?.addEventListener('click', () => {
     enviarMensajeChat(localStorage.getItem('token_hex_hijo'));
 });
 
-// ==========================================
-// PARCHE DE SEGURIDAD UI (Limpieza de Caché del Navegador)
-// ==========================================
 window.addEventListener('pageshow', function(event) {
-    // Si el usuario regresa con el botón "Atrás" desde Stripe, descongelamos la pantalla
     const modal = document.getElementById('modalEnergia');
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('opacity-50', 'pointer-events-none');
     }
 });
+
