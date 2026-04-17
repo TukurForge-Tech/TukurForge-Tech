@@ -150,17 +150,19 @@ function actualizarDisplayCreditos() {
 async function guardarCreditosEnBD(creditosNuevos) {
     const email = localStorage.getItem('session_email');
     const token = localStorage.getItem('token_hex_hijo');
+    const nombreHijo = localStorage.getItem('nombre_alumno'); // 🔒 Candado de hermanos
+
     if (_supabase && email && token) {
         const { data, error } = await _supabase.from('usuarios_membresias')
             .update({ intentos_simulacro_restantes: creditosNuevos })
             .eq('email', email)
-            .eq('token_hex', token);
+            .eq('token_hex', token)
+            .eq('nombre_alumno', nombreHijo); // Solo se descuenta al niño que lo usó
             
         if (error) {
             console.error("❌ ERROR AL DESCONTAR TOKEN:", error);
-            alert("Error de BD: No se pudo descontar el token. Revisa la consola.");
         } else {
-            console.log("✅ Token descontado correctamente en la BD.");
+            console.log(`✅ Token de ${nombreHijo} actualizado a: ${creditosNuevos}`);
         }
     }
 }
@@ -325,11 +327,6 @@ async function enviarMensajeChat(token) {
         emisor: 'alumno',
         mensaje: textoUsuario
     }]);
-
-    if (errorAlumno) {
-        console.error("❌ ERROR GUARDANDO CHAT ALUMNO:", errorAlumno);
-        alert(`Error guardando chat: ${errorAlumno.message}`);
-    }
     
     const idBurbujaIA = "typing-" + Date.now();
     dibujarBurbujaChat('simu', `<span id="${idBurbujaIA}" class="animate-pulse">Simu está analizando...</span>`);
@@ -345,18 +342,12 @@ async function enviarMensajeChat(token) {
             body: JSON.stringify({ contents: [{ parts: [{ text: textoUsuario }] }], generationConfig: { temperature: 0.4 } })
         });
         
-        if (!response.ok) throw new Error("Falla de red");
+        if (!response.ok) throw new Error("Falla de red en Gemini");
         
         const data = await response.json();
         const respuestaIA = data.candidates[0].content.parts[0].text;
         
-        const spanBurbuja = document.getElementById(idBurbujaIA);
-        if(spanBurbuja && spanBurbuja.parentElement) {
-            spanBurbuja.parentElement.innerHTML = respuestaIA.replace(/\*\*(.*?)\*\*/g, '<strong class="color-cian">$1</strong>');
-            if (window.MathJax) { window.MathJax.typesetPromise([spanBurbuja.parentElement.parentElement]); }
-        }
-
-        // 💾 3. GUARDAMOS EN SUPABASE (El registro de la IA)
+        // 💾 3. GUARDAMOS EN SUPABASE PRIMERO (Antes de que falle la pantalla)
         const { error: errorIA } = await _supabase.from('chat_historial').insert([{
             token_hex: token,
             email: email,
@@ -365,13 +356,26 @@ async function enviarMensajeChat(token) {
             mensaje: respuestaIA
         }]);
 
-        if (errorIA) console.error("❌ ERROR GUARDANDO CHAT IA:", errorIA);
+        // 4. PINTAMOS EN PANTALLA (Con protección matemática)
+        const spanBurbuja = document.getElementById(idBurbujaIA);
+        if(spanBurbuja && spanBurbuja.parentElement) {
+            const contenedor = spanBurbuja.parentElement;
+            contenedor.innerHTML = respuestaIA.replace(/\*\*(.*?)\*\*/g, '<strong class="color-cian">$1</strong>');
+            
+            // Chaleco antibalas para MathJax
+            if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') { 
+                window.MathJax.typesetPromise([contenedor.parentElement]).catch(e => console.warn('MathJax cargando...', e)); 
+            }
+        }
         
     } catch (e) {
+        console.error("❌ Falla interceptada en el motor de Chat:", e); // Esto nos chismeará si algo falla
         const spanBurbuja = document.getElementById(idBurbujaIA);
-        if(spanBurbuja && spanBurbuja.parentElement) spanBurbuja.parentElement.innerHTML = "<em>Error de conexión. Intenta de nuevo.</em>";
+        if(spanBurbuja && spanBurbuja.parentElement) {
+             spanBurbuja.parentElement.innerHTML = "<em>Error de conexión. Intenta de nuevo.</em>";
+        }
         
-        // Reembolso del token
+        // Reembolso del token SOLO si de verdad hubo error
         energia += 1;
         energiaElement.innerText = energia;
         localStorage.setItem('simu_creditos', energia);
