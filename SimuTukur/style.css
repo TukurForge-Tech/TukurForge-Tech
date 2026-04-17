@@ -101,22 +101,6 @@ input[type="file"]::file-selector-button {
 /* =========================================
    Ajustes UX/UI - EXCLUSIVO PARA INDEX (Landing Page)
 ========================================= */
-
-/* 1. Estilos Premium para el selector agrupado */
-#exam-dropdown optgroup {
-    background: #0a0f1a !important;
-    color: #06b6d4 !important;
-    font-weight: bold;
-    font-style: italic;
-    padding: 10px;
-}
-
-#exam-dropdown option {
-    background: #000 !important;
-    color: #fff !important;
-    padding: 10px;
-}
-
 /* 2. Igualar alturas de las tarjetas de acción */
 #start-demo-btn, 
 a[href="registro.html"].group {
