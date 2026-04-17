@@ -42,32 +42,37 @@
             El único simulador con Inteligencia Artificial que entrena al aspirante como un maestro particular 24/7. Telemetría de atención, retos personalizados y explicaciones paso a paso.
         </p>
 
-        <div class="flex flex-col items-center gap-6 w-full max-w-2xl mx-auto mt-10">
-            
+        <div class="flex flex-col items-center gap-6 w-full max-w-3xl mx-auto mt-10 px-4">
+    
             <div class="text-center">
                 <h3 class="text-xl font-bold italic text-cyan-400 uppercase tracking-tight mb-2">
                     ¿Quieres probar el demo?
                 </h3>
-                <p class="text-gray-400 text-sm mb-6">Dime qué examen quieres hacer y comienza ahora mismo:</p>
+                <p class="text-gray-400 text-sm mb-4">Dime qué examen quieres hacer y comienza ahora mismo:</p>
             </div>
         
-            <div class="flex flex-col sm:flex-row justify-center items-stretch gap-4 w-full">
-                <div class="flex flex-col gap-2 w-full sm:w-1/2 relative">
-                    <select id="exam-dropdown" class="bg-black/50 border border-gray-700 text-white text-sm font-bold p-4 rounded-2xl focus:ring-2 focus:ring-cyan-500 outline-none w-full appearance-none cursor-pointer transition shadow-inner">
-                        <option value="" disabled selected>Cargando opciones...</option>
-                    </select>
-                    <i class="fa-solid fa-chevron-down absolute right-4 top-5 text-gray-500 text-xs pointer-events-none"></i>
+            <div class="flex flex-col md:flex-row justify-center items-stretch gap-6 w-full">
+                
+                <div class="flex flex-col justify-between gap-3 w-full md:w-1/2">
+                    <div class="relative w-full">
+                        <select id="exam-dropdown" class="bg-black/50 border border-gray-700 text-white text-sm font-bold p-4 rounded-2xl focus:ring-2 focus:ring-cyan-500 outline-none w-full appearance-none cursor-pointer transition shadow-inner h-[60px]">
+                            <option value="" disabled selected>Cargando opciones...</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down absolute right-5 top-[22px] text-gray-500 text-xs pointer-events-none"></i>
+                    </div>
                     
-                    <button id="start-demo-btn" class="bg-glass hover:bg-white/10 text-white font-black py-4 px-4 rounded-2xl transition border border-gray-700 w-full mt-2">
+                    <button id="start-demo-btn" class="bg-glass hover:bg-white/10 text-white font-black py-4 px-4 rounded-2xl transition border border-gray-700 w-full h-[60px]">
                         Hacer Examen Demo
                     </button>
                 </div>
         
-                <div class="w-full sm:w-1/2 flex items-end">
-                    <a href="registro.html" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 px-4 rounded-2xl transition transform hover:scale-105 shadow-[0_0_20px_rgba(6,182,212,0.4)] w-full text-center flex items-center justify-center h-[58px] sm:mb-[0px] mb-2">
-                        Ver Planes e Inscribirse
+                <div class="w-full md:w-1/2 flex">
+                    <a href="registro.html" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xl rounded-2xl transition transform hover:scale-105 shadow-[0_0_20px_rgba(6,182,212,0.4)] w-full text-center flex flex-col items-center justify-center min-h-[132px] md:h-full">
+                        <span class="block">Ver Planes</span>
+                        <span class="block text-sm font-normal text-cyan-200 mt-1 uppercase tracking-widest">e Inscribirse</span>
                     </a>
                 </div>
+        
             </div>
         </div>
         
