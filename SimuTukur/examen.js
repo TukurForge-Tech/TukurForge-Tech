@@ -2,7 +2,8 @@
 
 const params = new URLSearchParams(window.location.search);
 const token = params.get('v');
-const nivelLabel = localStorage.getItem('simu_nivel');
+let nivelLabel = localStorage.getItem('simu_nivel');
+const tipoPruebaEnMemoria = localStorage.getItem('simu_tipo_examen'); // Nueva variable
 const cantQ = parseInt(localStorage.getItem('simu_preguntas'));
 const mins = parseInt(localStorage.getItem('simu_tiempo'));
 const esPro = localStorage.getItem('es_pro') === "true";
@@ -26,11 +27,40 @@ async function init() {
         setupAudioMonitor(stream);
         setupVideoMonitor(videoElement);
         
+        const emailPadre = localStorage.getItem('session_email');
+        const nombreHijo = localStorage.getItem('nombre_alumno');
         const inst = localStorage.getItem('plan_institucion'); 
         const area = localStorage.getItem('plan_area'); 
-        
         const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : (inst.includes('UNAM') ? 'UNAM A4' : inst);
         
+        // 🧠 LA INTELIGENCIA: Si es un Repaso, buscamos el nivel en la BD
+        if (tipoPruebaEnMemoria === 'Repaso') {
+            console.log("🔍 Modo Repaso detectado. Buscando nivel reprobado en Supabase...");
+            
+            const { data: ultimoFallo } = await _supabase
+                .from('resultados_examenes')
+                .select('nivel_examen')
+                .eq('email', emailPadre)
+                .eq('nombre_alumno', nombreHijo)
+                .eq('token_hex', token) // El token viene de la URL (v)
+                .lt('puntaje_obtenido', 70) // Solo los que no pasaron
+                .order('fecha_aplicacion', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (ultimoFallo) {
+                const etiquetas = { 1: "Principiante", 2: "Medio", 3: "Avanzado" };
+                nivelLabel = etiquetas[ultimoFallo.nivel_examen];
+                console.log(`✅ Nivel recuperado de la BD: ${nivelLabel}`);
+            } else {
+                console.warn("⚠️ No se halló examen fallado previo. Usando Principiante por defecto.");
+                nivelLabel = "Principiante";
+            }
+        }
+
+        // Definimos el ID numérico final para la consulta de reactivos
+        const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
+
         let filtroTipos = [];
         if (inst.includes('ECOEMS')) {
             filtroTipos = ['ECOEMS']; 
@@ -41,7 +71,7 @@ async function init() {
         }
 
         // --- FASE 1: DESVÍO DE REPASO ---
-        if (nivelLabel === "Repaso") {
+        if (tipoPruebaEnMemoria === "Repaso") { // CORREGIDO: Evaluamos la bandera, no el nivelLabel
             let reactivosRepaso = await obtenerReactivosRepaso(cantQ); 
             if (!reactivosRepaso || reactivosRepaso.length === 0) {
                 alert("¡Expediente limpio! No tienes suficientes errores registrados para armar un repaso.");
@@ -49,7 +79,6 @@ async function init() {
                 return;
             }
 
-            // APLICAMOS LA MAGIA DE AGRUPAMIENTO AL REPASO
             let subGrupos = {};
             reactivosRepaso.forEach(p => {
                 let llave = "suelta_" + p.id;
@@ -71,7 +100,6 @@ async function init() {
         }
 
         // --- FASE 2: COSECHA UNIVERSAL (Sin datos en duro) ---
-        const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
         const nivelColchonID = nivelID < 3 ? nivelID + 1 : 3;
 
         const { data: regla } = await _supabase.from('reglas_simulador')
@@ -90,7 +118,6 @@ async function init() {
         let reactivosPuros = [];
         
         for (const [materia, cantidad] of Object.entries(distribucion)) {
-            // Bajamos todo sin importar el nivel para proteger bloques mixtos
             const { data: todos } = await _supabase.from('reactivos')
                 .select('*').in('tipo_examen', filtroTipos).eq('materia', materia);
 
@@ -123,7 +150,6 @@ async function init() {
                 let llavesLectura = Object.keys(gruposLectura).sort(() => Math.random() - 0.5);
                 sueltasBase = sueltasBase.sort(() => Math.random() - 0.5);
 
-                // 1. Inyectar bloques de lectura enteros primero
                 for (let llave of llavesLectura) {
                     let bloque = gruposLectura[llave].sort((a, b) => a.id - b.id);
                     if (seleccionados.length + bloque.length <= cantidad + 1) { 
@@ -134,13 +160,11 @@ async function init() {
                     if (seleccionados.length >= cantidad) break;
                 }
 
-                // 2. Rellenar con sueltas si falta
                 while (seleccionados.length < cantidad && sueltasBase.length > 0) {
                     seleccionados.push(sueltasBase.pop());
                 }
                 reactivosPuros.push(...seleccionados);
 
-                // 3. Llenar el colchón adaptativo solo con sueltas
                 if (nivelID < 3) {
                     const cantColchon = Math.ceil(cantidad * 0.5);
                     colchonReactivos.push(...sueltasColchon.slice(0, cantColchon));
@@ -173,7 +197,6 @@ async function init() {
             let llavesSubGrupo = Object.keys(subGrupos).sort(() => Math.random() - 0.5);
             
             llavesSubGrupo.forEach(llave => {
-                // El bloque entra entero, sin revolverse por dentro
                 reactivos.push(...subGrupos[llave]);
             });
         });
@@ -181,7 +204,7 @@ async function init() {
         colchonReactivos = colchonReactivos.sort(() => Math.random() - 0.5);
 
         if (reactivos.length > 0) {
-            if (!esPro) ejecutarDescuentoIntento(); 
+            if (!esPro && typeof ejecutarDescuentoIntento === 'function') ejecutarDescuentoIntento(); 
             render(); 
             startTimer();
         } else { 
@@ -209,7 +232,7 @@ function setupAudioMonitor(stream) {
         
         if (volume > 40 && (Date.now() - ultimoAvisoRuido > 5000)) {
             ultimoAvisoRuido = Date.now();
-            registrarEventoVigilancia("Ruido moderado/fuerte detectado");
+            if (typeof registrarEventoVigilancia === 'function') registrarEventoVigilancia("Ruido moderado/fuerte detectado");
             const tiempoActual = document.getElementById('timer').innerText;
             incidenciasVigilancia.push(`Pico de ruido detectado en el minuto ${tiempoActual}`);
         }
@@ -221,7 +244,7 @@ function setupAudioMonitor(stream) {
 async function confirmarAborto() {
     let msg = esPro ? "¿Desea finalizar la sesión? Su progreso no será guardado." : "ATENCIÓN: Cuenta con un Plan Básico. Si abandona ahora, se descontará 1 oportunidad. ¿Desea finalizar?";
     if (confirm(msg)) {
-        await registrarEventoVigilancia("Examen abortado por el alumno");
+        if (typeof registrarEventoVigilancia === 'function') await registrarEventoVigilancia("Examen abortado por el alumno");
         window.location.href = 'dashboard.html';
     }
 }
@@ -231,10 +254,10 @@ function render() {
     const panelLectura = document.getElementById('panel-lectura');
 
     if (r.texto_lectura && r.texto_lectura.trim() !== "") {
-        panelLectura.classList.remove('hidden');
+        if(panelLectura) panelLectura.classList.remove('hidden');
         document.getElementById('texto-lectura-content').innerText = r.texto_lectura;
     } else {
-        panelLectura.classList.add('hidden');
+        if(panelLectura) panelLectura.classList.add('hidden');
     }
 
     document.getElementById('label-materia').innerText = `${localStorage.getItem('plan_nombre_completo')} | ${r.materia}`;
@@ -268,7 +291,8 @@ function render() {
         g.appendChild(b);
     });
     document.getElementById('btn-confirm').disabled = true;
-    document.getElementById('panel-preguntas').scrollTop = 0; 
+    const panelQ = document.getElementById('panel-preguntas');
+    if(panelQ) panelQ.scrollTop = 0;
 }
 
 async function procesarRespuesta() {
@@ -278,7 +302,7 @@ async function procesarRespuesta() {
     const esCorrecto = (seleccionUser === respuestaBD);
     
     const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
-    await registrarPasoPorReactivo(r.id, esCorrecto, nivelID);
+    if (typeof registrarPasoPorReactivo === 'function') await registrarPasoPorReactivo(r.id, esCorrecto, nivelID);
 
     if (esCorrecto) {
         aciertos++;
@@ -313,16 +337,25 @@ async function procesarRespuesta() {
 }
 
 function startTimer() {
-    setInterval(() => {
+    const timerInterval = setInterval(() => {
         const h = Math.floor(tiempoSeg / 3600);
         const m = Math.floor((tiempoSeg % 3600) / 60);
         const s = tiempoSeg % 60;
-        document.getElementById('timer').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-        if (tiempoSeg-- <= 0) finalizar();
+        const timerEl = document.getElementById('timer');
+        if(timerEl) timerEl.innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        
+        if (tiempoSeg-- <= 0) {
+            clearInterval(timerInterval);
+            finalizar();
+        }
     }, 1000);
+    // Guardamos la referencia en el objeto window para poder limpiarlo al finalizar manual
+    window.timerIntervalRef = timerInterval;
 }
 
 async function finalizar() {
+    if (window.timerIntervalRef) clearInterval(window.timerIntervalRef);
+    
     const p = (aciertos / reactivos.length) * 100;
     const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
     
@@ -344,11 +377,32 @@ async function finalizar() {
         fallas_academicas: reactivosFallados
     };
 
-    await guardarResultadoFinal(p, nivelID, detallesJSON);
-    await guardarAnalisisVigilancia({ veredicto: veredicto, riesgo: riesgo });
-    await guardarProgresoIA(p);
+    // Calculamos el nombre correcto del examen (Aquí es donde se aplica la inteligencia de la BD)
+    const inst = localStorage.getItem('plan_institucion') || '';
+    const nombreFinalPrueba = (tipoPruebaEnMemoria === 'Repaso') ? 'Reto de Repaso' : (inst.includes('ECOEMS') ? 'ECOEMS GENERAL' : 'UNAM GENERAL');
+
+    await guardarResultadoFinal(p, nivelID, detallesJSON, nombreFinalPrueba);
+    
+    if (typeof guardarAnalisisVigilancia === 'function') await guardarAnalisisVigilancia({ veredicto: veredicto, riesgo: riesgo });
+    if (typeof guardarProgresoIA === 'function') await guardarProgresoIA(p);
     
     window.location.href = `dashboard.html?res=${Math.round(p)}`;
+}
+
+async function guardarResultadoFinal(p, nID, detalles, nombrePrueba) {
+    const email = localStorage.getItem('session_email');
+    const token = localStorage.getItem('token_hex_hijo');
+    const nombre = localStorage.getItem('nombre_alumno');
+
+    await _supabase.from('resultados_examenes').insert([{
+        tipo_prueba: nombrePrueba,
+        puntaje_obtenido: Math.round(p),
+        detalles_fallas: detalles,
+        email: email,
+        token_hex: token,
+        nombre_alumno: nombre,
+        nivel_examen: nID
+    }]);
 }
 
 async function setupVideoMonitor(videoElement) {
@@ -360,13 +414,14 @@ async function setupVideoMonitor(videoElement) {
             if (videoElement.paused || videoElement.ended) return;
 
             const detections = await faceapi.detectAllFaces(videoElement, new faceapi.TinyFaceDetectorOptions());
-            const tiempoActual = document.getElementById('timer').innerText;
+            const timerEl = document.getElementById('timer');
+            const tiempoActual = timerEl ? timerEl.innerText : "00:00";
 
             if (detections.length === 0) {
-                registrarEventoVigilancia("Rostro no detectado (Posible abandono)");
+                if (typeof registrarEventoVigilancia === 'function') registrarEventoVigilancia("Rostro no detectado (Posible abandono)");
                 incidenciasVigilancia.push(`Ausencia detectada en cámara en el minuto ${tiempoActual}`);
             } else if (detections.length > 1) {
-                registrarEventoVigilancia("Múltiples rostros detectados");
+                if (typeof registrarEventoVigilancia === 'function') registrarEventoVigilancia("Múltiples rostros detectados");
                 incidenciasVigilancia.push(`Múltiples personas en cámara en el minuto ${tiempoActual}`);
             }
         }, 5000); 
