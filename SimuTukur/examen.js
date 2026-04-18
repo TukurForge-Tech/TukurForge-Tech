@@ -393,15 +393,37 @@ async function finalizar() {
     };
 
     // Calculamos el nombre correcto del examen (Aquí es donde se aplica la inteligencia de la BD)
-    const inst = localStorage.getItem('plan_institucion') || '';
-    const nombreFinalPrueba = (tipoPruebaEnMemoria === 'Repaso') ? 'Reto de Repaso' : (inst.includes('ECOEMS') ? 'ECOEMS GENERAL' : 'UNAM GENERAL');
+    //const inst = localStorage.getItem('plan_institucion') || '';
+    //const nombreFinalPrueba = (tipoPruebaEnMemoria === 'Repaso') ? 'Reto de Repaso' : (inst.includes('ECOEMS') ? 'ECOEMS GENERAL' : 'UNAM GENERAL');
 
-    await guardarResultadoFinal(p, nivelID, detallesJSON, nombreFinalPrueba);
+    /*await guardarResultadoFinal(p, nivelID, detallesJSON, nombreFinalPrueba);
     
     if (typeof guardarAnalisisVigilancia === 'function') await guardarAnalisisVigilancia({ veredicto: veredicto, riesgo: riesgo });
     if (typeof guardarProgresoIA === 'function') await guardarProgresoIA(p);
     
-    window.location.href = `dashboard.html?res=${Math.round(p)}`;
+    window.location.href = `dashboard.html?res=${Math.round(p)}`;*/
+    // Calculamos el nombre correcto del examen
+    const inst = localStorage.getItem('plan_institucion') || '';
+    const nombreFinalPrueba = (tipoPruebaEnMemoria === 'Repaso') ? 'Reto de Repaso' : (inst.includes('ECOEMS') ? 'ECOEMS GENERAL' : 'UNAM GENERAL');
+
+    // 🛡️ CORRECCIÓN: Envolvemos en try/catch para obligar al sistema a esperar
+    try {
+        console.log("Iniciando guardado de resultados...");
+        await guardarResultadoFinal(p, nivelID, detallesJSON, nombreFinalPrueba);
+        
+        if (typeof guardarAnalisisVigilancia === 'function') await guardarAnalisisVigilancia({ veredicto: veredicto, riesgo: riesgo });
+        if (typeof guardarProgresoIA === 'function') await guardarProgresoIA(p);
+        
+        // Le damos 500ms (medio segundo) a Supabase para cerrar la conexión antes de saltar de página
+        setTimeout(() => {
+            window.location.href = `dashboard.html?res=${Math.round(p)}`;
+        }, 500);
+
+    } catch (errorGuardado) {
+        console.error("Error crítico guardando el examen:", errorGuardado);
+        alert("Hubo un error guardando tus resultados. Por favor contacta a soporte.");
+        window.location.href = `dashboard.html?res=${Math.round(p)}`;
+    }
 }
 
 async function guardarResultadoFinal(p, nID, detalles, nombrePrueba) {
@@ -443,6 +465,31 @@ async function setupVideoMonitor(videoElement) {
 
     } catch (error) {
         console.warn("La vigilancia de video no pudo iniciar:", error);
+    }
+}
+
+// 🛡️ FUNCIÓN DE BITÁCORA EXACTA (Alineada al esquema de BD)
+async function registrarPasoPorReactivo(idReactivo, fueCorrecto, nivelActual) {
+    try {
+        // Sacamos los datos correctos de la memoria
+        const emailHijo = localStorage.getItem('session_email');
+        const nombreHijo = localStorage.getItem('nombre_alumno');
+
+        // Si por alguna razón no hay sesión, no intentamos guardar para evitar errores
+        if (!emailHijo) return; 
+
+        // Inserción con los nombres EXACTOS de tus columnas
+        await _supabase.from('bitacora_reactivos_vistos').insert([{
+            email: emailHijo,
+            nombre_alumno: nombreHijo,
+            reactivo_id: idReactivo,
+            nivel: nivelActual,
+            es_correcto: fueCorrecto
+        }]);
+        
+    } catch (err) {
+        console.error("Error silencioso guardando en la bitácora:", err);
+        // Si la bitácora falla, el examen sigue fluyendo sin molestar al alumno
     }
 }
 
