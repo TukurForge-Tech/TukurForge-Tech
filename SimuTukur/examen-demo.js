@@ -25,6 +25,18 @@ async function init() {
     }
     sessionStorage.setItem('demo_mina_activa', 'true');
 
+    // 👇 NUEVO: ESCUDO DE TOKEN EN URL 👇
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('v');
+    const localToken = localStorage.getItem('demo_token_hex');
+
+    if (!urlToken || urlToken !== localToken) {
+        alert("⛔ Acceso denegado: Token de examen inválido o manipulado.");
+        window.location.href = 'index.html';
+        return;
+    }
+    // 👆 FIN DEL ESCUDO 👆
+
     try {
         // Inicializar Biometría Visual
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -49,7 +61,7 @@ async function init() {
 }
 
 // ==========================================
-// 2. COSECHA PROPORCIONAL DE LA MATRIZ (LÓGICA UNAM CORREGIDA)
+// 2. COSECHA PROPORCIONAL DE LA MATRIZ (LÓGICA UNAM CORREGIDA Y LIMPIA)
 // ==========================================
 async function cargarReactivosDesdeMatriz() {
     document.getElementById('txt-pregunta').innerHTML = "Generando entorno de evaluación...";
@@ -66,20 +78,29 @@ async function cargarReactivosDesdeMatriz() {
 
     const distribucion = JSON.parse(matrizStr);
     let poolFinal = [];
+        
+    // Arreglo para guardar los chivatos de error
+    let alertasDebug = [];
 
     // Materias que son iguales para TODAS las áreas de la UNAM
     const materiasGeneralesUNAM = [
         "Español", "Historia Universal", "Historia de México", 
-        "Geografía", "Literatura", "Comprensión de Textos"
+        "Geografía", "Literatura", "Comprensión de Lectura" 
     ];
 
     for (const [materia, cantidad] of Object.entries(distribucion)) {
         
+        // PUENTE AUTOMÁTICO: Si el JSON dice "Textos", busca "Lectura"
+        let materiaBusqueda = materia;
+        if (materiaBusqueda === "Comprensión de Textos") {
+            materiaBusqueda = "Comprensión de Lectura";
+        }
+
         let tipoBusqueda = '';
 
         if (institucion === 'UNAM') {
             // LÓGICA UNAM: Decide si busca en la bolsa General o en la Específica
-            if (materiasGeneralesUNAM.includes(materia)) {
+            if (materiasGeneralesUNAM.includes(materiaBusqueda)) {
                 tipoBusqueda = 'UNAM_GENERAL';
             } else {
                 tipoBusqueda = `UNAM ${area}`; // Ej: "UNAM A1"
@@ -93,29 +114,41 @@ async function cargarReactivosDesdeMatriz() {
         const { data, error } = await _supabase
             .from('reactivos')
             .select('*')
-            .eq('tipo_examen', tipoBusqueda) // Aplicamos el filtro correcto
-            .eq('materia', materia)
+            .eq('tipo_examen', tipoBusqueda) 
+            .eq('materia', materiaBusqueda) 
             .in('nivel', [2, 3]) 
-            .limit(cantidad * 4); // Traemos de sobra
+            .limit(cantidad * 4); // Traemos de sobra para poder filtrar
         
         if (error) {
-            console.error(`Error buscando ${materia} en ${tipoBusqueda}:`, error);
+            console.error(`Error buscando ${materiaBusqueda} en ${tipoBusqueda}:`, error);
             continue;
         }
 
         if (data && data.length > 0) {
-            // ESTRATEGIA DE DEMO: Evitamos textos muy largos
+            // Filtramos textos muy largos para el demo
             let filtrados = data.filter(r => !r.id_grupo_lectura && (!r.texto_lectura || r.texto_lectura.length < 150));
             
             // Si nos quedamos sin preguntas filtradas, usamos las normales
             if (filtrados.length < cantidad) filtrados = data;
 
-            // Las mezclamos y tomamos exactamente la cantidad que dicta la matriz
-            let seleccion = filtrados.sort(() => Math.random() - 0.5).slice(0, cantidad);
-            poolFinal.push(...seleccion);
+            if (filtrados.length >= cantidad) {
+                // Todo perfecto: Las mezclamos y tomamos la cantidad que dicta la matriz
+                let seleccion = filtrados.sort(() => Math.random() - 0.5).slice(0, cantidad);
+                poolFinal.push(...seleccion);
+            } else {
+                // Faltan preguntas: Guardamos el error para avisarte
+                alertasDebug.push(`- ${materiaBusqueda} (${tipoBusqueda}): Pide ${cantidad}, solo hay ${filtrados.length} válidas.`);
+                poolFinal.push(...filtrados); 
+            }
         } else {
-            console.warn(`No se encontraron suficientes preguntas de ${materia} para ${tipoBusqueda}`);
+            // Cero preguntas
+            alertasDebug.push(`- ${materiaBusqueda} (${tipoBusqueda}): CERO preguntas encontradas.`);
         }
+    }
+
+    // Mostrar el alert si faltó algo (Ideal para que depures rápido)
+    if (alertasDebug.length > 0) {
+        alert("⚠️ REPORTE DE BD (Solo para ti, socio):\nFaltan preguntas para cumplir la matriz:\n\n" + alertasDebug.join("\n"));
     }
 
     return poolFinal.sort(() => Math.random() - 0.5);
