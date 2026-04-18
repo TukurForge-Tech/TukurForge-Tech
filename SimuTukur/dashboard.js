@@ -206,7 +206,8 @@ async function cargarHistorial(token, nombreHijo) {
     try {
         const { data, error } = await _supabase
             .from('resultados_examenes')
-            .select('tipo_prueba, fecha_aplicacion, puntaje_obtenido')
+            // 1. AÑADIMOS 'detalles_fallas' A LA CONSULTA PARA SACAR EL JSON
+            .select('tipo_prueba, fecha_aplicacion, puntaje_obtenido, detalles_fallas')
             .eq('token_hex', token)
             .eq('email', emailPadre)           // CANDADO 1
             .eq('nombre_alumno', nombreHijo)   // 🔒 CANDADO 2
@@ -219,15 +220,73 @@ async function cargarHistorial(token, nombreHijo) {
             return;
         }
         
-        contenedor.innerHTML = data.map(reg => `
+        contenedor.innerHTML = data.map(reg => {
+            // 2. EXTRAEMOS DATOS DEL JSON
+            let aciertosTotales = 0;
+            let preguntasTotales = 0;
+            let incidencias = [];
+
+            if (reg.detalles_fallas) {
+                // Sacamos los datos exactos que guardó el motor
+                aciertosTotales = reg.detalles_fallas.aciertos_totales || Math.round((reg.puntaje_obtenido / 100) * 120);
+                preguntasTotales = reg.detalles_fallas.preguntas_totales || 120;
+                incidencias = reg.detalles_fallas.log_vigilancia || [];
+            }
+
+            // 3. SEMÁFORO DE VIGILANCIA (Separamos Audio de Video)
+            let incAudio = incidencias.filter(i => i.toLowerCase().includes('ruido')).length;
+            let incVideo = incidencias.filter(i => !i.toLowerCase().includes('ruido')).length;
+
+            let colorAudio = incAudio === 0 ? 'text-green-500' : (incAudio <= 2 ? 'text-yellow-500' : 'text-red-500');
+            let colorVideo = incVideo === 0 ? 'text-green-500' : (incVideo <= 2 ? 'text-yellow-500' : 'text-red-500');
+
+            // 4. CÁLCULO DE PROBABILIDAD DE ADMISIÓN
+            let probColor = '';
+            let probText = '';
+            if (reg.puntaje_obtenido >= 85) { 
+                probColor = 'text-green-400 bg-green-900/30 border-green-500/50'; 
+                probText = 'ALTA'; 
+            } else if (reg.puntaje_obtenido >= 70) { 
+                probColor = 'text-yellow-400 bg-yellow-900/30 border-yellow-500/50'; 
+                probText = 'MEDIA'; 
+            } else { 
+                probColor = 'text-red-400 bg-red-900/30 border-red-500/50'; 
+                probText = 'BAJA'; 
+            }
+
+            // 5. RENDERIZADO DE LA NUEVA TARJETA TÁCTICA
+            return `
             <div class="card-glass p-4 border-l-4 border-cyan-500 bg-white/5 transition-all hover:bg-white/10 mb-3">
-                <div class="flex justify-between items-center text-[10px] sm:text-xs mb-2">
+                <div class="flex justify-between items-center text-[10px] sm:text-xs mb-3 border-b border-white/5 pb-2">
                     <span class="text-cyan-400 font-black uppercase tracking-tighter">${reg.tipo_prueba}</span>
                     <span class="text-gray-500">${new Date(reg.fecha_aplicacion).toLocaleDateString()}</span>
                 </div>
-                <p class="text-2xl font-black text-white">${reg.puntaje_obtenido}% <span class="text-xs text-gray-500 font-normal italic">Aciertos</span></p>
+
+                <div class="flex justify-between items-end mb-4">
+                    <div>
+                        <p class="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-1">Aciertos</p>
+                        <p class="text-2xl font-black text-white leading-none">${aciertosTotales} <span class="text-sm text-gray-500 font-normal italic">/ ${preguntasTotales}</span></p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[8px] uppercase tracking-widest font-bold text-gray-500 block mb-1">Probabilidad</span>
+                        <span class="${probColor} text-[10px] font-black px-2 py-1 rounded border shadow-sm inline-block">${probText}</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center bg-black/40 rounded-lg p-2 border border-slate-800">
+                    <span class="text-[8px] text-gray-500 uppercase font-bold tracking-widest">Biometría IA</span>
+                    <div class="flex gap-4 pr-1">
+                        <div title="Audio: ${incAudio} alertas" class="flex items-center gap-1 cursor-help">
+                            <i class="fa-solid fa-microphone text-[11px] ${colorAudio}"></i>
+                        </div>
+                        <div title="Video: ${incVideo} alertas" class="flex items-center gap-1 cursor-help">
+                            <i class="fa-solid fa-camera text-[11px] ${colorVideo}"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     } catch (err) { 
         console.error(err); 
         contenedor.innerHTML = `<div class="card-glass p-6 text-xs text-red-500 italic text-center">Error al sincronizar historial.</div>`;
