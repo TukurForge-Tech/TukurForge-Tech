@@ -85,7 +85,7 @@
                     <input type="email" id="email-demo" required class="w-full bg-black/50 border border-gray-700 rounded-xl p-4 text-sm text-white outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition shadow-inner" placeholder="ejemplo@correo.com">
                 </div>
 
-                <button onclick="arrancarDemo()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 rounded-xl uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all transform hover:-translate-y-1">
+                <button id="btn-comenzar" onclick="arrancarDemo()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 rounded-xl uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all transform hover:-translate-y-1">
                     Comenzar Diagnóstico <i class="fa-solid fa-play ml-2"></i>
                 </button>
                 <p id="msg-error" class="text-red-400 text-xs font-bold text-center mt-2 hidden">Por favor, ingresa un correo válido.</p>
@@ -98,30 +98,7 @@
 
     </div>
 
-    <script>
-        function arrancarDemo() {
-            const emailInput = document.getElementById('email-demo').value.trim();
-            const errorMsg = document.getElementById('msg-error');
-            
-            // Validación básica de correo
-            if (!emailInput || !emailInput.includes('@') || !emailInput.includes('.')) {
-                errorMsg.classList.remove('hidden');
-                return;
-            }
-
-            // 1. Guardamos el "Lead" en la memoria local
-            localStorage.setItem('demo_email_capturado', emailInput);
-            
-            // 2. Le inyectamos los 2 tokens promocionales para que los tenga listos en el dash
-            localStorage.setItem('simu_creditos', 2);
-            
-            // 3. Limpiamos cualquier basura de exámenes pasados
-            localStorage.removeItem('simu_fallas');
-            localStorage.removeItem('simu_aciertos');
-            
-            // 4. Lo mandamos a la cámara de tortura (el examen de 15 mins)
-            window.location.href = 'examen-demo.html';
-        }
-    </script>
+    <!-- Referencia a tu nuevo archivo JS -->
+    <script src="instrucciones-demo.js"></script>
 </body>
 </html>
