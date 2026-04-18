@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Esto es por si en la base de datos ya tienes A3 o A4 pero aún no quieres mostrarlas
                 const examenesValidos = data.filter(ex => {
                     if (ex.institucion === 'ECOEMS' && ex.area === 'GENERAL') return true;
-                    if (ex.institucion === 'UNAM' && (ex.area === 'A1' || ex.area === 'A2')) return true;
+                    if (ex.institucion === 'UNAM' && (ex.area === 'A1' || ex.area === 'A2' || ex.area === 'A3' || ex.area === 'A4')) return true;
                     return false;
                 });
 
