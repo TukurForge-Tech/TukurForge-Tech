@@ -57,8 +57,19 @@ async function inicializarDashboard() {
 
 async function seleccionarCurso(data, btn) {
     const emailPadre = localStorage.getItem('session_email');
-    localStorage.setItem('plan_institucion', data.institucion);
-    localStorage.setItem('nombre_alumno', data.nombre_alumno); 
+    //localStorage.setItem('plan_institucion', data.institucion);
+    //localStorage.setItem('nombre_alumno', data.nombre_alumno); 
+    // 1. Extraemos la Institución desde la sub-caja 'config_examenes'
+    localStorage.setItem('plan_institucion', data.config_examenes.institucion);
+    
+    // 2. Extraemos el Área (A1, A2, etc.) desde la misma sub-caja
+    localStorage.setItem('plan_area', data.config_examenes.area);
+    
+    // 3. El nombre del alumno se queda igual porque está en la caja principal
+    localStorage.setItem('nombre_alumno', data.nombre_alumno);
+    
+    // El resto de tu función se queda exactamente igual...
+    console.log("Curso seleccionado:", data.config_examenes.institucion, data.config_examenes.area);
     
     const conf = data.config_examenes; 
     const nombrePlan = conf.area ? `${conf.institucion} ${conf.area}` : conf.institucion;
