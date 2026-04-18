@@ -133,8 +133,11 @@ async function init() {
         let reactivosPuros = [];
         
         let palabrasPermitidas = [institucionRegla, inst, area];
-        if (inst.includes('UNAM')) palabrasPermitidas.push('UNAM_GENERAL', 'UNAM');
-        if (inst.includes('ECOEMS')) palabrasPermitidas.push('GENERAL');
+        
+        if (inst.includes('UNAM')) {
+            palabrasPermitidas.push('UNAM_GENERAL', 'UNAM');
+        }
+        // 🚨 ELIMINAMOS la inserción suelta de 'GENERAL' que causaba el cruce de cables
 
         for (const [materia, cantidad] of Object.entries(distribucion)) {
             // Traemos más preguntas solo filtrando por materia
@@ -143,11 +146,20 @@ async function init() {
 
             let todos = [];
             if (dataCruda) {
-                // Filtramos localmente como en el Demo
+                // Filtramos localmente con BLINDAJE ESTRICTO
                 todos = dataCruda.filter(r => {
                     let tipoDB = r.tipo_examen;
-                    if (Array.isArray(tipoDB)) return tipoDB.some(t => palabrasPermitidas.includes(t));
-                    else if (typeof tipoDB === 'string') return palabrasPermitidas.some(p => tipoDB.includes(p));
+                    if (!tipoDB) return false;
+
+                    if (inst === 'ECOEMS') {
+                        // Para ECOEMS: Solo aceptamos si dice literalmente ECOEMS
+                        if (Array.isArray(tipoDB)) return tipoDB.includes('ECOEMS');
+                        return typeof tipoDB === 'string' && tipoDB.includes('ECOEMS');
+                    } else {
+                        // Para UNAM y el resto: Usamos el radar flexible
+                        if (Array.isArray(tipoDB)) return tipoDB.some(t => palabrasPermitidas.includes(t));
+                        if (typeof tipoDB === 'string') return palabrasPermitidas.some(p => tipoDB.includes(p));
+                    }
                     return false;
                 });
             }
