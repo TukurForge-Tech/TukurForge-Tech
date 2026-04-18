@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Inteligente | SimuTukur</title>
+    <link rel="icon" type="image/jpeg" href="https://pcuopqvmucmhtcdeswxh.supabase.co/storage/v1/object/public/reactivos-assets/SimuTukur/SimuTukur2.jpeg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="stylesheet" href="style.css"> 
+</head>
+<body class="bg-[#050a14] text-white selection:bg-cyan-500 selection:text-white">
+    
+    <header class="p-6 flex flex-col gap-4 border-b border-gray-800 bg-[#050a14]">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-6">
+                <h1 class="text-3xl font-black italic text-cyan-400 tracking-tighter">SIMUTUKUR<br>
+                <span class="text-xs text-yellow-500 uppercase tracking-widest block mt-1">Versión Demo</span></h1>
+                
+                <div class="border-l border-gray-800 pl-6">
+                    <h2 class="text-xl font-black italic tracking-tighter text-white leading-none mb-1">Hola, <span class="text-cyan-400 italic" id="lbl-correo-lead">Aspirante</span></h2>
+                    <p class="text-[10px] uppercase font-bold text-gray-500 italic tracking-widest leading-none">Matriz de Evaluación: <span id="lbl-matriz-usada" class="text-white">...</span></p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-3 bg-gray-900 border border-cyan-900/50 rounded-lg p-2 px-4 shadow-sm animate-pulse">
+                    <i class="fa-solid fa-bolt text-yellow-400"></i>
+                    <div>
+                        <p class="text-[10px] text-gray-500 uppercase font-bold leading-none">Energía IA Gratis</p>
+                        <p id="energia-display" class="text-sm font-black text-white leading-none mt-1">2</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="grid grid-cols-12 h-[calc(100vh-100px)]">
+        
+        <!-- VENTA FINAL (Gancho izquierdo) -->
+        <aside class="col-span-3 border-r border-gray-800 p-6 flex flex-col bg-black/20 overflow-y-auto items-center text-center">
+            <i class="fa-solid fa-graduation-cap text-6xl text-cyan-500 mb-6 drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]"></i>
+            <h3 class="text-xl font-black uppercase italic tracking-tighter mb-4 text-white">¿Quieres dominar tu examen?</h3>
+            <p class="text-gray-400 text-xs leading-relaxed mb-6">
+                Acabas de probar solo 15 preguntas. El Simulador Oficial contiene cientos de retos adaptativos, explicaciones ilimitadas y rutas de mejora garantizadas.
+            </p>
+            <div class="bg-cyan-900/20 border border-cyan-500/50 p-4 rounded-xl w-full mb-6 text-left">
+                <ul class="text-xs text-gray-300 space-y-3 font-bold">
+                    <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i> Exámenes Completos</li>
+                    <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i> Tutoría IA 24/7</li>
+                    <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i> Telemetría y Estadísticas</li>
+                </ul>
+            </div>
+            <a href="registro.html" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all transform hover:-translate-y-1 block">
+                Inscríbete Ahora
+            </a>
+        </aside>
+
+        <!-- CHAT CON LA IA Y RESULTADOS -->
+        <section class="col-span-9 p-8 flex flex-col h-full bg-[#050a14] overflow-hidden">
+            <div class="card-glass flex-grow flex flex-col overflow-hidden h-full border border-gray-800 rounded-2xl">
+                <div class="p-3 border-b border-white/5 bg-white/5 flex items-center gap-3 shrink-0">
+                    <img src="https://pcuopqvmucmhtcdeswxh.supabase.co/storage/v1/object/public/reactivos-assets/SimuTukur/SimuTukur2.jpeg" class="w-10 h-10 rounded-lg object-cover border border-cyan-500/30" alt="Simu">
+                    <div>
+                        <span class="text-[11px] font-black uppercase text-cyan-400 italic block leading-none">Asistente IA Simu</span>
+                        <span class="text-[9px] text-green-500 font-bold uppercase">En Línea</span>
+                    </div>
+                </div>
+                
+                <div id="chat-box" class="flex-grow p-4 overflow-y-auto text-xs text-gray-300 space-y-3">
+                    <!-- Aquí se inyectan los resultados desde JS -->
+                </div>
+
+                <div class="p-3 border-t border-white/5 bg-black/40 shrink-0">
+                    <p class="text-center text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                        Selecciona una duda en tus resultados para usar tu Energía IA.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+    <script src="dash-demo.js"></script>
+</body>
+</html>
