@@ -132,9 +132,25 @@ async function init() {
         const distribucion = regla.distribucion_materias;
         let reactivosPuros = [];
         
+        let palabrasPermitidas = [institucionRegla, inst, area];
+        if (inst.includes('UNAM')) palabrasPermitidas.push('UNAM_GENERAL', 'UNAM');
+        if (inst.includes('ECOEMS')) palabrasPermitidas.push('GENERAL');
+
         for (const [materia, cantidad] of Object.entries(distribucion)) {
-            const { data: todos } = await _supabase.from('reactivos')
-                .select('*').in('tipo_examen', filtroTipos).eq('materia', materia);
+            // Traemos más preguntas solo filtrando por materia
+            const { data: dataCruda } = await _supabase.from('reactivos')
+                .select('*').eq('materia', materia);
+
+            let todos = [];
+            if (dataCruda) {
+                // Filtramos localmente como en el Demo
+                todos = dataCruda.filter(r => {
+                    let tipoDB = r.tipo_examen;
+                    if (Array.isArray(tipoDB)) return tipoDB.some(t => palabrasPermitidas.includes(t));
+                    else if (typeof tipoDB === 'string') return palabrasPermitidas.some(p => tipoDB.includes(p));
+                    return false;
+                });
+            }
 
             if (todos && todos.length > 0) {
                 let gruposLectura = {};
@@ -342,7 +358,9 @@ async function procesarRespuesta() {
         reactivosFallados.push({
             materia: r.materia,
             tema: r.tema_guia || "General",
-            pregunta_id: r.id
+            pregunta_id: r.id,
+            pregunta: r.pregunta,          // NUEVO: Guardamos el texto
+            correcta: r.respuesta_correcta // NUEVO: Guardamos la respuesta
         });
     }
     
