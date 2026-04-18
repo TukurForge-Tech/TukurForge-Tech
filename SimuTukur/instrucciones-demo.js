@@ -1,49 +1,143 @@
-// instrucciones-demo.js - Captura de prospectos y preparación del entorno
+// instrucciones-demo.js - Arquitectura de Captura y Matemáticas Proporcionales
+
+const params = new URLSearchParams(window.location.search);
+const tokenHex = params.get('v');
+let distribucionFinalDemo = null; 
+let configData = null;
+
+async function inicializarEntorno() {
+    if (!tokenHex) {
+        alert("Token de examen no válido.");
+        window.location.href = 'index.html';
+        return;
+    }
+
+    try {
+        // 1. Extraer configuración del token
+        const { data: config, error: errConf } = await _supabase
+            .from('config_examenes')
+            .select('institucion, area')
+            .eq('token_hex', tokenHex)
+            .single();
+
+        if (errConf || !config) throw errConf;
+        configData = config;
+
+        // 2. Armar llave de búsqueda (Ej. "ECOEMS" o "UNAM A1")
+        const instBusqueda = (config.institucion === 'ECOEMS') 
+            ? 'ECOEMS' 
+            : `${config.institucion} ${config.area}`;
+            
+        document.getElementById('lbl-institucion').innerText = instBusqueda;
+
+        // 3. Buscar el JSON de distribución en el nivel Avanzado
+        const { data: regla, error: errRegla } = await _supabase
+            .from('reglas_simulador')
+            .select('distribucion_materias')
+            .eq('institucion', instBusqueda)
+            .eq('nivel', 'Avanzado')
+            .single();
+
+        if (errRegla || !regla || !regla.distribucion_materias) {
+            document.getElementById('tabla-materias').innerHTML = `<tr><td colspan="3" class="p-4 text-center text-red-400">Distribución no encontrada.</td></tr>`;
+            return;
+        }
+
+        // 4. Inyectar a la Lógica Proporcional
+        calcularYRenderizarProporciones(regla.distribucion_materias);
+
+    } catch (error) {
+        console.error(error);
+        alert("Error cargando la matriz del examen.");
+    }
+}
+
+// ALGORITMO DE REPARTO PROPORCIONAL EXACTO (Largest Remainder Method)
+function calcularYRenderizarProporciones(distReal) {
+    let totalReal = 0;
+    const totalDemo = 15;
+    let materiasArr = [];
+
+    // Contar total real
+    for (let mat in distReal) { totalReal += distReal[mat]; }
+
+    // Calcular cuotas base y residuos
+    let sumDemo = 0;
+    for (let mat in distReal) {
+        let cuotaExacta = (distReal[mat] / totalReal) * totalDemo;
+        let base = Math.floor(cuotaExacta);
+        materiasArr.push({ materia: mat, real: distReal[mat], asignadas: base, residuo: cuotaExacta - base });
+        sumDemo += base;
+    }
+
+    // Repartir los lugares que faltan por culpa de los decimales
+    let faltantes = totalDemo - sumDemo;
+    materiasArr.sort((a, b) => b.residuo - a.residuo); // Ordenar por quien "merece" más el decimal
+    for (let i = 0; i < faltantes; i++) {
+        materiasArr[i].asignadas += 1;
+    }
+
+    // Preparar objeto final y renderizar HTML
+    distribucionFinalDemo = {};
+    let html = "";
+    
+    // Lo ordenamos de mayor a menor para que se vea premium
+    materiasArr.sort((a, b) => b.asignadas - a.asignadas).forEach(m => {
+        if (m.asignadas > 0) {
+            distribucionFinalDemo[m.materia] = m.asignadas;
+            html += `
+                <tr class="hover:bg-white/5 transition">
+                    <td class="p-3 font-bold">${m.materia}</td>
+                    <td class="p-3 text-center text-gray-400">${m.real}</td>
+                    <td class="p-3 text-center font-black text-cyan-400 bg-cyan-900/10">${m.asignadas}</td>
+                </tr>
+            `;
+        }
+    });
+
+    document.getElementById('tabla-materias').innerHTML = html;
+    document.getElementById('lbl-total-real').innerText = totalReal;
+
+    // Habilitar Botón
+    const btn = document.getElementById('btn-comenzar');
+    btn.disabled = false;
+    btn.className = "w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 rounded-xl uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all transform hover:-translate-y-1";
+}
 
 function arrancarDemo() {
     const emailInput = document.getElementById('email-demo').value.trim();
     const errorMsg = document.getElementById('msg-error');
     const btnComenzar = document.getElementById('btn-comenzar');
     
-    // Validación básica de correo
     if (!emailInput || !emailInput.includes('@') || !emailInput.includes('.')) {
         errorMsg.classList.remove('hidden');
         return;
     }
 
-    // Efecto visual de carga en el botón
     errorMsg.classList.add('hidden');
-    btnComenzar.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Preparando...';
+    btnComenzar.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Preparando Entorno...';
     btnComenzar.disabled = true;
-    btnComenzar.classList.add('opacity-70', 'cursor-not-allowed');
 
-    // 1. Guardamos el "Lead" en la memoria local
+    // GUARDADO ESTRATÉGICO EN MEMORIA PARA EL MOTOR
     localStorage.setItem('demo_email_capturado', emailInput);
+    localStorage.setItem('demo_token_hex', tokenHex);
+    localStorage.setItem('demo_institucion', configData.institucion);
+    localStorage.setItem('demo_area', configData.area);
     
-    // 2. Le inyectamos los 2 tokens promocionales para que los tenga listos en el dash
-    localStorage.setItem('simu_creditos', 2);
+    // Aquí le pasamos el JSON con la distribución matemática exacta al examen
+    localStorage.setItem('demo_distribucion_materias', JSON.stringify(distribucionFinalDemo));
     
-    // 3. Limpiamos cualquier basura de exámenes pasados para que el demo sea limpio
+    // Limpieza de caché de exámenes pasados
     localStorage.removeItem('simu_fallas');
     localStorage.removeItem('simu_aciertos');
-    localStorage.removeItem('simu_inc_audio');
-    localStorage.removeItem('simu_inc_video');
-    localStorage.removeItem('simu_terminado');
+    localStorage.setItem('simu_creditos', 2); // Regalo IA
     
-    // 4. Salto automático al motor de examen en medio segundo
-    setTimeout(() => {
-        window.location.href = 'examen-demo.html';
-    }, 500);
+    setTimeout(() => { window.location.href = 'examen-demo.html'; }, 800);
 }
 
-// Extra UX: Permitir que arranquen presionando 'Enter' en el teclado
 document.addEventListener("DOMContentLoaded", () => {
-    const emailInput = document.getElementById('email-demo');
-    if (emailInput) {
-        emailInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                arrancarDemo();
-            }
-        });
-    }
+    inicializarEntorno();
+    document.getElementById('email-demo')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') arrancarDemo();
+    });
 });
