@@ -29,9 +29,24 @@ async function init() {
         
         const emailPadre = localStorage.getItem('session_email');
         const nombreHijo = localStorage.getItem('nombre_alumno');
-        const inst = localStorage.getItem('plan_institucion'); 
-        const area = localStorage.getItem('plan_area'); 
-        const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : (inst.includes('UNAM') ? 'UNAM A4' : inst);
+        //const inst = localStorage.getItem('plan_institucion'); 
+        //const area = localStorage.getItem('plan_area'); 
+        //const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : (inst.includes('UNAM') ? 'UNAM A4' : inst);
+        // 1. Extraemos de la memoria
+        let instRaw = localStorage.getItem('plan_institucion'); 
+        let areaRaw = localStorage.getItem('plan_area'); 
+
+        // 2. EL ESCUDO: Si la memoria dice "undefined" o está sucia, ponemos UNAM y A1 por defecto para que NO truene la página.
+        const inst = (instRaw && instRaw !== "undefined" && instRaw !== "null") ? instRaw : "UNAM";
+        let area = (areaRaw && areaRaw !== "undefined" && areaRaw !== "null") ? areaRaw : "A1";
+
+        // 3. EL PARCHE ECOEMS: Forzamos el área a 'ECOEMS' en lugar de 'GENERAL' para que encuentre las preguntas en la base de datos.
+        if (inst === 'ECOEMS') {
+            area = 'ECOEMS'; 
+        }
+
+        // 4. Asignamos la regla final
+        const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : (inst.includes('UNAM') ? 'UNAM' : inst);
         
         // 🧠 LA INTELIGENCIA: Si es un Repaso, buscamos el nivel en la BD
         if (tipoPruebaEnMemoria === 'Repaso') {
