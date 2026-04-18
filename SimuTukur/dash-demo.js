@@ -118,9 +118,18 @@ async function pedirExplicacionIADemo(preguntaCodificada, respuestaCodificada) {
     chatBox.scrollTop = chatBox.scrollHeight;
 
     try {
-        // Llama a la misma función de Supabase que tu simulador oficial
+        // Rescatamos la institución y área para mandárselas a la IA
+        const instActual = localStorage.getItem('demo_institucion') || 'SimuTukur';
+        const areaActual = localStorage.getItem('demo_area') || '';
+
+        // Llama a la función de Supabase enviando TODAS las variables
         const { data, error } = await _supabase.functions.invoke('explicacion_ia', {
-            body: { pregunta: pregunta, correcta: correcta }
+            body: { 
+                pregunta: pregunta, 
+                correcta: correcta,
+                institucion: instActual,
+                area: areaActual
+            }
         });
 
         if (error) throw error;
