@@ -58,6 +58,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const token = examDropdown.value;
         if (!token) return alert('Selecciona un examen');
         // Redirección al HTML de Demo que ya tienes
-        window.location.href = `examen-demo.html?area=${token}`;
+        window.location.href = `instrucciones-demo.html?v=${token}`;
     });
 });
