@@ -167,7 +167,7 @@ function arrancarDemo() {
     localStorage.removeItem('simu_aciertos');
     localStorage.setItem('simu_creditos', 2); // Regalo IA
     
-    setTimeout(() => { window.location.href = 'examen-demo.html'; }, 800);
+    setTimeout(() => { window.location.href = `examen-demo.html?v=${tokenHex}`; }, 800);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
