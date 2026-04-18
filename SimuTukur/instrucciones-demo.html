@@ -9,82 +9,88 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-[#050a14] text-white min-h-screen flex items-center justify-center p-6 selection:bg-cyan-500 selection:text-white">
+<body class="bg-[#050a14] text-white min-h-screen flex flex-col items-center justify-center p-6 selection:bg-cyan-500 selection:text-white">
 
-    <div class="max-w-4xl w-full grid md:grid-cols-2 gap-8 items-center">
+    <div class="max-w-5xl w-full">
         
-        <!-- Columna Izquierda: Instrucciones y Comparativa -->
-        <div class="space-y-6">
-            <div>
-                <div class="inline-block bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 text-[10px] font-black uppercase tracking-widest py-1 px-3 rounded-full mb-3">
-                    MOTOR 99% IDÉNTICO AL OFICIAL
-                </div>
-                <!-- 🎯 AQUÍ ESTÁ TU FRASE ESTRELLA -->
-                <h1 class="text-3xl md:text-4xl font-black italic tracking-tighter uppercase mb-2 leading-tight">
-                    Los exámenes ya evolucionaron.<br>
-                    <span class="text-cyan-400 text-2xl md:text-3xl">¿Por qué tu forma de estudiar no?</span>
-                </h1>
-                <p class="text-gray-400 text-sm leading-relaxed mt-2">
-                    Las evaluaciones de admisión modernas son implacables. Este diagnóstico exprés calibra la misma proporción matemática (<span id="lbl-institucion" class="text-white font-bold">...</span>) y el mismo estrés del examen real.
-                </p>
+        <!-- 🎯 TEXTO PRINCIPAL CENTRADO -->
+        <div class="text-center mb-10">
+            <div class="inline-block bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 text-[10px] font-black uppercase tracking-widest py-1 px-3 rounded-full mb-4 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+                MOTOR 99% IDÉNTICO AL OFICIAL
             </div>
+            <h1 class="text-4xl md:text-5xl font-black italic tracking-tighter uppercase mb-4 leading-tight">
+                Los exámenes ya evolucionaron.<br>
+                <span class="text-cyan-400 text-3xl md:text-4xl">¿Por qué tu forma de estudiar no?</span>
+            </h1>
+            <p class="text-gray-400 text-base md:text-lg leading-relaxed max-w-3xl mx-auto">
+                Las evaluaciones de admisión modernas son implacables. Este diagnóstico exprés calibra la misma proporción matemática (<span id="lbl-institucion" class="text-white font-bold">...</span>) y el mismo estrés del examen real.
+            </p>
+        </div>
 
+        <div class="grid md:grid-cols-2 gap-8 items-start">
+            
+            <!-- Columna Izquierda: La Matriz Matemática -->
             <div class="bg-black/40 border border-gray-800 rounded-2xl overflow-hidden shadow-inner">
                 <table class="w-full text-left text-xs">
                     <thead class="bg-gray-900 border-b border-gray-800 text-gray-500 uppercase tracking-widest font-bold">
                         <tr>
-                            <th class="p-3">Materia</th>
-                            <th class="p-3 text-center">Examen Real</th>
-                            <th class="p-3 text-center text-cyan-400">Este Demo</th>
+                            <th class="p-4">Materia</th>
+                            <th class="p-4 text-center">Examen Real</th>
+                            <th class="p-4 text-center text-cyan-400">Este Demo</th>
                         </tr>
                     </thead>
                     <tbody id="tabla-materias" class="divide-y divide-gray-800 text-gray-300">
-                        <tr><td colspan="3" class="p-4 text-center animate-pulse"><i class="fa-solid fa-circle-notch fa-spin"></i> Calculando distribución...</td></tr>
+                        <tr><td colspan="3" class="p-6 text-center animate-pulse"><i class="fa-solid fa-circle-notch fa-spin text-cyan-500 text-xl mb-2 block"></i> Calculando distribución...</td></tr>
                     </tbody>
                     <tfoot class="bg-cyan-900/10 border-t border-cyan-900/50">
                         <tr>
-                            <td class="p-3 font-black uppercase tracking-widest text-cyan-400">TOTALES</td>
-                            <td id="lbl-total-real" class="p-3 text-center font-black">--</td>
-                            <td id="lbl-total-demo" class="p-3 text-center font-black text-cyan-400">15</td>
+                            <td class="p-4 font-black uppercase tracking-widest text-cyan-400">TOTALES</td>
+                            <td id="lbl-total-real" class="p-4 text-center font-black text-lg">--</td>
+                            <td id="lbl-total-demo" class="p-4 text-center font-black text-cyan-400 text-lg">15</td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
 
-            <!-- 🎯 AQUÍ ESTÁ TU JUSTIFICACIÓN DE TELEMETRÍA -->
-            <div class="bg-red-900/10 border border-red-500/30 p-4 rounded-xl flex gap-4 items-start">
-                <i class="fa-solid fa-video text-2xl text-red-500 mt-1 animate-pulse"></i>
-                <div>
-                    <h3 class="text-red-400 font-bold text-sm uppercase tracking-widest mb-1">Vigilancia Biométrica Activa</h3>
-                    <p class="text-[11px] text-gray-400 leading-relaxed">
-                        Replicamos el software Anti-Trampas actual. La cámara y el micrófono detectarán si hay <strong>alguien más en la habitación o si estás hablando</strong>. No grabamos tu sesión, solo medimos tu nivel de alerta y concentración.
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Columna Derecha: Captura del Lead -->
-        <div class="card-glass bg-gray-900 border border-slate-700 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600"></div>
-            
-            <div class="text-center mb-8">
-                <i class="fa-solid fa-envelope-open-text text-5xl text-cyan-400 mb-4 drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]"></i>
-                <h2 class="text-2xl font-black italic uppercase tracking-tighter text-white">Reporte Inteligente</h2>
-                <p class="text-xs text-gray-400 mt-2">
-                    Ingresa tu correo. Al terminar, la IA Simu generará tu calificación y ruta de mejora en tu panel personal.
-                </p>
-            </div>
-
-            <div class="space-y-5">
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Correo Electrónico</label>
-                    <input type="email" id="email-demo" required class="w-full bg-black/50 border border-gray-700 rounded-xl p-4 text-sm text-white outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition shadow-inner" placeholder="ejemplo@correo.com">
+            <!-- Columna Derecha: Vigilancia y Captura del Lead -->
+            <div class="space-y-6">
+                
+                <!-- 🎯 AVISO DE VIGILANCIA MOVIDO AQUÍ ARRIBA -->
+                <div class="bg-red-900/10 border border-red-500/30 p-5 rounded-2xl flex gap-4 items-start shadow-lg">
+                    <div class="bg-red-500/20 p-2 rounded-lg shrink-0">
+                        <i class="fa-solid fa-video text-xl text-red-500 animate-pulse"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-red-400 font-bold text-xs uppercase tracking-widest mb-1">Vigilancia Biométrica Activa</h3>
+                        <p class="text-[11px] text-gray-400 leading-relaxed">
+                            Replicamos el software Anti-Trampas. La cámara y micrófono detectarán si hay <strong>alguien más en la habitación o si estás hablando</strong>. No grabamos tu sesión, solo medimos tu nivel de alerta y concentración.
+                        </p>
+                    </div>
                 </div>
 
-                <button id="btn-comenzar" onclick="arrancarDemo()" disabled class="w-full bg-gray-800 text-gray-500 font-black py-4 rounded-xl uppercase tracking-widest text-sm transition-all cursor-not-allowed">
-                    Calculando...
-                </button>
-                <p id="msg-error" class="text-red-400 text-xs font-bold text-center mt-2 hidden">Ingresa un correo válido.</p>
+                <div class="card-glass bg-gray-900 border border-slate-700 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600"></div>
+                    
+                    <div class="text-center mb-6">
+                        <i class="fa-solid fa-envelope-open-text text-4xl text-cyan-400 mb-3 drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]"></i>
+                        <h2 class="text-xl font-black italic uppercase tracking-tighter text-white">Reporte Inteligente</h2>
+                        <p class="text-xs text-gray-400 mt-2">
+                            Ingresa tu correo. Al terminar, la IA Simu generará tu calificación y ruta de mejora en tu panel personal.
+                        </p>
+                    </div>
+
+                    <div class="space-y-5">
+                        <div>
+                            <input type="email" id="email-demo" required class="w-full bg-black/50 border border-gray-700 rounded-xl p-4 text-sm text-white outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition shadow-inner text-center" placeholder="ejemplo@correo.com">
+                        </div>
+
+                        <button id="btn-comenzar" onclick="arrancarDemo()" disabled class="w-full bg-gray-800 text-gray-500 font-black py-4 rounded-xl uppercase tracking-widest text-sm transition-all cursor-not-allowed">
+                            Calculando Matriz...
+                        </button>
+                        <p id="msg-error" class="text-red-400 text-xs font-bold text-center mt-2 hidden">Ingresa un correo electrónico válido.</p>
+                    </div>
+                </div>
+
             </div>
         </div>
 
