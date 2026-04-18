@@ -57,8 +57,6 @@ async function inicializarDashboard() {
 
 async function seleccionarCurso(data, btn) {
     const emailPadre = localStorage.getItem('session_email');
-    //localStorage.setItem('plan_institucion', data.institucion);
-    //localStorage.setItem('nombre_alumno', data.nombre_alumno); 
     // 1. Extraemos la Institución desde la sub-caja 'config_examenes'
     localStorage.setItem('plan_institucion', data.config_examenes.institucion);
     
@@ -77,7 +75,7 @@ async function seleccionarCurso(data, btn) {
     // 🔒 Filtro estricto consolidado (Una sola consulta)
     const { data: historialBD } = await _supabase
         .from('resultados_examenes')
-        .select('puntaje_obtenido')
+        .select('puntaje_obtenido, detalles_fallas')
         .eq('token_hex', data.token_hex)
         .eq('tipo_prueba', nombrePlan)
         .eq('email', emailPadre)
@@ -307,6 +305,42 @@ async function cargarHistorialChat(token, puntaje, contexto) {
     } else {
         dibujarBurbujaChat('simu', "¡Hola! Estoy listo para ayudarte a entrenar. Selecciona un nivel o hazme una pregunta directa.");
     }
+
+    // NUEVO: PINTAR MAPA DE VULNERABILIDADES SI ES RECIENTE
+    if (contexto === "reciente") {
+        const { data: ultimoExamen } = await _supabase.from('resultados_examenes')
+            .select('detalles_fallas')
+            .eq('token_hex', token).eq('email', email).eq('nombre_alumno', nombreHijo)
+            .order('fecha_aplicacion', { ascending: false }).limit(1).single();
+
+        if (ultimoExamen && ultimoExamen.detalles_fallas && ultimoExamen.detalles_fallas.fallas_academicas) {
+            const fallas = ultimoExamen.detalles_fallas.fallas_academicas;
+            if (fallas.length > 0) {
+                let htmlFallas = `<div class="bg-gray-800/80 p-5 rounded-2xl rounded-tl-none border border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.2)] text-gray-200 mt-4 mb-4">
+                    <p class="text-[10px] uppercase text-cyan-400 font-black mb-3 tracking-widest border-b border-white/10 pb-2"><i class="fa-solid fa-bullseye mr-1"></i> Vulnerabilidades Detectadas</p>
+                    <div class="space-y-3 max-h-72 overflow-y-auto pr-2 scroll-smooth">`;
+                
+                fallas.forEach(f => {
+                    if(f.pregunta && f.correcta) {
+                        htmlFallas += `
+                        <div class="bg-black/50 border border-slate-700/50 p-4 rounded-xl relative overflow-hidden group">
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
+                            <span class="text-red-400 text-[9px] font-black uppercase mb-2 block tracking-widest ml-2">${f.materia}</span>
+                            <div class="text-gray-300 text-sm mb-3 ml-2 overflow-x-auto">${f.pregunta}</div>
+                            <button onclick="pedirExplicacionOficial('${encodeURIComponent(f.pregunta)}', '${encodeURIComponent(f.correcta)}')" 
+                                    class="ml-2 w-[calc(100%-0.5rem)] text-cyan-400 font-bold uppercase hover:bg-cyan-900/40 border border-cyan-900 bg-cyan-900/20 py-2 rounded-lg text-[10px] tracking-wider flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-brain"></i> Explicar Error (1⚡)
+                            </button>
+                        </div>`;
+                    }
+                });
+                htmlFallas += `</div></div>`;
+                chatBox.innerHTML += htmlFallas;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+    }
+
 }
 
 async function enviarMensajeChat(token) {
@@ -331,7 +365,7 @@ async function enviarMensajeChat(token) {
     input.value = '';
 
     // 💾 2. GUARDAMOS EN SUPABASE (El registro del Alumno)
-    const { error: errorAlumno } = await _supabase.from('chat_historial').insert([{
+    await _supabase.from('chat_historial').insert([{
         token_hex: token,
         email: email,
         nombre_alumno: nombreHijo,
@@ -343,6 +377,25 @@ async function enviarMensajeChat(token) {
     dibujarBurbujaChat('simu', `<span id="${idBurbujaIA}" class="animate-pulse">Simu está analizando...</span>`);
 
     try {
+        // --- 🧠 ALTERNATIVA A: AHORRO DE TOKENS (SOLO 2 MENSAJES ANTERIORES) ---
+        const { data: ultimosMsgs } = await _supabase
+            .from('chat_historial')
+            .select('emisor, mensaje')
+            .eq('token_hex', token).eq('email', email).eq('nombre_alumno', nombreHijo)
+            .order('created_at', { ascending: false })
+            .limit(2); // Solo extraemos los 2 últimos mensajes para el contexto
+
+        let textoConContexto = textoUsuario;
+        if (ultimosMsgs && ultimosMsgs.length > 0) {
+            let contextoInfo = "HISTORIAL RECIENTE PARA CONTEXTO:\n";
+            // Invertimos para poner el orden cronológico correcto
+            ultimosMsgs.reverse().forEach(m => {
+                contextoInfo += `${m.emisor.toUpperCase()}: ${m.mensaje}\n`;
+            });
+            textoConContexto = `${contextoInfo}\nNUEVO MENSAJE DEL ALUMNO: ${textoUsuario}`;
+        }
+        // -----------------------------------------------------------------------
+
         const url = `https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/chat-simu`;
         const response = await fetch(url, {
             method: 'POST', 
@@ -350,7 +403,8 @@ async function enviarMensajeChat(token) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${supabaseKey}`
             },
-            body: JSON.stringify({ contents: [{ parts: [{ text: textoUsuario }] }], generationConfig: { temperature: 0.4 } })
+            // Enviamos a la IA la pregunta + el mini-historial inyectado
+            body: JSON.stringify({ contents: [{ parts: [{ text: textoConContexto }] }], generationConfig: { temperature: 0.4 } })
         });
         
         if (!response.ok) throw new Error("Falla de red en Gemini");
@@ -358,8 +412,8 @@ async function enviarMensajeChat(token) {
         const data = await response.json();
         const respuestaIA = data.candidates[0].content.parts[0].text;
         
-        // 💾 3. GUARDAMOS EN SUPABASE PRIMERO (Antes de que falle la pantalla)
-        const { error: errorIA } = await _supabase.from('chat_historial').insert([{
+        // 💾 3. GUARDAMOS EN SUPABASE PRIMERO (Solo guardamos la respuesta limpia, no el bloque de contexto)
+        await _supabase.from('chat_historial').insert([{
             token_hex: token,
             email: email,
             nombre_alumno: nombreHijo,
@@ -367,20 +421,19 @@ async function enviarMensajeChat(token) {
             mensaje: respuestaIA
         }]);
 
-        // 4. PINTAMOS EN PANTALLA (Con protección matemática)
+        // 4. PINTAMOS EN PANTALLA
         const spanBurbuja = document.getElementById(idBurbujaIA);
         if(spanBurbuja && spanBurbuja.parentElement) {
             const contenedor = spanBurbuja.parentElement;
             contenedor.innerHTML = respuestaIA.replace(/\*\*(.*?)\*\*/g, '<strong class="color-cian">$1</strong>');
             
-            // Chaleco antibalas para MathJax
             if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') { 
                 window.MathJax.typesetPromise([contenedor.parentElement]).catch(e => console.warn('MathJax cargando...', e)); 
             }
         }
         
     } catch (e) {
-        console.error("❌ Falla interceptada en el motor de Chat:", e); // Esto nos chismeará si algo falla
+        console.error("❌ Falla interceptada en el motor de Chat:", e); 
         const spanBurbuja = document.getElementById(idBurbujaIA);
         if(spanBurbuja && spanBurbuja.parentElement) {
              spanBurbuja.parentElement.innerHTML = "<em>Error de conexión. Intenta de nuevo.</em>";
@@ -427,3 +480,67 @@ window.addEventListener('pageshow', function(event) {
     }
 });
 
+// NUEVO: FUNCIÓN PARA PEDIR EXPLICACIÓN DEL ERROR DESDE EL DASHBOARD OFICIAL
+async function pedirExplicacionOficial(preguntaCodificada, respuestaCodificada) {
+    let tokens = parseInt(localStorage.getItem('simu_creditos')) || 0;
+    
+    if (tokens <= 0) {
+        abrirModalEnergia();
+        return;
+    }
+
+    // Cobrar Token
+    tokens -= 1;
+    localStorage.setItem('simu_creditos', tokens);
+    actualizarDisplayCreditos();
+    await guardarCreditosEnBD(tokens);
+    
+    const pregunta = decodeURIComponent(preguntaCodificada);
+    const correcta = decodeURIComponent(respuestaCodificada);
+    const inst = localStorage.getItem('plan_institucion');
+    const area = localStorage.getItem('plan_area');
+    const email = localStorage.getItem('session_email');
+    const tokenUser = localStorage.getItem('token_hex_hijo');
+    const nombreHijo = localStorage.getItem('nombre_alumno');
+
+    dibujarBurbujaChat('alumno', `¿Me puedes explicar por qué fallé en esta pregunta? \n"${pregunta}"`);
+    
+    const idBurbujaIA = "typing-" + Date.now();
+    dibujarBurbujaChat('simu', `<span id="${idBurbujaIA}" class="animate-pulse">Analizando tu error...</span>`);
+
+    try {
+        const { data, error } = await _supabase.functions.invoke('explicacion_ia', {
+            body: { 
+                pregunta: pregunta, 
+                correcta: correcta,
+                institucion: inst,
+                area: area
+            }
+        });
+
+        if (error) throw error;
+        
+        const spanBurbuja = document.getElementById(idBurbujaIA);
+        if(spanBurbuja && spanBurbuja.parentElement) {
+            const contenedor = spanBurbuja.parentElement;
+            contenedor.innerHTML = data.respuesta.replace(/\*\*(.*?)\*\*/g, '<strong class="color-cian">$1</strong>');
+            if (window.MathJax) { window.MathJax.typesetPromise([contenedor.parentElement]); }
+        }
+
+        // Guardamos en el historial la plática real para que se quede guardada
+        await _supabase.from('chat_historial').insert([
+            { token_hex: tokenUser, email: email, nombre_alumno: nombreHijo, emisor: 'alumno', mensaje: `Explicación de error: ${pregunta}` },
+            { token_hex: tokenUser, email: email, nombre_alumno: nombreHijo, emisor: 'simu', mensaje: data.respuesta }
+        ]);
+
+    } catch (error) {
+        console.error(error);
+        const spanBurbuja = document.getElementById(idBurbujaIA);
+        if(spanBurbuja) spanBurbuja.parentElement.innerHTML = "<span class='text-red-500'>Error de red. Te hemos devuelto tu Energía.</span>";
+        
+        tokens += 1;
+        localStorage.setItem('simu_creditos', tokens);
+        actualizarDisplayCreditos();
+        await guardarCreditosEnBD(tokens);
+    }
+}
