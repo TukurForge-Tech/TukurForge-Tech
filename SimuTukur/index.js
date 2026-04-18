@@ -34,11 +34,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 for (const inst in grupos) {
                     const optgroup = document.createElement('optgroup'); 
                     optgroup.label = `--- ${inst} ---`;
+                    optgroup.className = "bg-gray-900 text-cyan-400 font-bold";
                     
                     grupos[inst].forEach(ex => {
                         const option = document.createElement('option'); 
                         option.value = ex.token_hex; 
                         option.text = ex.area; // Muestra "A1", "A2", "GENERAL"
+                        option.className = "bg-black text-white";
                         optgroup.appendChild(option);
                     });
                     examDropdown.appendChild(optgroup);
