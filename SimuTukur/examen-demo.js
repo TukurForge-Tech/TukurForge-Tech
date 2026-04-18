@@ -1,219 +1,283 @@
-// examen-demo.js - Motor de Diagnóstico (Versión Marketing)
+// examen-demo.js - Motor Clon Oficial (Adaptado para 15 mins y Embudo de Ventas)
 
 let reactivos = [];         
+let reactivosFallados = []; 
+let incidenciasAudio = [];
+let incidenciasVideo = [];
 let index = 0;
 let aciertos = 0;
 let seleccionActual = null;
-let tiempoSeg = 15 * 60; // 15 Minutos de Demo
-let timerInterval; // 🛑 NUEVA VARIABLE PARA CONTROLAR EL RELOJ
+let tiempoSeg = 15 * 60; // 15 Minutos EXACTOS
+let timerIntervalLocal;
+let ultimoAvisoRuido = 0;
 
-async function initDemo() {
+// ==========================================
+// ESCUDO ANTI-TRAMPAS (Botón Atrás)
+// ==========================================
+history.pushState(null, null, location.href);
+window.onpopstate = function () {
+    history.go(1);
+    alert("⛔ ALERTA: No puedes retroceder durante una evaluación.");
+};
+
+async function init() {
+    // Escudo Anti-F5
+    if (sessionStorage.getItem('demo_mina_activa') === 'true') {
+        alert("⛔ ALERTA: Recargaste la página. El diagnóstico ha sido cancelado.");
+        registrarIncidencia('video', 'El alumno recargó la página (F5).');
+        finalizarDemo(); 
+        return; 
+    }
+    sessionStorage.setItem('demo_mina_activa', 'true');
+
     try {
-        // Inicializar Biométrica Visual (Marketing)
+        // Inicializar Biometría Visual
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         const videoElement = document.getElementById('webcam'); 
         videoElement.srcObject = stream;
         setupAudioMonitor(stream);
         setupVideoMonitor(videoElement);
         
-        // Extraer reactivos de Nivel Avanzado (ID 3) para asustarlos un poco
-        const { data: todos } = await _supabase.from('reactivos')
-            .select('*')
-            .eq('nivel', 3)
-            .eq('tipo_examen', 'ECOEMS') // 🛑 AQUÍ ESTÁ EL NUEVO FILTRO
-            .limit(100); 
-
-        if (!todos || todos.length === 0) {
-            alert("Error conectando con la BD de la demo.");
-            window.location.href = 'index.html';
-            return;
-        }
-
-        // Filtramos para evitar lecturas largas en el demo por rapidez (Estrategia de Ventas)
-        const filtrados = todos.filter(r => !r.texto_lectura && !r.id_grupo_lectura);
+        // Cargar los reactivos basados en la Matriz Proporcional
+        reactivos = await cargarReactivosDesdeMatriz();
         
-        // Mezclamos y tomamos exactamente 15
-        reactivos = filtrados.sort(() => Math.random() - 0.5).slice(0, 15);
-
-        if (reactivos.length > 0) {
-            render(); 
-            startTimer();
+        if(reactivos.length > 0) {
+            document.getElementById('lbl-estado').innerText = "Vigilancia Biométrica Activa";
+            render();
+            iniciarCronometro(); 
         }
-    } catch (e) { 
-        console.error(e);
-        alert(`Otorga permisos de cámara y micrófono para vivir la experiencia IA.`);
+
+    } catch (err) {
+        alert("Para vivir la experiencia real del simulador, debes otorgar permisos de cámara y micrófono.");
+        window.location.href = 'index.html';
     }
 }
 
-function render() {
-    const r = reactivos[index];
-    const g = document.getElementById('opciones-grid'); 
+// ==========================================
+// 2. COSECHA PROPORCIONAL DE LA MATRIZ
+// ==========================================
+async function cargarReactivosDesdeMatriz() {
+    document.getElementById('txt-pregunta').innerHTML = "Generando entorno de evaluación...";
     
-    document.getElementById('label-materia').innerText = `DIAGNÓSTICO | ${r.materia}`;
-    document.getElementById('txt-pregunta').innerText = r.pregunta;
-    document.getElementById('progreso-txt').innerText = `REACTIVO ${index + 1} DE ${reactivos.length}`;
-    g.innerHTML = '';
-    
-    const contenido = [
-        { id: 'a', t: r.opcion_a }, { id: 'b', t: r.opcion_b },
-        { id: 'c', t: r.opcion_c }, { id: 'd', t: r.opcion_d }
-    ].sort(() => Math.random() - 0.5);
+    // Sacamos la matriz que calculamos en la pantalla anterior
+    const matrizStr = localStorage.getItem('demo_distribucion_materias');
+    const institucion = localStorage.getItem('demo_institucion'); // Ej. UNAM o ECOEMS
+    const area = localStorage.getItem('demo_area');
 
-    const letras = ['A', 'B', 'C', 'D'];
-    contenido.forEach((op, i) => {
-        const b = document.createElement('button');
-        b.className = "w-full text-left p-3 md:p-4 rounded-xl border border-slate-800 bg-black/20 flex items-center gap-4 transition-all text-sm md:text-base italic hover:border-cyan-500 hover:bg-slate-800/80 shadow-inner group";
-        b.innerHTML = `<span class="min-w-[2rem] w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-xs font-black text-cyan-400 shrink-0 group-hover:scale-110 transition-transform">${letras[i]}</span> <span class="text-slate-200 leading-relaxed">${op.t}</span>`;
+    if (!matrizStr) {
+        alert("Error de seguridad: No se detectó configuración de examen.");
+        window.location.href = 'index.html';
+        return [];
+    }
+
+    const distribucion = JSON.parse(matrizStr);
+    let poolFinal = [];
+
+    // Ajustar filtros de búsqueda
+    let filtroTipos = [institucion];
+    if (institucion === 'UNAM') filtroTipos.push(area, 'UNAM_GENERAL');
+
+    for (const [materia, cantidad] of Object.entries(distribucion)) {
+        // Buscamos preguntas de Nivel Medio (2) y Avanzado (3)
+        const { data } = await _supabase
+            .from('reactivos')
+            .select('*')
+            .in('tipo_examen', filtroTipos)
+            .eq('materia', materia)
+            .in('nivel', [2, 3]) 
+            .limit(cantidad * 4); // Traemos de sobra para poder filtrar
         
-        b.onclick = () => {
-            seleccionActual = op.id;
-            document.querySelectorAll('#opciones-grid button').forEach(x => {
-                x.classList.remove('border-cyan-400', 'bg-cyan-900/30');
-                x.classList.add('border-slate-800', 'bg-black/20');
+        if (data && data.length > 0) {
+            // ESTRATEGIA DE DEMO: Evitamos textos muy largos para que no pierdan tiempo leyendo en un demo de 15 mins
+            let filtrados = data.filter(r => !r.id_grupo_lectura && (!r.texto_lectura || r.texto_lectura.length < 150));
+            
+            // Si nos quedamos sin preguntas filtradas, usamos las normales
+            if (filtrados.length < cantidad) filtrados = data;
+
+            // Las mezclamos y tomamos exactamente la cantidad que dicta la matriz
+            let seleccion = filtrados.sort(() => Math.random() - 0.5).slice(0, cantidad);
+            poolFinal.push(...seleccion);
+        }
+    }
+
+    // Revolver todo el examen final
+    return poolFinal.sort(() => Math.random() - 0.5);
+}
+
+// ==========================================
+// 3. RENDERIZADO IDENTICO AL OFICIAL
+// ==========================================
+function render() {
+    if (index >= reactivos.length) { finalizarDemo(); return; }
+
+    const item = reactivos[index];
+    seleccionActual = null;
+    
+    document.getElementById('label-materia').innerText = item.materia;
+    document.getElementById('progreso-txt').innerText = `Q. ${index + 1} / ${reactivos.length}`;
+    
+    const wBar = ((index) / reactivos.length) * 100;
+    document.getElementById('progress-bar').style.width = wBar + "%";
+    
+    const btnConfirm = document.getElementById('btn-confirm');
+    btnConfirm.disabled = true;
+
+    // Manejo de textos
+    let textoHtml = "";
+    if (item.texto_lectura && item.texto_lectura.trim() !== "") {
+        textoHtml = `<div class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-sm text-slate-300 mb-4 max-h-48 overflow-y-auto italic">
+                        <i class="fa-solid fa-book-open text-cyan-500 mr-2"></i> ${item.texto_lectura}
+                     </div>`;
+    }
+
+    document.getElementById('txt-pregunta').innerHTML = textoHtml + item.pregunta;
+
+    const divOpciones = document.getElementById('opciones-grid');
+    divOpciones.innerHTML = '';
+    
+    const letras = ['A', 'B', 'C', 'D'];
+    [item.opcion_a, item.opcion_b, item.opcion_c, item.opcion_d].forEach((op, i) => {
+        if (!op) return;
+        
+        const btn = document.createElement('button');
+        btn.className = 'w-full text-left bg-black/40 border border-slate-700 p-4 rounded-xl hover:border-cyan-500 transition-all text-sm md:text-base flex items-start gap-4 focus:outline-none op-btn group';
+        
+        btn.innerHTML = `
+            <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center font-bold shrink-0 mt-0.5 border border-slate-700 group-hover:scale-110 transition-transform">${letras[i]}</div>
+            <div class="flex-1 pt-1 overflow-x-auto latex-container">${op}</div>
+        `;
+        
+        btn.onclick = () => {
+            document.querySelectorAll('.op-btn').forEach(b => {
+                b.classList.remove('border-cyan-500', 'bg-cyan-900/20');
+                b.querySelector('div').classList.remove('bg-cyan-500', 'text-black', 'border-cyan-400');
             });
-            b.classList.remove('border-slate-800', 'bg-black/20');
-            b.classList.add('border-cyan-400', 'bg-cyan-900/30');
-            document.getElementById('btn-confirm').disabled = false;
+            btn.classList.add('border-cyan-500', 'bg-cyan-900/20');
+            btn.querySelector('div').classList.add('bg-cyan-500', 'text-black', 'border-cyan-400');
+            seleccionActual = letras[i];
+            btnConfirm.disabled = false;
         };
-        g.appendChild(b);
+        divOpciones.appendChild(btn);
     });
-    
-    document.getElementById('btn-confirm').disabled = true;
-    document.getElementById('panel-preguntas').scrollTop = 0; 
-    
-    // Invocamos traductor LaTeX
-    if (window.MathJax) { window.MathJax.typesetPromise(); }
+
+    if(typeof MathJax !== 'undefined') MathJax.typesetPromise();
 }
 
 function procesarRespuesta() {
-    const r = reactivos[index];
-    const respuestaBD = String(r.respuesta_correcta).trim().toLowerCase();
-    const seleccionUser = String(seleccionActual).trim().toLowerCase();
+    if (!seleccionActual) return;
+    const item = reactivos[index];
     
-    if (seleccionUser === respuestaBD) aciertos++;
+    if (seleccionActual === item.respuesta_correcta) {
+        aciertos++;
+    } else {
+        reactivosFallados.push({
+            pregunta: item.pregunta,
+            materia: item.materia,
+            correcta: item.respuesta_correcta
+        });
+    }
     
-    index++; 
-    if (index < reactivos.length) render(); 
-    else finalizarDemo();
+    // Guardado Local (Nada de BD para no gastar dinero en prospectos)
+    localStorage.setItem('simu_fallas', JSON.stringify(reactivosFallados));
+    localStorage.setItem('simu_aciertos', aciertos);
+    
+    index++;
+    render();
 }
 
-function startTimer() {
-    // 🛑 ASIGNAMOS EL INTERVALO A LA VARIABLE
-    timerInterval = setInterval(() => {
-        const m = Math.floor(tiempoSeg / 60);
-        const s = tiempoSeg % 60;
-        document.getElementById('timer').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-        if (tiempoSeg-- <= 0) finalizarDemo();
+// ==========================================
+// 4. CRONÓMETRO AUTÓNOMO
+// ==========================================
+function iniciarCronometro() {
+    const el = document.getElementById('timer');
+    timerIntervalLocal = setInterval(() => {
+        tiempoSeg--;
+        let m = Math.floor(tiempoSeg / 60);
+        let s = tiempoSeg % 60;
+        
+        el.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        
+        if (tiempoSeg <= 300) el.classList.add('text-red-500', 'animate-pulse'); // Presión últimos 5 mins
+        
+        if(tiempoSeg <= 0) {
+            clearInterval(timerIntervalLocal);
+            // Si se acaba el tiempo, marcamos las restantes como mal
+            while(index < reactivos.length) {
+                reactivosFallados.push({
+                    pregunta: reactivos[index].pregunta,
+                    materia: reactivos[index].materia,
+                    correcta: reactivos[index].respuesta_correcta
+                });
+                index++;
+            }
+            localStorage.setItem('simu_fallas', JSON.stringify(reactivosFallados));
+            finalizarDemo();
+        }
     }, 1000);
 }
 
-function finalizarDemo() {
-    // 🛑 DETENEMOS EL RELOJ
-    clearInterval(timerInterval);
-
-    // Apagamos la cámara
-    const video = document.getElementById('webcam');
-    if(video && video.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
-    }
-
-    // Calculamos calificación y mostramos PANTALLA DE VENTAS
-    const score = (aciertos / reactivos.length) * 100;
-    document.getElementById('score-demo').innerText = Math.round(score) + "%";
-    
-    document.getElementById('quiz-ui').classList.add('hidden');
-    document.getElementById('modal-ventas').classList.remove('hidden');
-}
-
-// Simulador Visual de Audio (Solo para dar el efecto IA en el demo)
+// ==========================================
+// 5. VIGILANCIA BIOMÉTRICA (Efecto Placebo)
+// ==========================================
 function setupAudioMonitor(stream) {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioContext.createMediaStreamSource(stream);
-    const analyser = audioContext.createAnalyser();
-    source.connect(analyser);
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const actx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = actx.createMediaStreamSource(stream);
+    const analyzer = actx.createAnalyser();
+    src.connect(analyzer);
+    const dataArray = new Uint8Array(analyzer.frequencyBinCount);
+    const meter = document.getElementById('audio-meter');
 
-    function update() {
-        analyser.getByteFrequencyData(dataArray);
-        const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
-        document.getElementById('audio-fill').style.width = Math.min(volume * 4, 100) + "%";
-        requestAnimationFrame(update);
-    }
-    update();
+    setInterval(() => {
+        analyzer.getByteFrequencyData(dataArray);
+        let sum = dataArray.reduce((a, b) => a + b, 0);
+        let p = Math.min((sum / dataArray.length) * 4, 100);
+        if(meter) meter.style.width = p + "%";
+        
+        if (p > 40 && (Date.now() - ultimoAvisoRuido > 10000)) { 
+            registrarIncidencia('audio', `Ruido detectado min ${document.getElementById('timer').innerText}`);
+            ultimoAvisoRuido = Date.now();
+        }
+    }, 200);
 }
 
-// Inicializar detector de caras visual (Sin guardado en BD)
 async function setupVideoMonitor(videoElement) {
     try {
         const MODEL_URL = 'https://vladmandic.github.io/face-api/model/';
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-    } catch (error) { console.warn(error); }
+        setInterval(async () => {
+            if (videoElement.paused) return;
+            const det = await faceapi.detectAllFaces(videoElement, new faceapi.TinyFaceDetectorOptions());
+            if (det.length === 0) registrarIncidencia('video', `Ausencia min ${document.getElementById('timer').innerText}`);
+            else if (det.length > 1) registrarIncidencia('video', `Múltiples rostros min ${document.getElementById('timer').innerText}`);
+        }, 5000); 
+    } catch (e) { console.warn(e); }
 }
 
-// ==========================================
-// MOTOR DE CHAT IA PARA DEMO (BLINDADO)
-// ==========================================
-let tokensDemo = 2;
-
-async function enviarChatDemo() {
-    const input = document.getElementById('demo-chat-input');
-    const box = document.getElementById('demo-chat-box');
-    const texto = input.value.trim();
-    
-    if (!texto) return;
-    if (tokensDemo <= 0) {
-        box.innerHTML += `<div class="bg-red-900/30 border border-red-500/50 p-3 rounded-lg text-red-400 text-xs">Tokens agotados. Inscríbete al plan PRO para desbloquear Energía IA ilimitada.</div>`;
-        box.scrollTop = box.scrollHeight;
-        return;
-    }
-
-    // Descontar token y mostrar mensaje usuario
-    tokensDemo--;
-    document.getElementById('demo-tokens').innerText = tokensDemo;
-    box.innerHTML += `<div class="flex justify-end"><div class="bg-cyan-900/40 border border-cyan-500/30 p-2 rounded-lg text-white max-w-[85%]">${texto}</div></div>`;
-    input.value = '';
-    
-    const idBurbuja = "typing-" + Date.now();
-    box.innerHTML += `<div class="bg-gray-800 p-3 rounded-lg text-gray-300 max-w-[85%]"><span id="${idBurbuja}" class="animate-pulse">Analizando...</span></div>`;
-    box.scrollTop = box.scrollHeight;
-
-    try {
-        // 🛑 CANDADO DE SEGURIDAD Y AHORRO 🛑
-        // Extraemos la pregunta exacta que el alumno está viendo en pantalla
-        const preguntaActual = reactivos[index] ? reactivos[index].pregunta : "Pregunta no detectada";
-        
-        // Inyectamos un "System Prompt" oculto para obligar a la IA a ser breve y enfocada
-        const promptBlindado = `Eres Simu, un tutor muy directo. El alumno está viendo esta pregunta de su examen: "${preguntaActual}".
-REGLAS ESTRICTAS:
-1. Tu respuesta debe tener MÁXIMO 3 renglones. Sé extremadamente conciso y al grano.
-2. Si el alumno te pregunta algo que NO tiene relación con la pregunta del examen que está viendo, responde ÚNICAMENTE: "Solo estoy autorizado para ayudarte con la pregunta actual del simulacro."
-3. Nunca des la respuesta correcta directa, solo una pista.
-
-Pregunta del alumno: ${texto}`;
-
-        const url = `https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/chat-simu`;
-        const response = await fetch(url, {
-            method: 'POST', 
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseKey}` // 🛑 AQUÍ ESTÁ LA LLAVE QUE SE ME OLVIDÓ PONER
-            },
-            body: JSON.stringify({ contents: [{ parts: [{ text: promptBlindado }] }] })
-        });
-        
-        const data = await response.json();
-        const respuestaIA = data.candidates[0].content.parts[0].text;
-        document.getElementById(idBurbuja).parentElement.innerHTML = respuestaIA.replace(/\*\*(.*?)\*\*/g, '<strong class="text-cyan-400">$1</strong>');
-        if (window.MathJax) { window.MathJax.typesetPromise(); }
-    } catch (e) {
-        document.getElementById(idBurbuja).innerText = "Error de conexión en el Demo.";
-        tokensDemo++; // Le regresamos el token si falla
-        document.getElementById('demo-tokens').innerText = tokensDemo;
+function registrarIncidencia(tipo, mensaje) {
+    if (tipo === 'audio') {
+        incidenciasAudio.push(mensaje);
+        localStorage.setItem('simu_inc_audio', JSON.stringify(incidenciasAudio));
+    } else {
+        incidenciasVideo.push(mensaje);
+        localStorage.setItem('simu_inc_video', JSON.stringify(incidenciasVideo));
     }
 }
 
-document.getElementById('demo-chat-input')?.addEventListener('keypress', (e) => {
-    if(e.key === 'Enter') enviarChatDemo();
-});
+// ==========================================
+// 6. FINALIZACIÓN RÁPIDA (Salto al Embudo)
+// ==========================================
+function finalizarDemo() {
+    clearInterval(timerIntervalLocal);
+    sessionStorage.removeItem('demo_mina_activa');
+    localStorage.setItem('simu_terminado', 'true');
+    localStorage.setItem('demo_total_preguntas', reactivos.length); // Guardamos total para sacar la calificación
+    
+    // Apagar cámara
+    const videoEl = document.getElementById('webcam');
+    if(videoEl && videoEl.srcObject) videoEl.srcObject.getTracks().forEach(t => t.stop());
 
-window.onload = initDemo;
+    // SALTO DIRECTO AL DASHBOARD DEMO (Para la venta final)
+    window.location.href = 'dash-demo.html'; 
+}
+
+window.onload = init;
