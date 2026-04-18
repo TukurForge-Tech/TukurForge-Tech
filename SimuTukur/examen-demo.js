@@ -14,11 +14,11 @@ let ultimoAvisoRuido = 0;
 // ==========================================
 // ESCUDO ANTI-TRAMPAS (Botón Atrás)
 // ==========================================
-history.pushState(null, null, location.href);
+/*history.pushState(null, null, location.href);
 window.onpopstate = function () {
     history.go(1);
     alert("⛔ ALERTA: No puedes retroceder durante una evaluación.");
-};
+};*/
 
 async function init() {
     // Escudo Anti-F5
