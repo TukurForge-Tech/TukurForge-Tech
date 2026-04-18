@@ -14,11 +14,6 @@ let ultimoAvisoRuido = 0;
 // ==========================================
 // ESCUDO ANTI-TRAMPAS (Botón Atrás)
 // ==========================================
-/*history.pushState(null, null, location.href);
-window.onpopstate = function () {
-    history.go(1);
-    alert("⛔ ALERTA: No puedes retroceder durante una evaluación.");
-};*/
 
 async function init() {
     // Escudo Anti-F5
@@ -54,15 +49,14 @@ async function init() {
 }
 
 // ==========================================
-// 2. COSECHA PROPORCIONAL DE LA MATRIZ
+// 2. COSECHA PROPORCIONAL DE LA MATRIZ (LÓGICA UNAM CORREGIDA)
 // ==========================================
 async function cargarReactivosDesdeMatriz() {
     document.getElementById('txt-pregunta').innerHTML = "Generando entorno de evaluación...";
     
-    // Sacamos la matriz que calculamos en la pantalla anterior
     const matrizStr = localStorage.getItem('demo_distribucion_materias');
-    const institucion = localStorage.getItem('demo_institucion'); // Ej. UNAM o ECOEMS
-    const area = localStorage.getItem('demo_area');
+    const institucion = localStorage.getItem('demo_institucion'); // Ej. UNAM
+    const area = localStorage.getItem('demo_area'); // Ej. A1
 
     if (!matrizStr) {
         alert("Error de seguridad: No se detectó configuración de examen.");
@@ -73,22 +67,44 @@ async function cargarReactivosDesdeMatriz() {
     const distribucion = JSON.parse(matrizStr);
     let poolFinal = [];
 
-    // Ajustar filtros de búsqueda
-    let filtroTipos = [institucion];
-    if (institucion === 'UNAM') filtroTipos.push(area, 'UNAM_GENERAL');
+    // Materias que son iguales para TODAS las áreas de la UNAM
+    const materiasGeneralesUNAM = [
+        "Español", "Historia Universal", "Historia de México", 
+        "Geografía", "Literatura", "Comprensión de Textos"
+    ];
 
     for (const [materia, cantidad] of Object.entries(distribucion)) {
+        
+        let tipoBusqueda = '';
+
+        if (institucion === 'UNAM') {
+            // LÓGICA UNAM: Decide si busca en la bolsa General o en la Específica
+            if (materiasGeneralesUNAM.includes(materia)) {
+                tipoBusqueda = 'UNAM_GENERAL';
+            } else {
+                tipoBusqueda = `UNAM ${area}`; // Ej: "UNAM A1"
+            }
+        } else {
+            // LÓGICA ECOEMS: Busca directamente por el nombre de la institución
+            tipoBusqueda = institucion; 
+        }
+
         // Buscamos preguntas de Nivel Medio (2) y Avanzado (3)
-        const { data } = await _supabase
+        const { data, error } = await _supabase
             .from('reactivos')
             .select('*')
-            .in('tipo_examen', filtroTipos)
+            .eq('tipo_examen', tipoBusqueda) // Aplicamos el filtro correcto
             .eq('materia', materia)
             .in('nivel', [2, 3]) 
-            .limit(cantidad * 4); // Traemos de sobra para poder filtrar
+            .limit(cantidad * 4); // Traemos de sobra
         
+        if (error) {
+            console.error(`Error buscando ${materia} en ${tipoBusqueda}:`, error);
+            continue;
+        }
+
         if (data && data.length > 0) {
-            // ESTRATEGIA DE DEMO: Evitamos textos muy largos para que no pierdan tiempo leyendo en un demo de 15 mins
+            // ESTRATEGIA DE DEMO: Evitamos textos muy largos
             let filtrados = data.filter(r => !r.id_grupo_lectura && (!r.texto_lectura || r.texto_lectura.length < 150));
             
             // Si nos quedamos sin preguntas filtradas, usamos las normales
@@ -97,10 +113,11 @@ async function cargarReactivosDesdeMatriz() {
             // Las mezclamos y tomamos exactamente la cantidad que dicta la matriz
             let seleccion = filtrados.sort(() => Math.random() - 0.5).slice(0, cantidad);
             poolFinal.push(...seleccion);
+        } else {
+            console.warn(`No se encontraron suficientes preguntas de ${materia} para ${tipoBusqueda}`);
         }
     }
 
-    // Revolver todo el examen final
     return poolFinal.sort(() => Math.random() - 0.5);
 }
 
