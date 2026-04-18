@@ -242,8 +242,13 @@ function calcularYRenderizarProporciones(distReal) {
 
     // --- RENDERIZAR HTML ---
     let html = "";
-    // Lo ordenamos de mayor a menor para que se vea premium
-    vistaArr.sort((a, b) => b.asignadas - a.asignadas).forEach(m => {
+    // 🛡️ CORRECCIÓN: Ordenamos primero por el Demo, y si empatan, desempatamos por el Examen Real
+    vistaArr.sort((a, b) => {
+        if (b.asignadas !== a.asignadas) {
+            return b.asignadas - a.asignadas; // 1. Ordenar por preguntas del Demo
+        }
+        return b.real - a.real; // 2. Desempate: Ordenar por preguntas Reales
+    }).forEach(m => {
         if (m.asignadas > 0) {
             html += `
                 <tr class="hover:bg-white/5 transition">
