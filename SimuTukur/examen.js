@@ -114,7 +114,6 @@ async function init() {
 
         // --- FASE 2: COSECHA UNIVERSAL (Sin datos en duro) ---
         const nivelColchonID = nivelID < 3 ? nivelID + 1 : 3;
-
         const { data: regla } = await _supabase.from('reglas_simulador')
             .select('distribucion_materias')
             .eq('institucion', institucionRegla)
@@ -128,31 +127,53 @@ async function init() {
         }
 
         const distribucion = regla.distribucion_materias;
-        let reactivosPuros = [];
 
+        // 🕵️‍♂️ NUEVO: EL "CHISMOSO" PARA LA CONSOLA (F12)
+        console.log("=========================================");
+        console.log("🚀 INICIANDO GENERACIÓN DE EXAMEN");
+        console.log(`🏢 Institución: ${inst}`);
+        console.log(`🎯 Área: ${area} (Regla aplicada: ${institucionRegla})`);
+        console.log(`📈 Nivel: ${nivelLabel} (ID: ${nivelID})`);
+        console.log("📦 JSON de Materias extraído de Supabase:");
+        console.table(distribucion); // Esto dibujará una tabla hermosa en tu consola
+        
+        // Sumamos los valores para ver cuánto pidió realmente la base de datos
+        let totalPedidos = Object.values(distribucion).reduce((a, b) => a + b, 0);
+        console.log(`🧮 TOTAL DE REACTIVOS PEDIDOS POR EL JSON: ${totalPedidos}`);
+        console.log("=========================================");
+
+        let reactivosPuros = [];
+        
         let palabrasPermitidas = [institucionRegla, inst, area];
         
         if (inst.includes('UNAM')) {
-            // LÓGICA ESTRICTA UNAM: Tronco común (UNAM_GENERAL) + Área Específica (ej. UNAM A4)
-            // 'institucionRegla' ya vale "UNAM A4" gracias a la corrección anterior
+            // LÓGICA ESTRICTA UNAM: Tronco común (UNAM_GENERAL) + Área Específica
             palabrasPermitidas = ['UNAM_GENERAL', institucionRegla]; 
         }
 
+        // 🚀 MODO TURBO: 1 SOLA CONSULTA A SUPABASE (Baja el tiempo de 5 seg a 0.5 seg)
+        const materiasRequeridas = Object.keys(distribucion);
+        console.log("⏳ Descargando base de datos (Modo Turbo)...");
+        
+        const { data: todaLaDataCruda } = await _supabase.from('reactivos')
+            .select('*')
+            .eq('institucion', inst)
+            .in('materia', materiasRequeridas);
+
+        console.log(`✅ ¡Descarga lista! Se trajeron ${todaLaDataCruda ? todaLaDataCruda.length : 0} reactivos en bruto.`);
+
+        // Ahora procesamos en la memoria local, rapidísimo
         for (const [materia, cantidad] of Object.entries(distribucion)) {
-            // OPTIMIZACIÓN GIGANTE: Filtramos directo por institución en Supabase
-            const { data: dataCruda } = await _supabase.from('reactivos')
-                .select('*')
-                .eq('institucion', inst) 
-                .eq('materia', materia);
+            
+            let dataCruda = todaLaDataCruda ? todaLaDataCruda.filter(r => r.materia === materia) : [];
 
             let todos = [];
-            if (dataCruda) {
+            if (dataCruda && dataCruda.length > 0) {
                 // Filtramos localmente con BLINDAJE ESTRICTO
                 todos = dataCruda.filter(r => {
                     let tipoDB = r.tipo_examen;
                     if (!tipoDB) return false;
 
-                    // Convertimos todo a String y lo limpiamos (mayúsculas) para evitar errores
                     let tipoStrLimpio = "";
                     if (Array.isArray(tipoDB)) {
                         tipoStrLimpio = tipoDB.join(",").toUpperCase();
@@ -163,10 +184,8 @@ async function init() {
                     if (inst === 'ECOEMS') {
                         return tipoStrLimpio.includes('ECOEMS');
                     } else if (inst.includes('UNAM')) {
-                        // UNAM: Exige que el tipo sea 'UNAM_GENERAL' o la regla 'UNAM A4'
                         return palabrasPermitidas.some(p => tipoStrLimpio.includes(p.toUpperCase()));
                     } else {
-                        // IPN / UAM (Radar flexible)
                         return palabrasPermitidas.some(p => tipoStrLimpio.includes(p.toUpperCase()));
                     }
                 });
@@ -222,6 +241,30 @@ async function init() {
                 }
             }
         }
+
+        // ✂️ RECORTADOR INTELIGENTE (Fuerza la cantidad exacta a lo que diga el dashboard)
+        if (reactivosPuros.length > cantQ) {
+            console.log(`⚠️ Excedente detectado: Se armaron ${reactivosPuros.length} reactivos, pero se pidieron ${cantQ}. Aplicando recorte inteligente...`);
+            let numAQuitar = reactivosPuros.length - cantQ;
+            let reactivosAjustados = [];
+            // Recorremos de atrás para adelante quitando preguntas "sueltas" para compensar
+            for (let i = reactivosPuros.length - 1; i >= 0; i--) {
+                let r = reactivosPuros[i];
+                let esLectura = r.id_grupo_lectura || (r.texto_lectura && r.texto_lectura.trim() !== "");
+                if (!esLectura && numAQuitar > 0) {
+                    numAQuitar--; 
+                } else {
+                    reactivosAjustados.unshift(r); 
+                }
+            }
+            reactivosPuros = reactivosAjustados;
+            
+            if (reactivosPuros.length > cantQ) {
+                reactivosPuros = reactivosPuros.slice(0, cantQ);
+            }
+        }
+        
+        console.log(`🎯 TOTAL FINAL LISTO PARA EL EXAMEN: ${reactivosPuros.length} reactivos.`);
 
         // --- FASE 2.5: ORDENAMIENTO GARANTIZADO ---
         let reactivosAgrupados = {};
