@@ -46,7 +46,7 @@ async function init() {
         }
 
         // 4. Asignamos la regla final
-        const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : (inst.includes('UNAM') ? 'UNAM' : inst);
+        const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : (inst.includes('UNAM') ? `${inst} ${area}` : inst);
         
         // 🧠 LA INTELIGENCIA: Si es un Repaso, buscamos el nivel en la BD
         if (tipoPruebaEnMemoria === 'Repaso') {
@@ -135,34 +135,44 @@ async function init() {
         let palabrasPermitidas = [institucionRegla, inst, area];
         
         if (inst.includes('UNAM')) {
-            palabrasPermitidas.push('UNAM_GENERAL', 'UNAM');
+            // LÓGICA ESTRICTA UNAM: Buscamos el tronco común o el área específica (Ej. A4)
+            palabrasPermitidas = ['UNAM_GENERAL', area]; 
         }
-        // 🚨 ELIMINAMOS la inserción suelta de 'GENERAL' que causaba el cruce de cables
 
         for (const [materia, cantidad] of Object.entries(distribucion)) {
-            // Traemos más preguntas solo filtrando por materia
+            // OPTIMIZACIÓN GIGANTE: Filtramos directo por institución en Supabase
             const { data: dataCruda } = await _supabase.from('reactivos')
-                .select('*').eq('materia', materia);
+                .select('*')
+                .eq('institucion', inst) // <--- ORO PURO: Exige que sea UNAM o ECOEMS desde el inicio
+                .eq('materia', materia);
 
             let todos = [];
             if (dataCruda) {
-                // Filtramos localmente con BLINDAJE ESTRICTO
+                // Filtramos localmente con BLINDAJE ESTRICTO según tu arquitectura
                 todos = dataCruda.filter(r => {
                     let tipoDB = r.tipo_examen;
                     if (!tipoDB) return false;
 
                     if (inst === 'ECOEMS') {
-                        // Para ECOEMS: Solo aceptamos si dice literalmente ECOEMS
                         if (Array.isArray(tipoDB)) return tipoDB.includes('ECOEMS');
                         return typeof tipoDB === 'string' && tipoDB.includes('ECOEMS');
+                    } else if (inst.includes('UNAM')) {
+                        // UNAM EXACTA: Exige que el tipo sea 'UNAM_GENERAL' o 'A4'
+                        if (Array.isArray(tipoDB)) return tipoDB.some(t => palabrasPermitidas.includes(t));
+                        if (typeof tipoDB === 'string') {
+                            // Separamos por comas por si pusiste "UNAM_GENERAL, A4"
+                            const tiposStr = tipoDB.split(',').map(s => s.trim());
+                            return tiposStr.some(p => palabrasPermitidas.includes(p));
+                        }
                     } else {
-                        // Para UNAM y el resto: Usamos el radar flexible
+                        // IPN / UAM (Radar flexible)
                         if (Array.isArray(tipoDB)) return tipoDB.some(t => palabrasPermitidas.includes(t));
                         if (typeof tipoDB === 'string') return palabrasPermitidas.some(p => tipoDB.includes(p));
                     }
                     return false;
                 });
             }
+        
 
             if (todos && todos.length > 0) {
                 let gruposLectura = {};
