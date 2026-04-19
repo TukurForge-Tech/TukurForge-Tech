@@ -151,20 +151,33 @@ async function init() {
             palabrasPermitidas = ['UNAM_GENERAL', institucionRegla]; 
         }
 
-        // 🚀 MODO TURBO: 1 SOLA CONSULTA A SUPABASE (Baja el tiempo de 5 seg a 0.5 seg)
+        // 🚀 MODO TURBO V2 (CONCURRENTE): Múltiples hilos para saltar el límite de 1000
         const materiasRequeridas = Object.keys(distribucion);
-        console.log("⏳ Descargando base de datos (Modo Turbo)...");
+        console.log("⏳ Descargando base de datos (Modo Turbo Concurrente)...");
         
-        const { data: todaLaDataCruda } = await _supabase.from('reactivos')
+        // Disparamos todas las consultas al mismo tiempo (1 por materia)
+        const promesas = materiasRequeridas.map(mat => 
+            _supabase.from('reactivos')
             .select('*')
             .eq('institucion', inst)
-            .in('materia', materiasRequeridas);
+            .eq('materia', mat)
+            .in('nivel', [nivelID, nivelColchonID]) // 🧠 OPTIMIZACIÓN: Solo traemos niveles útiles
+        );
+        
+        const resultadosSupabase = await Promise.all(promesas);
+        
+        let todaLaDataCruda = [];
+        resultadosSupabase.forEach(res => {
+            if (res.data) todaLaDataCruda.push(...res.data);
+        });
 
-        console.log(`✅ ¡Descarga lista! Se trajeron ${todaLaDataCruda ? todaLaDataCruda.length : 0} reactivos en bruto.`);
+        console.log(`✅ ¡Descarga lista sin límites! Se trajeron ${todaLaDataCruda.length} reactivos útiles.`);
 
         // Ahora procesamos en la memoria local, rapidísimo
         for (const [materia, cantidad] of Object.entries(distribucion)) {
             
+            console.log(`\n--- 🔎 Analizando: ${materia} (Meta: ${cantidad}) ---`); // <--- EL CHISMOSO POR MATERIA
+
             let dataCruda = todaLaDataCruda ? todaLaDataCruda.filter(r => r.materia === materia) : [];
 
             let todos = [];
@@ -234,6 +247,12 @@ async function init() {
                     seleccionados.push(sueltasBase.pop());
                 }
                 reactivosPuros.push(...seleccionados);
+
+                // REPORTE DEL CHISMOSO EN LA TERMINAL
+                console.log(`✔️ ${materia}: Se agregaron ${seleccionados.length} válidos de ${cantidad} pedidos.`);
+                if (seleccionados.length < cantidad) {
+                    console.warn(`⚠️ FALTANTE EN ${materia}: Solo hay ${seleccionados.length}, faltan ${cantidad - seleccionados.length} en la BD.`);
+                }
 
                 if (nivelID < 3) {
                     const cantColchon = Math.ceil(cantidad * 0.5);
