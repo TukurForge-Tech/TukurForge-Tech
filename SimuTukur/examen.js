@@ -29,9 +29,7 @@ async function init() {
         
         const emailPadre = localStorage.getItem('session_email');
         const nombreHijo = localStorage.getItem('nombre_alumno');
-        //const inst = localStorage.getItem('plan_institucion'); 
-        //const area = localStorage.getItem('plan_area'); 
-        //const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : (inst.includes('UNAM') ? 'UNAM A4' : inst);
+
         // 1. Extraemos de la memoria
         let instRaw = localStorage.getItem('plan_institucion'); 
         let areaRaw = localStorage.getItem('plan_area'); 
@@ -131,48 +129,48 @@ async function init() {
 
         const distribucion = regla.distribucion_materias;
         let reactivosPuros = [];
-        
+
         let palabrasPermitidas = [institucionRegla, inst, area];
         
         if (inst.includes('UNAM')) {
-            // LÓGICA ESTRICTA UNAM: Buscamos el tronco común o el área específica (Ej. A4)
-            palabrasPermitidas = ['UNAM_GENERAL', area]; 
+            // LÓGICA ESTRICTA UNAM: Tronco común (UNAM_GENERAL) + Área Específica (ej. UNAM A4)
+            // 'institucionRegla' ya vale "UNAM A4" gracias a la corrección anterior
+            palabrasPermitidas = ['UNAM_GENERAL', institucionRegla]; 
         }
 
         for (const [materia, cantidad] of Object.entries(distribucion)) {
             // OPTIMIZACIÓN GIGANTE: Filtramos directo por institución en Supabase
             const { data: dataCruda } = await _supabase.from('reactivos')
                 .select('*')
-                .eq('institucion', inst) // <--- ORO PURO: Exige que sea UNAM o ECOEMS desde el inicio
+                .eq('institucion', inst) 
                 .eq('materia', materia);
 
             let todos = [];
             if (dataCruda) {
-                // Filtramos localmente con BLINDAJE ESTRICTO según tu arquitectura
+                // Filtramos localmente con BLINDAJE ESTRICTO
                 todos = dataCruda.filter(r => {
                     let tipoDB = r.tipo_examen;
                     if (!tipoDB) return false;
 
+                    // Convertimos todo a String y lo limpiamos (mayúsculas) para evitar errores
+                    let tipoStrLimpio = "";
+                    if (Array.isArray(tipoDB)) {
+                        tipoStrLimpio = tipoDB.join(",").toUpperCase();
+                    } else if (typeof tipoDB === 'string') {
+                        tipoStrLimpio = tipoDB.toUpperCase();
+                    }
+
                     if (inst === 'ECOEMS') {
-                        if (Array.isArray(tipoDB)) return tipoDB.includes('ECOEMS');
-                        return typeof tipoDB === 'string' && tipoDB.includes('ECOEMS');
+                        return tipoStrLimpio.includes('ECOEMS');
                     } else if (inst.includes('UNAM')) {
-                        // UNAM EXACTA: Exige que el tipo sea 'UNAM_GENERAL' o 'A4'
-                        if (Array.isArray(tipoDB)) return tipoDB.some(t => palabrasPermitidas.includes(t));
-                        if (typeof tipoDB === 'string') {
-                            // Separamos por comas por si pusiste "UNAM_GENERAL, A4"
-                            const tiposStr = tipoDB.split(',').map(s => s.trim());
-                            return tiposStr.some(p => palabrasPermitidas.includes(p));
-                        }
+                        // UNAM: Exige que el tipo sea 'UNAM_GENERAL' o la regla 'UNAM A4'
+                        return palabrasPermitidas.some(p => tipoStrLimpio.includes(p.toUpperCase()));
                     } else {
                         // IPN / UAM (Radar flexible)
-                        if (Array.isArray(tipoDB)) return tipoDB.some(t => palabrasPermitidas.includes(t));
-                        if (typeof tipoDB === 'string') return palabrasPermitidas.some(p => tipoDB.includes(p));
+                        return palabrasPermitidas.some(p => tipoStrLimpio.includes(p.toUpperCase()));
                     }
-                    return false;
                 });
             }
-        
 
             if (todos && todos.length > 0) {
                 let gruposLectura = {};
@@ -432,16 +430,6 @@ async function finalizar() {
         fallas_academicas: reactivosFallados
     };
 
-    // Calculamos el nombre correcto del examen (Aquí es donde se aplica la inteligencia de la BD)
-    //const inst = localStorage.getItem('plan_institucion') || '';
-    //const nombreFinalPrueba = (tipoPruebaEnMemoria === 'Repaso') ? 'Reto de Repaso' : (inst.includes('ECOEMS') ? 'ECOEMS GENERAL' : 'UNAM GENERAL');
-
-    /*await guardarResultadoFinal(p, nivelID, detallesJSON, nombreFinalPrueba);
-    
-    if (typeof guardarAnalisisVigilancia === 'function') await guardarAnalisisVigilancia({ veredicto: veredicto, riesgo: riesgo });
-    if (typeof guardarProgresoIA === 'function') await guardarProgresoIA(p);
-    
-    window.location.href = `dashboard.html?res=${Math.round(p)}`;*/
     // Calculamos el nombre correcto del examen
     const inst = localStorage.getItem('plan_institucion') || '';
     const nombreFinalPrueba = (tipoPruebaEnMemoria === 'Repaso') ? 'Reto de Repaso' : (inst.includes('ECOEMS') ? 'ECOEMS GENERAL' : 'UNAM GENERAL');
