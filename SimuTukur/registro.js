@@ -382,9 +382,27 @@ async function cargarExamenesBD() {
 
         select.innerHTML = '<option value="" disabled selected class="text-gray-400">Selecciona tu examen...</option>';
         for (const inst in grupos) {
-            const optgroup = document.createElement('optgroup'); optgroup.label = `--- ${inst} ---`;
+            const optgroup = document.createElement('optgroup'); 
+            optgroup.label = `--- ${inst} ---`;
+            optgroup.className = "text-cyan-400 font-bold bg-gray-900"; // Le damos estilo al encabezado del grupo
+
             grupos[inst].forEach(ex => {
-                const option = document.createElement('option'); option.value = ex.token_hex; option.text = ex.descripcion; option.dataset.nombreExamen = `${inst} - ${ex.descripcion}`; optgroup.appendChild(option);
+                const option = document.createElement('option'); 
+                option.value = ex.token_hex; 
+                
+                // Limpiamos la descripción para que no se vea tan larga.
+                // Si dice "A1 - Ciencias...", solo mostrará "A1"
+                let descripcionCorta = ex.descripcion;
+                if(inst === 'UNAM' && ex.descripcion.includes('-')) {
+                    descripcionCorta = ex.descripcion.split('-')[0].trim();
+                } else if(inst === 'ECOEMS') {
+                    descripcionCorta = "GENERAL"; // Forzamos "GENERAL" para ECOEMS
+                }
+
+                option.text = descripcionCorta; 
+                option.className = "text-white bg-black"; // Forzamos fondo negro para las opciones
+                option.dataset.nombreExamen = `${inst} - ${ex.descripcion}`; 
+                optgroup.appendChild(option);
             });
             select.appendChild(optgroup);
         }
