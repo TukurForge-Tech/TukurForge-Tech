@@ -278,6 +278,7 @@ async function init() {
                 let r = reactivosPuros[i];
                 let esLectura = r.id_grupo_lectura || (r.texto_lectura && r.texto_lectura.trim() !== "");
                 if (!esLectura && numAQuitar > 0) {
+                    console.log(`✂️ Sacrificando 1 reactivo de: ${r.materia} para ajustar el total.`);
                     numAQuitar--; 
                 } else {
                     reactivosAjustados.unshift(r); 
