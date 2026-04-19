@@ -162,7 +162,7 @@ async function init() {
                 .eq('materia', mat);
 
             // 🧠 SUPER INTELIGENCIA: Rescate de bloques de lectura completos
-            const materiasLectura = ['Habilidad Verbal', 'Comprensión de Lectura', 'Español'];
+            const materiasLectura = ['Habilidad Verbal', 'Comprensión de Lectura'];
             if (!materiasLectura.includes(mat)) {
                 // 🎯 CORRECCIÓN MAGISTRAL: Filtramos por COMPLEJIDAD, no por nivel cognitivo
                 consulta = consulta.in('complejidad', [nivelID, nivelColchonID]); 
