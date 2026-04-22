@@ -44,7 +44,8 @@ async function init() {
         }
 
         // 4. Asignamos la regla final
-        const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : (inst.includes('UNAM') ? `${inst} ${area}` : inst);
+        // 4. Asignamos la regla final
+        const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : ((inst.includes('UNAM') || inst.includes('IPN')) ? `${inst} ${area}` : inst);
         
         // 🧠 LA INTELIGENCIA: Si es un Repaso, buscamos el nivel en la BD
         if (tipoPruebaEnMemoria === 'Repaso') {
@@ -149,6 +150,9 @@ async function init() {
         if (inst.includes('UNAM')) {
             // LÓGICA ESTRICTA UNAM: Tronco común (UNAM_GENERAL) + Área Específica
             palabrasPermitidas = ['UNAM_GENERAL', institucionRegla]; 
+        } else if (inst.includes('IPN')) {
+            // LÓGICA ESTRICTA IPN: Tronco común (IPN_GENERAL) + Área Específica
+            palabrasPermitidas = ['IPN_GENERAL', institucionRegla]; 
         }
 
         // 🚀 MODO TURBO V3: Rescate de lecturas y Filtro exacto por COMPLEJIDAD
