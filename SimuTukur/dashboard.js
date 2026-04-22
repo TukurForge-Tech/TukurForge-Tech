@@ -227,7 +227,6 @@ async function cargarHistorial(token, nombreHijo) {
             let incidencias = [];
 
             if (reg.detalles_fallas) {
-                // Sacamos los datos exactos que guardó el motor
                 aciertosTotales = reg.detalles_fallas.aciertos_totales || Math.round((reg.puntaje_obtenido / 100) * 120);
                 preguntasTotales = reg.detalles_fallas.preguntas_totales || 120;
                 incidencias = reg.detalles_fallas.log_vigilancia || [];
@@ -254,7 +253,50 @@ async function cargarHistorial(token, nombreHijo) {
                 probText = 'BAJA'; 
             }
 
-            // 5. RENDERIZADO DE LA NUEVA TARJETA TÁCTICA
+            // 🧠 NUEVO: GENERACIÓN DE TIPS COMPACTOS PARA EL HISTORIAL
+            let tipsHtml = '';
+            let fallosVideoTxt = incidencias.filter(i => !i.toLowerCase().includes('ruido')).join(" ");
+
+            if (incAudio === 0 && incVideo === 0) {
+                // VERDE: Comportamiento impecable
+                tipsHtml = `
+                    <div class="mt-2 bg-green-900/10 border border-green-500/20 p-2 rounded-lg flex gap-2 items-start">
+                        <i class="fa-solid fa-check-circle text-green-500 text-[10px] mt-0.5"></i>
+                        <p class="text-[9px] text-gray-400 leading-tight"><strong class="text-green-400 uppercase tracking-wider">Perfil óptimo:</strong> Excelente nivel de concentración. Entorno auditivo y visual impecable.</p>
+                    </div>
+                `;
+            } else {
+                // AMARILLO/ROJO: Mapeo de fallas específicas
+                tipsHtml = `<div class="mt-2 space-y-1.5">`;
+                
+                if (fallosVideoTxt.includes("Ausencia")) {
+                    tipsHtml += `
+                        <div class="bg-yellow-900/10 border border-yellow-500/30 p-2 rounded-lg flex gap-2 items-start">
+                            <i class="fa-solid fa-user-slash text-yellow-500 text-[10px] mt-0.5"></i>
+                            <p class="text-[9px] text-gray-400 leading-tight"><strong class="text-yellow-400 uppercase tracking-wider">Salida de cuadro:</strong> Evita balancearte o salir de la toma. La cámara debe ver tu rostro siempre.</p>
+                        </div>
+                    `;
+                }
+                if (fallosVideoTxt.includes("Múltiples rostros")) {
+                    tipsHtml += `
+                        <div class="bg-red-900/10 border border-red-500/30 p-2 rounded-lg flex gap-2 items-start">
+                            <i class="fa-solid fa-users text-red-500 text-[10px] mt-0.5"></i>
+                            <p class="text-[9px] text-gray-400 leading-tight"><strong class="text-red-400 uppercase tracking-wider">Acompañante:</strong> El software oficial te anulará si detecta a otra persona. Presenta a solas.</p>
+                        </div>
+                    `;
+                }
+                if (incAudio > 0) {
+                    tipsHtml += `
+                        <div class="bg-orange-900/10 border border-orange-500/30 p-2 rounded-lg flex gap-2 items-start">
+                            <i class="fa-solid fa-volume-high text-orange-500 text-[10px] mt-0.5"></i>
+                            <p class="text-[9px] text-gray-400 leading-tight"><strong class="text-orange-400 uppercase tracking-wider">Ruido excesivo:</strong> Micrófono con alertas. Busca un lugar aislado y en completo silencio.</p>
+                        </div>
+                    `;
+                }
+                tipsHtml += `</div>`;
+            }
+
+            // 5. RENDERIZADO DE LA TARJETA CON LOS TIPS INTEGRADOS
             return `
             <div class="card-glass p-4 border-l-4 border-cyan-500 bg-white/5 transition-all hover:bg-white/10 mb-3">
                 <div class="flex justify-between items-center text-[10px] sm:text-xs mb-3 border-b border-white/5 pb-2">
@@ -284,9 +326,14 @@ async function cargarHistorial(token, nombreHijo) {
                         </div>
                     </div>
                 </div>
+                
+                <!-- AQUÍ APARECEN TUS TIPS DINÁMICOS -->
+                ${tipsHtml}
+                
             </div>
             `;
         }).join('');
+
     } catch (err) { 
         console.error(err); 
         contenedor.innerHTML = `<div class="card-glass p-6 text-xs text-red-500 italic text-center">Error al sincronizar historial.</div>`;
