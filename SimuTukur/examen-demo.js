@@ -98,15 +98,30 @@ async function cargarReactivosDesdeMatriz() {
 
         let tipoBusqueda = '';
 
+        // Definimos las materias de tronco común para desviar la búsqueda
+        const materiasGeneralesUNAM = [
+            "Español", "Historia Universal", "Historia de México", 
+            "Geografía", "Literatura", "Comprensión de Lectura" 
+        ];
+        const materiasGeneralesIPN = [
+            "Historia", "Competencia Lectora", "Competencia Escrita", "Reading Comprehension"
+        ];
+
         if (institucion === 'UNAM') {
-            // LÓGICA UNAM: Decide si busca en la bolsa General o en la Específica
             if (materiasGeneralesUNAM.includes(materiaBusqueda)) {
                 tipoBusqueda = 'UNAM_GENERAL';
             } else {
-                tipoBusqueda = `UNAM ${area}`; // Ej: "UNAM A1"
+                tipoBusqueda = `UNAM ${area}`; 
+            }
+        } else if (institucion === 'IPN') {
+            // LÓGICA IPN: Tronco común a la bolsa general, ciencias y mate a la bolsa específica
+            if (materiasGeneralesIPN.includes(materiaBusqueda)) {
+                tipoBusqueda = 'IPN_GENERAL';
+            } else {
+                tipoBusqueda = `IPN ${area}`; 
             }
         } else {
-            // LÓGICA ECOEMS: Busca directamente por el nombre de la institución
+            // LÓGICA ECOEMS
             tipoBusqueda = institucion; 
         }
 
