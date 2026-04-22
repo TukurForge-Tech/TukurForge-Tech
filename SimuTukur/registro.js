@@ -373,7 +373,7 @@ async function cargarExamenesBD() {
         // 2. Quítale la doble diagonal // a la LÍNEA B para encenderla.
         
         //const examenesHabilitados = data.filter(ex => ex.institucion.includes('ECOEMS')); // <-- LÍNEA A (Activada hoy)
-        const examenesHabilitados = data.filter(ex => ['ECOEMS', 'UNAM'].includes(ex.institucion));
+        const examenesHabilitados = data.filter(ex => ['ECOEMS', 'UNAM', 'IPN'].includes(ex.institucion));
         //const examenesHabilitados = data; // <-- LÍNEA B (Activada en el futuro)
         // =========================================================
 
