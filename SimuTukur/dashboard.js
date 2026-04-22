@@ -72,16 +72,14 @@ async function seleccionarCurso(data, btn) {
     const conf = data.config_examenes; 
     const nombrePlan = conf.area ? `${conf.institucion} ${conf.area}` : conf.institucion;
 
-    // 🔒 Filtro estricto consolidado (Una sola consulta)
+    // 🛡️ 1. TRAEMOS TODO EL HISTORIAL (Del más viejo al más nuevo)
     const { data: historialBD } = await _supabase
         .from('resultados_examenes')
-        .select('puntaje_obtenido, detalles_fallas')
+        .select('puntaje_obtenido, tipo_prueba')
         .eq('token_hex', data.token_hex)
-        .eq('tipo_prueba', nombrePlan)
         .eq('email', emailPadre)
         .eq('nombre_alumno', data.nombre_alumno)
-        .order('fecha_aplicacion', { ascending: false })
-        .limit(1);
+        .order('fecha_aplicacion', { ascending: true }); // Ascendente para simular el progreso
 
     document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
@@ -91,21 +89,53 @@ async function seleccionarCurso(data, btn) {
     
     const esPro = data.config_examenes.plan === 'PRO';
     localStorage.setItem('token_hex_hijo', data.token_hex);
-     localStorage.setItem('plan_area', conf.area);               
+    localStorage.setItem('plan_area', conf.area);               
     localStorage.setItem('plan_nombre_completo', nombrePlan);   
     localStorage.setItem('es_pro', esPro);
     localStorage.setItem('simu_creditos', data.intentos_simulacro_restantes || 0);
     
     actualizarDisplayCreditos();
-    
-    const ultimoPuntajeBD = (historialBD && historialBD.length > 0) ? historialBD[0].puntaje_obtenido : null;
+
+    // 🧠 2. CÁLCULO DE RACHA Y DESBLOQUEO PERMANENTE
+    let nivelMaximo = 1; // 1: Principiante, 2: Medio, 3: Avanzado
+    let racha = 0;
+    let requiereRepaso = false;
+
+    if (historialBD && historialBD.length > 0) {
+        historialBD.forEach(ex => {
+            // Verificamos si el examen guardado fue un repaso
+            const esRepaso = ex.tipo_prueba.toLowerCase().includes('repaso');
+            
+            if (esRepaso) {
+                racha = 0; // Hacer un repaso rompe la racha de exámenes normales
+                if (ex.puntaje_obtenido >= 70) requiereRepaso = false; // Si aprueba el repaso, se quita el castigo
+            } else {
+                if (ex.puntaje_obtenido >= 70) {
+                    racha++;
+                    requiereRepaso = false;
+                    // Si junta 3 victorias seguidas, sube de nivel permanentemente
+                    if (racha >= 3 && nivelMaximo === 1) { nivelMaximo = 2; racha = 0; }
+                    else if (racha >= 3 && nivelMaximo === 2) { nivelMaximo = 3; racha = 0; }
+                } else {
+                    racha = 0; // Un examen reprobado rompe la racha
+                    requiereRepaso = true; // Y lo castiga mandándolo a repaso
+                }
+            }
+        });
+    }
+
+    // 3. LIMPIEZA DE URL (Anti-Trampas visual)
     const params = new URLSearchParams(window.location.search);
-    const puntajeReciente = params.get('res');
-    const puntajeFinal = puntajeReciente ? parseInt(puntajeReciente) : (ultimoPuntajeBD !== null ? ultimoPuntajeBD : 100);
+    const esReciente = params.has('res');
+    if (esReciente) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     const palabraBusqueda = conf.institucion.includes('ECOEMS') ? 'ECOEMS' : nombrePlan;
     
-    cargarNiveles(palabraBusqueda, puntajeFinal);
-    cargarHistorialChat(data.token_hex, puntajeFinal, puntajeReciente ? "reciente" : "historico");
+    // 4. EJECUTAMOS LAS VISTAS CON LA VERDAD DE LA BASE DE DATOS
+    cargarNiveles(palabraBusqueda, requiereRepaso, nivelMaximo);
+    cargarHistorialChat(data.token_hex, null, esReciente ? "reciente" : "historico");
     setTimeout(() => { cargarHistorial(data.token_hex, data.nombre_alumno); }, 800);
 }
 
@@ -340,22 +370,20 @@ async function cargarHistorial(token, nombreHijo) {
     }
 }
 
-async function cargarNiveles(institucion, puntajeReal) {
+async function cargarNiveles(institucion, requiereRepaso, nivelMaximo) {
     const contenedor = document.getElementById('contenedor-niveles');
     const { data } = await _supabase.from('reglas_simulador').select('*').eq('institucion', institucion).order('id', { ascending: true });
     
-    const estaBloqueado = puntajeReal < 70;
-    
-    // 🛑 EL INSTRUCTIVO DE REGLAS RECUPERADO
+    // 🛑 TEXTOS ACTUALIZADOS PARA EL ALUMNO
     let html = `
         <div class="mb-5 bg-cyan-900/20 border border-cyan-800 p-4 rounded-xl shadow-inner">
             <h4 class="text-cyan-400 font-black text-xs uppercase tracking-widest mb-2"><i class="fa-solid fa-circle-info"></i> Reglas de la IA</h4>
-            <p class="text-xs text-gray-400 leading-relaxed mb-2">Para desbloquear un nivel superior, debes superar al menos <strong class="text-white">3 simulacros con más del 70%</strong> de aciertos.</p>
-            <p class="text-xs text-gray-400 leading-relaxed">Si tu último simulacro es menor a 70%, tu entrenamiento se bloqueará y deberás superar el <strong class="text-red-400">Reto de Repaso</strong>.</p>
+            <p class="text-xs text-gray-400 leading-relaxed mb-2">Para desbloquear un nivel superior, debes superar al menos <strong class="text-white">3 simulacros seguidos con más del 70%</strong> de aciertos (sin reprobar ni hacer repasos entre ellos).</p>
+            <p class="text-xs text-gray-400 leading-relaxed">Una vez desbloqueado un nivel, <strong class="text-green-400">se queda abierto para siempre</strong>. Pero si repruebas, deberás superar el <strong class="text-red-400">Reto de Repaso</strong> para volver a entrenar.</p>
         </div>
     `;
 
-    if (estaBloqueado) {
+    if (requiereRepaso) {
         html += `
             <div class="bg-red-900/20 border border-red-500/50 p-4 rounded-xl mb-4 text-center">
                 <h4 class="text-red-400 font-bold text-sm uppercase mb-1">Entrenamiento Bloqueado</h4>
@@ -370,12 +398,22 @@ async function cargarNiveles(institucion, puntajeReal) {
     }
 
     if (data) {
+        // Mapa para saber qué número de nivel es cada tarjeta
+        const jerarquiaNiveles = { 'Principiante': 1, 'Medio': 2, 'Avanzado': 3 };
+
         html += data.map(n => {
-            const isLocked = estaBloqueado || n.nivel !== 'Principiante'; 
+            const nivelDeEstaTarjeta = jerarquiaNiveles[n.nivel] || 1;
+            
+            // Está bloqueado si requiere repaso por reprobar, o si aún no alcanza ese nivel históricamente
+            const isLocked = requiereRepaso || (nivelDeEstaTarjeta > nivelMaximo); 
+            
             let textoRequisito = "";
             if (isLocked) {
-                if (estaBloqueado) textoRequisito = `<p class="text-[9px] text-red-400/80 italic mt-2 uppercase tracking-wide">🔒 Supera el Repaso primero</p>`;
-                else textoRequisito = `<p class="text-[9px] text-gray-500 italic mt-2 uppercase tracking-wide">🔒 Requiere 3 Exámenes > 70%</p>`;
+                if (requiereRepaso) {
+                    textoRequisito = `<p class="text-[9px] text-red-400/80 italic mt-2 uppercase tracking-wide">🔒 Supera el Repaso primero</p>`;
+                } else {
+                    textoRequisito = `<p class="text-[9px] text-gray-500 italic mt-2 uppercase tracking-wide">🔒 Requiere 3 Exámenes seguidos > 70%</p>`;
+                }
             }
 
             return `
