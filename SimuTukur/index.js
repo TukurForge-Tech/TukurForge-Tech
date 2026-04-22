@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .from('config_examenes') 
                 .select('*')
                 .eq('plan', 'PRO')
-                .in('institucion', ['UNAM', 'ECOEMS']) // 🔒 Bloquea IPN/UAM automáticamente
+                .in('institucion', ['UNAM', 'ECOEMS', 'IPN']) // 🔒 Bloquea IPN/UAM automáticamente
                 .order('institucion', { ascending: true });
 
             if (error) throw error;
@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const examenesValidos = data.filter(ex => {
                     if (ex.institucion === 'ECOEMS' && ex.area === 'GENERAL') return true;
                     if (ex.institucion === 'UNAM' && (ex.area === 'A1' || ex.area === 'A2' || ex.area === 'A3' || ex.area === 'A4')) return true;
+                    if (ex.institucion === 'IPN' && (ex.area === 'IyCFM' || ex.area === 'CMB' || ex.area === 'CSyA')) return true; // 🔓 Áreas IPN
                     return false;
                 });
 
