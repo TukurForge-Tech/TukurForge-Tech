@@ -401,7 +401,10 @@ async function cargarNiveles(institucion, requiereRepaso, nivelMaximo) {
         // Mapa para saber qué número de nivel es cada tarjeta
         const jerarquiaNiveles = { 'Principiante': 1, 'Medio': 2, 'Avanzado': 3 };
 
-        html += data.map(n => {
+        // 🔄 ORDENAMIENTO FORZADO: Acomodamos la data de menor a mayor jerarquía
+        const dataOrdenada = data.sort((a, b) => jerarquiaNiveles[a.nivel] - jerarquiaNiveles[b.nivel]);
+
+        html += dataOrdenada.map(n => {
             const nivelDeEstaTarjeta = jerarquiaNiveles[n.nivel] || 1;
             
             // Está bloqueado si requiere repaso por reprobar, o si aún no alcanza ese nivel históricamente
