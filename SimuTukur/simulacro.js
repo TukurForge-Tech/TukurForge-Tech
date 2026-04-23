@@ -31,13 +31,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // ==========================================
             let ligaOficialMeet = "";
             if (dia === "Sabado_10AM") {
-                ligaOficialMeet = "https://meet.google.com/link-sabado-10am"; 
+                ligaOficialMeet = "https://meet.google.com/ixs-bpch-fws"; 
             } else if (dia === "Sabado_12PM") {
-                ligaOficialMeet = "https://meet.google.com/link-sabado-12pm"; 
+                ligaOficialMeet = "https://meet.google.com/amb-zphp-nhb"; 
             } else if (dia === "Domingo_10AM") {
-                ligaOficialMeet = "https://meet.google.com/link-domingo-10am"; 
+                ligaOficialMeet = "https://meet.google.com/sat-rpgy-qet"; 
             } else if (dia === "Domingo_12PM") {
-                ligaOficialMeet = "https://meet.google.com/link-domingo-12pm"; 
+                ligaOficialMeet = "https://meet.google.com/cmn-pvqa-jkb"; 
             }
 
             try {
