@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 // ==========================================
-                // GUARDADO EN SUPABASE
+                // 1. GUARDADO EN SUPABASE
                 // ==========================================
                 const { error } = await _supabase.from('prospectos_simulacro').insert([
                     { 
@@ -59,7 +59,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (error) throw error;
 
                 // ==========================================
-                // ACTUALIZAR INTERFAZ AL ÉXITO
+                // 2. DISPARADOR DE CORREO DE INSTRUCCIONES
+                // ==========================================
+                try {
+                    await _supabase.functions.invoke('correo-simulacro', {
+                        body: { 
+                            tutor_nombre: tutor,
+                            alumno_nombre: alumno, 
+                            correo_destino: correo, 
+                            examen_elegido: nombreExamenFiltro,
+                            horario_elegido: dia,
+                            link_meet: ligaOficialMeet
+                        }
+                    });
+                } catch(emailErr) {
+                    console.log("Aviso silencioso: El envío del correo falló, pero el registro está en BD.", emailErr);
+                }
+
+                // ==========================================
+                // 3. ACTUALIZAR INTERFAZ AL ÉXITO (¡Esto faltaba!)
                 // ==========================================
                 document.getElementById('formSimulacro').classList.add('hidden');
                 
@@ -70,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('mensajeExito').classList.remove('hidden');
 
             } catch (err) {
+                // ¡También faltaba cerrar el error principal de Supabase!
                 console.error("Error en el registro:", err);
                 alert("Hubo un error al registrarte. Verifica tus datos o intenta con otro correo.");
                 btn.innerHTML = '<i class="fa-solid fa-video mr-2"></i> RESERVAR MI LUGAR';
