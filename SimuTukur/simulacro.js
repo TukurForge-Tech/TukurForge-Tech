@@ -61,19 +61,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 // ==========================================
                 // 2. DISPARADOR DE CORREO DE INSTRUCCIONES
                 // ==========================================
-                try {
-                    await _supabase.functions.invoke('correo-simulacro', {
-                        body: { 
-                            tutor_nombre: tutor,
-                            alumno_nombre: alumno, 
-                            correo_destino: correo, 
-                            examen_elegido: nombreExamenFiltro,
-                            horario_elegido: dia,
-                            link_meet: ligaOficialMeet
-                        }
-                    });
-                } catch(emailErr) {
-                    console.log("Aviso silencioso: El envío del correo falló, pero el registro está en BD.", emailErr);
+                const { data: respuestaCorreo, error: errorCorreo } = await _supabase.functions.invoke('correo-simulacro', {
+                    body: { 
+                        tutor_nombre: tutor,
+                        alumno_nombre: alumno, 
+                        correo_destino: correo, 
+                        examen_elegido: nombreExamenFiltro,
+                        horario_elegido: dia,
+                        link_meet: ligaOficialMeet
+                    }
+                });
+
+                // Si choca, nos escupe el error en la cara
+                if (errorCorreo) {
+                    alert("⚠️ Falló el correo. El sistema dice: " + JSON.stringify(errorCorreo));
+                    console.error("Error completo de correo:", errorCorreo);
                 }
 
                 // ==========================================
