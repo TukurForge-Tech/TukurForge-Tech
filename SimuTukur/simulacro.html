@@ -87,7 +87,7 @@
             </button>
         </form>
 
-        <!-- PANTALLA DE ÉXITO CON LINK INMEDIATO -->
+        <!-- PANTALLA DE ÉXITO CON LINK INMEDIATO Y AVISO DE SPAM -->
         <div id="mensajeExito" class="hidden text-center mt-4 bg-gray-900/80 p-6 rounded-xl border border-green-500/30">
             <i class="fa-solid fa-circle-check text-5xl text-green-400 mb-4 animate-pulse"></i>
             <h3 class="text-2xl font-black italic text-white uppercase tracking-tighter mb-1">¡Lugar Reservado!</h3>
@@ -98,7 +98,12 @@
                 <a id="linkMeet" href="#" target="_blank" class="text-lg font-mono text-white hover:text-cyan-300 underline break-all">Cargando...</a>
             </div>
             
-            <p class="text-[10px] text-gray-500 uppercase font-bold">Te enviaremos un recordatorio por WhatsApp 10 minutos antes de comenzar.</p>
+            <div class="bg-yellow-900/20 border border-yellow-500/50 p-3 rounded-lg text-left mb-4">
+                <p class="text-[10px] text-yellow-500 uppercase font-black tracking-widest mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> IMPORTANTE</p>
+                <p class="text-[10px] text-gray-300 leading-relaxed">Te acabamos de enviar un correo con las <strong class="text-white">instrucciones específicas y el reglamento</strong> del simulacro. Por favor, revisa tu bandeja de entrada y tu carpeta de <strong class="text-yellow-400">Correo No Deseado (Spam)</strong>.</p>
+            </div>
+            
+            <p class="text-[9px] text-gray-500 uppercase font-bold">Te enviaremos un recordatorio por WhatsApp 10 minutos antes de comenzar.</p>
         </div>
     </div>
 
