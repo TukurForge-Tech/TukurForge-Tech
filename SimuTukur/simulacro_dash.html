@@ -27,30 +27,33 @@
         </p>
     </div>
     
-    <header class="p-6 flex flex-col gap-4 border-b border-gray-800 bg-[#050a14]">
+    <header class="p-6 border-b border-gray-800 bg-[#050a14]">
         <div class="flex justify-between items-center">
+            
             <div class="flex items-center gap-6">
-                <h1 class="text-3xl font-black italic color-cian tracking-tighter">SIMUTUKUR<br>
-                <button class="btn-tab px-6 py-3 rounded-full text-xs font-black uppercase whitespace-nowrap bg-cyan-500 text-black">
-                  ECOEMS GENERAL
-                </button></h1>
-                
-                <div id="info-usuario" class="border-l border-gray-800 pl-6">
-                    <h2 class="text-xl font-black italic tracking-tighter text-white leading-none mb-1">Hola, <span class="color-cian italic" id="nombre-span">...</span></h2>
+                <div class="flex flex-col items-center">
+                    <h1 class="text-3xl font-black italic tracking-tighter text-cyan-400">SIMUTUKUR</h1>
+                    <button class="btn-tab bg-cyan-500 text-black text-[10px] font-black uppercase px-4 py-1 rounded-full mt-1 w-full text-center tracking-widest hover:bg-cyan-400 transition">
+                        CARGANDO...
+                    </button>
+                </div>
                     
-                    <div id="plan-actual-container">
-                        <p class="text-[10px] uppercase font-bold text-gray-500 italic tracking-widest leading-none">Plan Activo: <span class="text-white">ECOEMS GENERAL</span></p>
+                <div class="ml-4 flex flex-col justify-center border-l border-gray-800 pl-6">
+                    <h2 class="text-xl text-gray-300 italic">
+                        Hola, <span id="nombre-span" class="text-white font-black not-italic">...</span>
+                    </h2>
+                    <div id="plan-actual-container" class="text-[10px] uppercase tracking-widest mt-1 text-gray-500">
+                        PLAN ACTIVO: <span class="text-cyan-400 font-black italic ml-1">CARGANDO...</span>
                     </div>
                 </div>
             </div>
-            
+
             <div class="flex items-center gap-6">
                 <div class="flex items-center gap-3 bg-gray-900 border border-cyan-900/50 rounded-lg p-2 px-4 shadow-sm">
                     <i class="fa-solid fa-bolt text-yellow-400"></i>
                     <div>
                         <p class="text-[10px] text-gray-500 uppercase font-bold leading-none">Energía IA</p>
-                        <p id="energia-display" class="text-sm font-black text-white leading-none mt-1">2</p>
-                        <!--<p class="text-sm font-black text-white leading-none mt-1">2</p>-->
+                        <p id="energia-display" class="text-sm font-black text-white leading-none mt-1">0</p>
                     </div>
                     <button class="ml-3 bg-gray-800 text-gray-500 text-[10px] font-black py-1 px-3 rounded uppercase transition cursor-not-allowed">Recargar</button>
                 </div>
