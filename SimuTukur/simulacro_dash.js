@@ -5,6 +5,44 @@ async function validarAccesoPilotoDash() {
     if (!email) { window.location.href = 'acceso_piloto.html'; return; }
 
     try {
+        // PASO 1: Agregamos 'examen' a la consulta
+        const { data, error } = await _supabase
+            .from('prospectos_simulacro')
+            .select('nombre_tutor, examen') // Traemos el examen desde la BD
+            .eq('correo', email) 
+            .maybeSingle();
+
+        if (error || !data) {
+            window.location.href = 'acceso_piloto.html';
+            return;
+        }
+
+        // PASO 2: Actualizamos el saludo
+        const saludoSpan = document.getElementById('nombre-span');
+        if (saludoSpan) saludoSpan.innerText = data.nombre_tutor || email;
+
+        // PASO 3: Actualizamos el Plan Activo en el HTML
+        // Buscamos los contenedores donde el texto está "en duro"
+        const planText = document.querySelector('#plan-actual-container span');
+        const badgeExamen = document.querySelector('button.btn-tab');
+
+        if (planText) planText.innerText = data.examen || "PLAN ESTÁNDAR";
+        if (badgeExamen) badgeExamen.innerText = data.examen || "SIMULACRO";
+
+        // Gestión de tokens (mantenemos tu lógica existente)
+        if (!localStorage.getItem('simu_creditos')) {
+            localStorage.setItem('simu_creditos', 2);
+        }
+        document.getElementById('energia-display').innerText = localStorage.getItem('simu_creditos');
+
+    } catch (err) { console.error("Error en validación dash:", err); }
+}
+
+/*async function validarAccesoPilotoDash() {
+    const email = localStorage.getItem('session_email');
+    if (!email) { window.location.href = 'acceso_piloto.html'; return; }
+
+    try {
         const { data, error } = await _supabase
             .from('prospectos_simulacro')
             .select('nombre_tutor') 
@@ -26,7 +64,7 @@ async function validarAccesoPilotoDash() {
         document.getElementById('energia-display').innerText = localStorage.getItem('simu_creditos');
 
     } catch (err) { console.error("Error en validación dash:", err); }
-}
+}*/
 
 // Adecuación 9: Iniciar el Simulacro Piloto a motor.html
 function iniciarSimulacro() {
