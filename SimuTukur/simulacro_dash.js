@@ -5,10 +5,10 @@ async function validarAccesoPilotoDash() {
     if (!email) { window.location.href = 'acceso_piloto.html'; return; }
 
     try {
-        // PASO 1: Agregamos 'examen' a la consulta
+        // Traemos el examen desde la BD
         const { data, error } = await _supabase
             .from('prospectos_simulacro')
-            .select('nombre_tutor, examen') // Traemos el examen desde la BD
+            .select('nombre_tutor, examen') 
             .eq('correo', email) 
             .maybeSingle();
 
@@ -17,19 +17,45 @@ async function validarAccesoPilotoDash() {
             return;
         }
 
-        // PASO 2: Actualizamos el saludo
+        // Actualizamos el saludo y el Plan Activo
         const saludoSpan = document.getElementById('nombre-span');
         if (saludoSpan) saludoSpan.innerText = data.nombre_tutor || email;
 
-        // PASO 3: Actualizamos el Plan Activo en el HTML
-        // Buscamos los contenedores donde el texto está "en duro"
         const planText = document.querySelector('#plan-actual-container span');
         const badgeExamen = document.querySelector('button.btn-tab');
 
         if (planText) planText.innerText = data.examen || "PLAN ESTÁNDAR";
         if (badgeExamen) badgeExamen.innerText = data.examen || "SIMULACRO";
 
-        // Gestión de tokens (mantenemos tu lógica existente)
+        // =========================================================
+        // NUEVA LÓGICA: Consultar la distribución de materias
+        // =========================================================
+        let instBusqueda = 'ECOEMS';
+        if (data.examen) {
+            // Extraer si es UNAM A1, A2, A3, A4, IPN o ECOEMS
+            if(data.examen.includes('UNAM')) {
+                const partes = data.examen.split('-');
+                if(partes.length > 0) instBusqueda = partes[0].trim(); // Ej. "UNAM A4"
+            } else if (data.examen.includes('IPN')) {
+                instBusqueda = 'IPN';
+            }
+        }
+
+        const { data: regla, error: errR } = await _supabase
+            .from('reglas_simulador')
+            .select('distribucion_materias')
+            .eq('institucion', instBusqueda)
+            .eq('nivel', 'Avanzado') 
+            .maybeSingle();
+
+        if (regla && regla.distribucion_materias) {
+            // Mandamos llamar el cálculo matemático para 50 preguntas
+            renderizarTimelinePiloto(regla.distribucion_materias, 50); 
+        } else {
+             document.getElementById('contenedor-historial').innerHTML = "<p class='text-xs text-gray-500 italic p-4'>No se encontró distribución. Usa el formato general.</p>";
+        }
+
+        // Gestión de tokens (Energía IA)
         if (!localStorage.getItem('simu_creditos')) {
             localStorage.setItem('simu_creditos', 2);
         }
@@ -38,39 +64,61 @@ async function validarAccesoPilotoDash() {
     } catch (err) { console.error("Error en validación dash:", err); }
 }
 
-/*async function validarAccesoPilotoDash() {
-    const email = localStorage.getItem('session_email');
-    if (!email) { window.location.href = 'acceso_piloto.html'; return; }
+function renderizarTimelinePiloto(distReal, totalPiloto) {
+    let totalReal = 0;
+    let materiasArr = [];
 
-    try {
-        const { data, error } = await _supabase
-            .from('prospectos_simulacro')
-            .select('nombre_tutor') 
-            .eq('correo', email) 
-            .maybeSingle();
+    // 1. Contar total real de preguntas en el examen oficial
+    for (let mat in distReal) { totalReal += distReal[mat]; }
 
-        if (error || !data) {
-            window.location.href = 'acceso_piloto.html';
-            return;
+    // 2. Calcular cuotas base y decimales para 50 preguntas
+    let sumPiloto = 0;
+    for (let mat in distReal) {
+        let cuotaExacta = (distReal[mat] / totalReal) * totalPiloto;
+        let base = Math.floor(cuotaExacta);
+        materiasArr.push({ materia: mat, real: distReal[mat], asignadas: base, residuo: cuotaExacta - base });
+        sumPiloto += base;
+    }
+
+    // 3. Repartir los lugares que faltan por culpa de los decimales
+    let faltantes = totalPiloto - sumPiloto;
+    materiasArr.sort((a, b) => b.residuo - a.residuo); 
+    for (let i = 0; i < faltantes; i++) {
+        materiasArr[i].asignadas += 1;
+    }
+
+    const contenedor = document.getElementById('contenedor-historial');
+    contenedor.innerHTML = ""; // Limpiar el contenedor "Cargando..."
+
+    // 4. Preparar objeto final de distribución para inyectárselo al motor del examen
+    const distribucionFinal = {};
+    
+    // 5. Pintar en el HTML y guardar
+    materiasArr.sort((a, b) => b.asignadas - a.asignadas).forEach(m => {
+        if (m.asignadas > 0) {
+            distribucionFinal[m.materia] = m.asignadas;
+            const div = document.createElement('div');
+            div.className = "flex items-center space-x-3 p-2 border-l-2 border-cyan-500/20 hover:border-cyan-400 transition-all";
+            div.innerHTML = `
+                <div class="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_#06b6d4]"></div>
+                <div>
+                    <p class="text-[10px] font-bold text-white uppercase">${m.materia}</p>
+                    <p class="text-[9px] text-gray-500">Reactivos: ${m.asignadas}</p>
+                </div>
+            `;
+            contenedor.appendChild(div);
         }
-
-        const saludoSpan = document.getElementById('nombre-span');
-        if (saludoSpan) saludoSpan.innerText = data.nombre_tutor || email;
-
-        // INCIDENCIA 4c: Asegurar que tengan sus 2 tokens al entrar al dash
-        if (!localStorage.getItem('simu_creditos')) {
-            localStorage.setItem('simu_creditos', 2);
-        }
-        document.getElementById('energia-display').innerText = localStorage.getItem('simu_creditos');
-
-    } catch (err) { console.error("Error en validación dash:", err); }
-}*/
+    });
+    
+    // ¡CRÍTICO! Guardamos esta distribución en el localStorage para que simulacro_motor.html sepa cuántas sacar de cada una.
+    localStorage.setItem('piloto_distribucion', JSON.stringify(distribucionFinal));
+}
 
 // Adecuación 9: Iniciar el Simulacro Piloto a motor.html
 function iniciarSimulacro() {
     localStorage.setItem('simu_nivel', 'PILOTO_VIP'); // Nivel adaptativo Medio-Alto
-    localStorage.setItem('simu_preguntas', 60);
-    localStorage.setItem('simu_tiempo', 90);
+    localStorage.setItem('simu_preguntas', 50);
+    localStorage.setItem('simu_tiempo', 75);
     window.location.href = 'simulacro_motor.html'; // Tu motor aislado
 }
 
