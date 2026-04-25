@@ -101,10 +101,10 @@ function renderizarTimelinePiloto(distReal, totalPiloto) {
             const div = document.createElement('div');
             div.className = "flex items-center space-x-3 p-2 border-l-2 border-cyan-500/20 hover:border-cyan-400 transition-all";
             div.innerHTML = `
-                <div class="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_#06b6d4]"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-[0_0_8px_#06b6d4]"></div>
                 <div>
-                    <p class="text-[10px] font-bold text-white uppercase">${m.materia}</p>
-                    <p class="text-[9px] text-gray-500">Reactivos: ${m.asignadas}</p>
+                    <p class="text-sm font-black text-white uppercase tracking-wide">${m.materia}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">Reactivos: <span class="font-bold text-cyan-400">${m.asignadas}</span></p>
                 </div>
             `;
             contenedor.appendChild(div);
