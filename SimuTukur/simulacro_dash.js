@@ -176,11 +176,11 @@ async function checarSiTerminoExamen() {
         const listaHtml = document.getElementById('lista-fallas');
         fallas.forEach((falla) => {
             listaHtml.innerHTML += `
-                <div class="bg-black/50 border border-slate-700/50 p-3 rounded-xl">
-                    <span class="text-red-400 text-[8px] font-black uppercase mb-1 block tracking-widest">${falla.materia}</span>
-                    <p class="text-gray-300 text-xs italic mb-2 line-clamp-2">${falla.pregunta}</p>
+                <div class="bg-black/50 border border-slate-700/50 p-4 rounded-xl mb-3">
+                    <span class="text-red-400 text-[10px] font-black uppercase mb-1.5 block tracking-widest">${falla.materia}</span>
+                    <p class="text-gray-200 text-sm font-medium mb-3 line-clamp-3">${falla.pregunta}</p>
                     <button onclick="pedirExplicacionIA('${encodeURIComponent(falla.pregunta)}', '${encodeURIComponent(falla.correcta)}')" 
-                            class="text-cyan-400 font-bold uppercase hover:text-cyan-300 transition w-full text-center border border-cyan-900 bg-cyan-900/20 py-1.5 rounded-lg text-[9px] tracking-wider">
+                            class="text-cyan-400 font-bold uppercase hover:text-cyan-300 transition w-full text-center border border-cyan-900 bg-cyan-900/20 py-2 rounded-lg text-[10px] tracking-wider">
                         <i class="fa-solid fa-brain mr-1"></i> Explicar con IA (1⚡)
                     </button>
                 </div>
