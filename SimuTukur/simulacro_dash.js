@@ -35,7 +35,8 @@ async function validarAccesoPilotoDash() {
             // Extraer si es UNAM A1, A2, A3, A4, IPN o ECOEMS
             if(data.examen.includes('UNAM')) {
                 const partes = data.examen.split('-');
-                if(partes.length > 0) instBusqueda = partes[0].trim(); // Ej. "UNAM A4"
+                // ¡AQUÍ ESTÁ EL CAMBIO! Usamos partes[1] en lugar de partes[0]
+                if(partes.length > 1) instBusqueda = partes[1].trim(); 
             } else if (data.examen.includes('IPN')) {
                 instBusqueda = 'IPN';
             }
