@@ -191,6 +191,7 @@ async function checarSiTerminoExamen() {
         if (typeof MathJax !== 'undefined') {
             MathJax.typesetPromise();
         }
+        document.getElementById('chat-box').scrollTop = 0;
     }
 }
 
