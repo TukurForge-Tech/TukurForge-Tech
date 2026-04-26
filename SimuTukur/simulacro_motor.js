@@ -1,4 +1,4 @@
-const cantQ = parseInt(localStorage.getItem('simu_preguntas'));
+ const cantQ = parseInt(localStorage.getItem('simu_preguntas'));
 let reactivos = [];         
 let reactivosFallados = []; 
 let incidenciasAudio = [];
@@ -51,16 +51,22 @@ async function init() {
 }
 
 // ==========================================
-// 2. COSECHA ESPECIAL PILOTO (Tronco Común + Área)
+// 2. COSECHA ESPECIAL PILOTO (Tronco Común + Área + Bloques de Lectura)
 // ==========================================
 async function cargarReactivosPiloto() {
     document.getElementById('txt-pregunta').innerHTML = "Construyendo Matriz del Simulacro...";
     
     const distribucionGuardada = localStorage.getItem('piloto_distribucion');
-    let distribucion = distribucionGuardada ? JSON.parse(distribucionGuardada) : {
-        'Habilidad Matemática': 6, 'Español': 6, 'Matemáticas': 6, 'Física': 6,
-        'Historia': 5, 'Biología': 5, 'Química': 5, 'Geografía': 5, 'Habilidad Verbal': 6
-    };
+    
+    // 🛡️ EL BLINDAJE: Si por algún error no llegó la distribución, no inventamos materias.
+    if (!distribucionGuardada || distribucionGuardada === "undefined") {
+        alert("Error de sincronización: No se encontró la estructura de tu examen. Regresando al Centro de Operaciones para recalcular.");
+        window.location.href = 'simulacro_dash.html';
+        return []; // Detenemos la función
+    }
+
+    // Leemos la distribución real que calculó el dashboard
+    let distribucion = JSON.parse(distribucionGuardada);
 
     // 1. LÓGICA DE TRONCO COMÚN + ÁREA ESPECÍFICA
     const planText = localStorage.getItem('simu_plan_completo') || 'ECOEMS';
@@ -68,7 +74,7 @@ async function cargarReactivosPiloto() {
 
     if (planText.includes('UNAM')) {
         const partes = planText.split('-');
-        const area = partes.length > 1 ? partes[1].trim() : 'UNAM'; // Extrae "UNAM A4"
+        const area = partes.length > 1 ? partes[1].trim() : 'UNAM';
         palabrasPermitidas = ['UNAM_GENERAL', area];
     } else if (planText.includes('IPN')) {
         const partes = planText.split('-');
@@ -81,9 +87,8 @@ async function cargarReactivosPiloto() {
         return { nombre: mat, cant: distribucion[mat] };
     });
 
-    // 2. EXTRACCIÓN Y FILTRADO
+    // 2. EXTRACCIÓN Y FILTRADO CON AGRUPACIÓN INTELIGENTE
     for (const m of materias) {
-        // Pedimos todas las de la materia
         const { data, error } = await _supabase
             .from('reactivos')
             .select('*')
@@ -91,25 +96,95 @@ async function cargarReactivosPiloto() {
             .in('complejidad', [2, 3]);
         
         if (data && data.length > 0) {
-            // Las pasamos por el filtro estricto (General + Área)
             const filtrados = data.filter(r => {
                 let tipoDB = r.tipo_examen;
                 if (!tipoDB) return false;
-                
-                // Limpiamos el texto por si viene en Array o String
                 let tipoStr = Array.isArray(tipoDB) ? tipoDB.join(",").toUpperCase() : String(tipoDB).toUpperCase();
-                
-                // Si el reactivo contiene alguna de nuestras palabras permitidas, pasa el filtro
                 return palabrasPermitidas.some(p => tipoStr.includes(p.toUpperCase()));
             });
 
-            // Revolvemos las que pasaron el filtro y cortamos solo las que pide la distribución
-            const seleccion = filtrados.sort(() => Math.random() - 0.5).slice(0, m.cant);
-            poolFinal.push(...seleccion);
+            // --- SEPARACIÓN DE LECTURAS VS SUELTAS ---
+            let gruposLectura = {};
+            let sueltasBase = [];
+
+            filtrados.forEach(r => {
+                let esLectura = false;
+                let llave = "";
+                // Detectamos si pertenece a un bloque de lectura
+                if (r.id_grupo_lectura) {
+                    llave = "grupo_" + r.id_grupo_lectura;
+                    esLectura = true;
+                } else if (r.texto_lectura && r.texto_lectura.trim() !== "") {
+                    llave = "txt_" + r.texto_lectura.trim().substring(0, 30);
+                    esLectura = true;
+                }
+
+                if (esLectura) {
+                    if (!gruposLectura[llave]) gruposLectura[llave] = [];
+                    gruposLectura[llave].push(r);
+                } else {
+                    sueltasBase.push(r);
+                }
+            });
+
+            let seleccionados = [];
+            let llavesLectura = Object.keys(gruposLectura).sort(() => Math.random() - 0.5);
+            sueltasBase = sueltasBase.sort(() => Math.random() - 0.5);
+
+            // 1. Metemos bloques de lectura completos sin romperlos
+            for (let llave of llavesLectura) {
+                // Ordenamos las preguntas de la lectura por ID para que tengan lógica
+                let bloque = gruposLectura[llave].sort((a, b) => a.id - b.id);
+                if (seleccionados.length + bloque.length <= m.cant + 1) {
+                    seleccionados.push(...bloque);
+                } else if (seleccionados.length === 0) {
+                    seleccionados.push(...bloque);
+                }
+                if (seleccionados.length >= m.cant) break;
+            }
+
+            // 2. Rellenamos el faltante con preguntas sueltas
+            while (seleccionados.length < m.cant && sueltasBase.length > 0) {
+                seleccionados.push(sueltasBase.pop());
+            }
+
+            // 3. Recorte quirúrgico (si nos pasamos por meter un bloque entero, sacamos sueltas)
+            while (seleccionados.length > m.cant) {
+                let idxSuelta = seleccionados.findIndex(r => !r.id_grupo_lectura && (!r.texto_lectura || r.texto_lectura.trim() === ""));
+                if (idxSuelta !== -1) {
+                    seleccionados.splice(idxSuelta, 1);
+                } else {
+                    seleccionados.pop(); 
+                }
+            }
+
+            poolFinal.push(...seleccionados);
         }
     }
 
-    return poolFinal.sort(() => Math.random() - 0.5); // Revolvemos todo el examen final
+    // --- ORDENAMIENTO FINAL GARANTIZADO (NO SEPARAR BLOQUES) ---
+    let examenOrdenado = [];
+    let subGruposFinales = {};
+
+    poolFinal.forEach(p => {
+        let llave = "suelta_" + p.id;
+        if (p.id_grupo_lectura) llave = "grupo_" + p.id_grupo_lectura;
+        else if (p.texto_lectura && p.texto_lectura.trim() !== "") llave = "txt_" + p.texto_lectura.trim().substring(0, 30);
+
+        if(!subGruposFinales[llave]) subGruposFinales[llave] = [];
+        subGruposFinales[llave].push(p);
+    });
+
+    // Revolvemos las llaves maestras (El orden de los temas), pero no el contenido interno
+    let llavesSubGrupo = Object.keys(subGruposFinales).sort(() => Math.random() - 0.5);
+
+    llavesSubGrupo.forEach(llave => {
+        // Mantenemos el orden interno (1, 2, 3) de las preguntas del bloque
+        let bloque = subGruposFinales[llave].sort((a, b) => a.id - b.id);
+        examenOrdenado.push(...bloque);
+    });
+
+    return examenOrdenado;
 }
 
 // ==========================================
