@@ -53,22 +53,21 @@ async function init() {
 // ==========================================
 // 2. COSECHA ESPECIAL PILOTO (Tronco Común + Área + Bloques de Lectura)
 // ==========================================
+// ==========================================
+// 2. COSECHA ESPECIAL PILOTO (Con Auditoría de Consola)
+// ==========================================
 async function cargarReactivosPiloto() {
     document.getElementById('txt-pregunta').innerHTML = "Construyendo Matriz del Simulacro...";
     
     const distribucionGuardada = localStorage.getItem('piloto_distribucion');
     
-    // 🛡️ EL BLINDAJE: Si por algún error no llegó la distribución, no inventamos materias.
     if (!distribucionGuardada || distribucionGuardada === "undefined") {
         alert("Error de sincronización: No se encontró la estructura de tu examen. Regresando al Centro de Operaciones para recalcular.");
         window.location.href = 'simulacro_dash.html';
-        return []; // Detenemos la función
+        return []; 
     }
 
-    // Leemos la distribución real que calculó el dashboard
     let distribucion = JSON.parse(distribucionGuardada);
-
-    // 1. LÓGICA DE TRONCO COMÚN + ÁREA ESPECÍFICA
     const planText = localStorage.getItem('simu_plan_completo') || 'ECOEMS';
     let palabrasPermitidas = ['ECOEMS'];
 
@@ -82,12 +81,20 @@ async function cargarReactivosPiloto() {
         palabrasPermitidas = ['IPN_GENERAL', area];
     }
 
+    // 🕵️‍♂️ EL "CHISMOSO" DE AUDITORÍA (INICIO)
+    console.log("=========================================");
+    console.log("🚀 INICIANDO GENERACIÓN DE EXAMEN PILOTO");
+    console.log(`🏢 Plan detectado: ${planText}`);
+    console.log(`🎯 Palabras clave (Filtro BD): ${palabrasPermitidas.join(", ")}`);
+    console.log("📦 Distribución solicitada por el Dashboard:");
+    console.table(distribucion);
+    console.log("=========================================");
+
     let poolFinal = [];
     const materias = Object.keys(distribucion).map(mat => {
         return { nombre: mat, cant: distribucion[mat] };
     });
 
-    // 2. EXTRACCIÓN Y FILTRADO CON AGRUPACIÓN INTELIGENTE
     for (const m of materias) {
         const { data, error } = await _supabase
             .from('reactivos')
@@ -103,14 +110,12 @@ async function cargarReactivosPiloto() {
                 return palabrasPermitidas.some(p => tipoStr.includes(p.toUpperCase()));
             });
 
-            // --- SEPARACIÓN DE LECTURAS VS SUELTAS ---
             let gruposLectura = {};
             let sueltasBase = [];
 
             filtrados.forEach(r => {
                 let esLectura = false;
                 let llave = "";
-                // Detectamos si pertenece a un bloque de lectura
                 if (r.id_grupo_lectura) {
                     llave = "grupo_" + r.id_grupo_lectura;
                     esLectura = true;
@@ -131,9 +136,7 @@ async function cargarReactivosPiloto() {
             let llavesLectura = Object.keys(gruposLectura).sort(() => Math.random() - 0.5);
             sueltasBase = sueltasBase.sort(() => Math.random() - 0.5);
 
-            // 1. Metemos bloques de lectura completos sin romperlos
             for (let llave of llavesLectura) {
-                // Ordenamos las preguntas de la lectura por ID para que tengan lógica
                 let bloque = gruposLectura[llave].sort((a, b) => a.id - b.id);
                 if (seleccionados.length + bloque.length <= m.cant + 1) {
                     seleccionados.push(...bloque);
@@ -143,12 +146,10 @@ async function cargarReactivosPiloto() {
                 if (seleccionados.length >= m.cant) break;
             }
 
-            // 2. Rellenamos el faltante con preguntas sueltas
             while (seleccionados.length < m.cant && sueltasBase.length > 0) {
                 seleccionados.push(sueltasBase.pop());
             }
 
-            // 3. Recorte quirúrgico (si nos pasamos por meter un bloque entero, sacamos sueltas)
             while (seleccionados.length > m.cant) {
                 let idxSuelta = seleccionados.findIndex(r => !r.id_grupo_lectura && (!r.texto_lectura || r.texto_lectura.trim() === ""));
                 if (idxSuelta !== -1) {
@@ -159,10 +160,20 @@ async function cargarReactivosPiloto() {
             }
 
             poolFinal.push(...seleccionados);
+
+            // 🕵️‍♂️ EL "CHISMOSO" DE AUDITORÍA (RESULTADOS POR MATERIA)
+            console.log(`✔️ Materia: ${m.nombre} | Metas: ${m.cant} | Extraídos: ${seleccionados.length}`);
+            if (seleccionados.length > 0) {
+                // Extraemos cómo venían etiquetados en Supabase para validarlo
+                const etiquetasDB = seleccionados.map(r => r.tipo_examen);
+                console.log(`   🏷️ Origen exacto (tipo_examen):`, etiquetasDB);
+            }
+
+        } else {
+            console.warn(`⚠️ ALERTA: No se encontró ningún reactivo en BD para ${m.nombre} en complejidad [2,3].`);
         }
     }
 
-    // --- ORDENAMIENTO FINAL GARANTIZADO (NO SEPARAR BLOQUES) ---
     let examenOrdenado = [];
     let subGruposFinales = {};
 
@@ -175,14 +186,17 @@ async function cargarReactivosPiloto() {
         subGruposFinales[llave].push(p);
     });
 
-    // Revolvemos las llaves maestras (El orden de los temas), pero no el contenido interno
     let llavesSubGrupo = Object.keys(subGruposFinales).sort(() => Math.random() - 0.5);
 
     llavesSubGrupo.forEach(llave => {
-        // Mantenemos el orden interno (1, 2, 3) de las preguntas del bloque
         let bloque = subGruposFinales[llave].sort((a, b) => a.id - b.id);
         examenOrdenado.push(...bloque);
     });
+
+    // 🕵️‍♂️ EL "CHISMOSO" DE AUDITORÍA (RESUMEN FINAL)
+    console.log("=========================================");
+    console.log(`🎯 CARGA COMPLETA: ${examenOrdenado.length} reactivos blindados y listos.`);
+    console.log("=========================================");
 
     return examenOrdenado;
 }
