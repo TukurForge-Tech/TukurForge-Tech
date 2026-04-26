@@ -8,7 +8,7 @@ async function validarAccesoPilotoDash() {
         // Traemos el examen desde la BD
         const { data, error } = await _supabase
             .from('prospectos_simulacro')
-            .select('nombre_alumno, examen') 
+            .select('nombre_alumno, examen, tokens_ia') 
             .eq('correo', email) 
             .maybeSingle();
 
@@ -56,11 +56,8 @@ async function validarAccesoPilotoDash() {
              document.getElementById('contenedor-historial').innerHTML = "<p class='text-xs text-gray-500 italic p-4'>No se encontró distribución. Usa el formato general.</p>";
         }
 
-        // Gestión de tokens (Energía IA)
-        if (!localStorage.getItem('simu_creditos')) {
-            localStorage.setItem('simu_creditos', 2);
-        }
-        document.getElementById('energia-display').innerText = localStorage.getItem('simu_creditos');
+        let energiaIA = data.tokens_ia !== undefined ? data.tokens_ia : 2;
+        document.getElementById('energia-display').innerText = energiaIA;
 
     } catch (err) { console.error("Error en validación dash:", err); }
 }
@@ -197,21 +194,31 @@ async function checarSiTerminoExamen() {
 
 // 6. La Función Monitoreada por Tokens
 async function pedirExplicacionIA(preguntaCodificada, respuestaCodificada) {
-    let tokens = parseInt(localStorage.getItem('simu_creditos')) || 0;
+    const email = localStorage.getItem('session_email');
+    
+    // 1. Verificamos los tokens REALES en la base de datos
+    const { data: usuario, error: errDb } = await _supabase
+        .from('prospectos_simulacro')
+        .select('tokens_ia')
+        .eq('correo', email)
+        .single();
+        
+    let tokens = usuario ? usuario.tokens_ia : 0;
+    
     if (tokens <= 0) {
-        alert("No tienes Energía IA suficiente. Debes recargar.");
+        alert("No tienes Energía IA suficiente. Tu saldo es 0.");
         return;
     }
 
-    // Cobrar Token
+    // 2. Le restamos 1 y actualizamos la Base de Datos
     tokens--;
-    localStorage.setItem('simu_creditos', tokens);
+    await _supabase.from('prospectos_simulacro').update({ tokens_ia: tokens }).eq('correo', email);
     document.getElementById('energia-display').innerText = tokens;
-    // Aquí actualizarías el número en tu HTML: document.getElementById('tokens-display').innerText = tokens;
     
     const pregunta = decodeURIComponent(preguntaCodificada);
     const correcta = decodeURIComponent(respuestaCodificada);
 
+    // ... (EL RESTO DE TU CÓDIGO DEL CHAT SE QUEDA EXACTAMENTE IGUAL) ...
     // Mandar mensaje al chat de la izquierda
     const chatBox = document.getElementById('chat-box');
     chatBox.innerHTML += `
