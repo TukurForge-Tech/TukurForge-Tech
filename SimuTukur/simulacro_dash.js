@@ -8,7 +8,7 @@ async function validarAccesoPilotoDash() {
         // Traemos el examen desde la BD
         const { data, error } = await _supabase
             .from('prospectos_simulacro')
-            .select('nombre_tutor, examen') 
+            .select('nombre_alumno, examen') 
             .eq('correo', email) 
             .maybeSingle();
 
