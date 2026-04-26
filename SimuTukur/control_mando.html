@@ -8,16 +8,26 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="bg-[#050a14] text-white p-10 font-sans">
-    <div class="max-w-2xl mx-auto bg-black/50 border border-slate-800 p-8 rounded-3xl text-center">
+    <div class="max-w-4xl mx-auto bg-black/50 border border-slate-800 p-8 rounded-3xl text-center">
         <i class="fa-solid fa-satellite-dish text-6xl text-cyan-500 mb-6 animate-pulse"></i>
         <h1 class="text-3xl font-black italic uppercase text-cyan-400 mb-2">Control Maestro Piloto</h1>
         <p class="text-gray-500 mb-8 uppercase text-xs tracking-widest">Estado actual: <span id="lbl_estado" class="text-white font-bold">CARGANDO...</span></p>
         
-        <div class="grid grid-cols-2 gap-4">
-            <button onclick="cambiarEstado('en_curso')" class="bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-xl uppercase shadow-[0_0_15px_rgba(22,163,74,0.4)]">
+        <!-- Cambiamos a grid-cols-3 para que quepan los 3 botones parejitos -->
+        <div class="grid grid-cols-3 gap-4">
+            
+            <!-- NUEVO BOTÓN: RESET / ESPERA (Manda los 4500 segundos = 75 min) -->
+            <button onclick="cambiarEstado('espera', 4500)" class="bg-yellow-600 hover:bg-yellow-500 text-white font-black py-4 rounded-xl uppercase shadow-[0_0_15px_rgba(202,138,4,0.4)] transition-all">
+                <i class="fa-solid fa-clock-rotate-left mr-2"></i> Espera / Reset (1:15)
+            </button>
+
+            <!-- BOTÓN: INICIAR -->
+            <button onclick="cambiarEstado('en_curso')" class="bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-xl uppercase shadow-[0_0_15px_rgba(22,163,74,0.4)] transition-all">
                 <i class="fa-solid fa-play mr-2"></i> Iniciar Examen Global
             </button>
-            <button onclick="cambiarEstado('finalizado')" class="bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-xl uppercase shadow-[0_0_15px_rgba(220,38,38,0.4)]">
+
+            <!-- BOTÓN: FINALIZAR -->
+            <button onclick="cambiarEstado('finalizado')" class="bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-xl uppercase shadow-[0_0_15px_rgba(220,38,38,0.4)] transition-all">
                 <i class="fa-solid fa-stop mr-2"></i> Finalizar y Liberar Dash
             </button>
         </div>
@@ -25,13 +35,32 @@
 
     <script src="supabase-client.js"></script>
     <script>
-        async function cambiarEstado(nuevoEstado) {
-            await _supabase.from('control_simulacro').update({ estado: nuevoEstado }).eq('id', 1);
+        // Modificamos la función para que acepte un segundo parámetro (el tiempo)
+        async function cambiarEstado(nuevoEstado, nuevoTiempo = null) {
+            
+            // Preparamos el paquete de datos para Supabase
+            let payload = { estado: nuevoEstado };
+            
+            // Si mandamos un tiempo (como en el botón de Espera), lo sumamos al paquete
+            if (nuevoTiempo !== null) {
+                payload.tiempo_restante = nuevoTiempo;
+            }
+
+            // Enviamos la orden a la base de datos
+            await _supabase.from('control_simulacro').update(payload).eq('id', 1);
+            
+            // Actualizamos la pantalla
             document.getElementById('lbl_estado').innerText = nuevoEstado.toUpperCase();
-            alert(`El examen ha cambiado a: ${nuevoEstado.toUpperCase()}`);
+            
+            // Mensaje de confirmación
+            let msj = `El examen ha cambiado a: ${nuevoEstado.toUpperCase()}`;
+            if (nuevoTiempo !== null) {
+                msj += `\n⏰ El reloj se reinició a 1 hora con 15 minutos (4500 seg).`;
+            }
+            alert(msj);
         }
         
-        // Cargar estado inicial
+        // Cargar estado inicial al abrir la página
         window.onload = async () => {
             const { data } = await _supabase.from('control_simulacro').select('estado').eq('id', 1).single();
             if(data) document.getElementById('lbl_estado').innerText = data.estado.toUpperCase();
