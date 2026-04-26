@@ -19,7 +19,7 @@ async function validarAccesoPilotoDash() {
 
         // Actualizamos el saludo y el Plan Activo
         const saludoSpan = document.getElementById('nombre-span');
-        if (saludoSpan) saludoSpan.innerText = data.nombre_tutor || email;
+        if (saludoSpan) saludoSpan.innerText = data.nombre_alumno || email;
 
         const planText = document.querySelector('#plan-actual-container span');
         const badgeExamen = document.querySelector('button.btn-tab');
