@@ -1,4 +1,4 @@
- const cantQ = parseInt(localStorage.getItem('simu_preguntas'));
+const cantQ = parseInt(localStorage.getItem('simu_preguntas'));
 let reactivos = [];         
 let reactivosFallados = []; 
 let incidenciasAudio = [];
