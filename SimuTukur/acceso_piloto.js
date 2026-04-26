@@ -35,6 +35,10 @@ async function validarLoginPiloto() {
         if (error || !data) {
             mostrarError("Acceso denegado. Este correo no está registrado en el grupo Piloto.");
         } else {
+            await _supabase
+                .from('prospectos_simulacro')
+                .update({ terminos_aceptados: true }) // La columna que creaste en Supabase
+                .eq('correo', email);
             localStorage.setItem('session_email', email);
             window.location.href = 'simulacro_dash.html';
         }
