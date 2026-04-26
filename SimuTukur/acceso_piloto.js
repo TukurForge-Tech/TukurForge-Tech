@@ -7,8 +7,16 @@ async function validarLoginPiloto() {
     const btnSpinner = document.getElementById('btn_spinner');
     const errorMsg = document.getElementById('error_msg');
 
+    const terminos = document.getElementById('terminos_checkbox');
+
     if (!email) {
         mostrarError("Por favor, ingresa tu correo.");
+        return;
+    }
+
+    // NUEVO: Validamos que esté activado
+    if (!terminos.checked) {
+        mostrarError("Debes aceptar el Aviso de Privacidad y el uso de cámara/micrófono para continuar.");
         return;
     }
 
