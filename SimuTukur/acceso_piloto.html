@@ -31,6 +31,16 @@
                         class="w-full bg-slate-900/50 border border-slate-700 text-white rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all placeholder-slate-600">
                 </div>
             </div>
+            
+            <!-- CHECKBOX DE AVISO DE PRIVACIDAD -->
+            <div class="flex items-start mt-4 mb-4">
+                <div class="flex items-center h-5">
+                    <input id="terminos_checkbox" type="checkbox" class="w-4 h-4 border border-slate-700 rounded bg-slate-900/50 focus:ring-2 focus:ring-cyan-500 cursor-pointer accent-cyan-500">
+                </div>
+                <label for="terminos_checkbox" class="ml-3 text-[10px] text-gray-400 leading-relaxed cursor-pointer">
+                    Al ingresar, acepto el <a href="privacidad.html" target="_blank" class="text-cyan-400 font-bold hover:underline">Aviso de Privacidad</a> y los <a href="terminos.html" target="_blank" class="text-cyan-400 font-bold hover:underline">Términos de Servicio</a>, consintiendo el uso temporal de mi cámara/micrófono exclusivamente para la telemetría.
+                </label>
+            </div>
 
             <button id="btn_ingresar" onclick="validarLoginPiloto()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 rounded-xl uppercase tracking-widest transition-all transform hover:scale-[1.02] shadow-lg flex justify-center items-center">
                 <span id="btn_text">Acceder al Simulador</span>
