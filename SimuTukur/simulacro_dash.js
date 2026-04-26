@@ -271,7 +271,7 @@ async function pedirExplicacionIA(preguntaCodificada, respuestaCodificada) {
         localStorage.setItem('simu_creditos', tokens);
         document.getElementById('energia-display').innerText = tokens;
     }
-
+    
     /*setTimeout(() => {
         chatBox.lastElementChild.remove(); // Quita spinner
         chatBox.innerHTML += `
@@ -287,7 +287,10 @@ async function pedirExplicacionIA(preguntaCodificada, respuestaCodificada) {
         chatBox.scrollTop = chatBox.scrollHeight;
     }, 2000); // Simulación de tiempo de respuesta*/
 }
-
+function cerrarSesionPiloto() {
+    localStorage.removeItem('session_email');
+    window.location.href = 'acceso_piloto.html';
+}
 // Iniciar protocolo al cargar
 window.onload = async () => {
     await validarAccesoPilotoDash(); // Checa quién entró
