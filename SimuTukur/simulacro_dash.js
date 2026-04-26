@@ -114,12 +114,16 @@ function renderizarTimelinePiloto(distReal, totalPiloto) {
 
 // Adecuación 9: Iniciar el Simulacro Piloto a motor.html
 function iniciarSimulacro() {
-    localStorage.setItem('simu_nivel', 'PILOTO_VIP'); // Nivel adaptativo Medio-Alto
+    localStorage.setItem('simu_nivel', 'PILOTO_VIP'); 
     localStorage.setItem('simu_preguntas', 50);
     localStorage.setItem('simu_tiempo', 75);
-    window.location.href = 'simulacro_motor.html'; // Tu motor aislado
+    
+    // NUEVO: Guardamos TODO el texto del plan para extraer el área exacta en el motor
+    const planText = document.querySelector('#plan-actual-container span').innerText;
+    localStorage.setItem('simu_plan_completo', planText); 
+    
+    window.location.href = 'simulacro_motor.html'; 
 }
-
 async function checarSiTerminoExamen() {
     if (localStorage.getItem('simu_terminado') === 'true') {
         
@@ -278,21 +282,7 @@ async function pedirExplicacionIA(preguntaCodificada, respuestaCodificada) {
         localStorage.setItem('simu_creditos', tokens);
         document.getElementById('energia-display').innerText = tokens;
     }
-    
-    /*setTimeout(() => {
-        chatBox.lastElementChild.remove(); // Quita spinner
-        chatBox.innerHTML += `
-            <div class="mb-3">
-                <div class="bg-gray-800/60 p-4 rounded-xl rounded-tl-none border border-white/5 max-w-[85%] shadow-sm text-sm text-gray-200">
-                    <strong class="color-cian font-black italic text-[10px] uppercase flex items-center gap-2 mb-2"><i class="fa-solid fa-brain"></i> Tutor Simu</strong>
-                    <p>La respuesta correcta es <strong>${correcta}</strong> porque... [AQUÍ VA LA RESPUESTA DE TU IA].</p>
-                    <hr class="border-white/10 my-2">
-                    <p class="text-[10px] text-yellow-500">⚡ Te quedan ${tokens} tokens. Selecciona otra pregunta en el panel derecho si deseas otra explicación.</p>
-                </div>
-            </div>
-        `;
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }, 2000); // Simulación de tiempo de respuesta*/
+   
 }
 function cerrarSesionPiloto() {
     localStorage.removeItem('session_email');
