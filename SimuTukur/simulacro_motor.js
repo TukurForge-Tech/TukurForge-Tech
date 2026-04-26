@@ -1,4 +1,4 @@
-const cantQ = parseInt(localStorage.getItem('simu_preguntas'));
+ const cantQ = parseInt(localStorage.getItem('simu_preguntas'));
 let reactivos = [];         
 let reactivosFallados = []; 
 let incidenciasAudio = [];
@@ -51,47 +51,65 @@ async function init() {
 }
 
 // ==========================================
-// 2. COSECHA ESPECIAL PILOTO (60 Reactivos)
+// 2. COSECHA ESPECIAL PILOTO (Tronco Común + Área)
 // ==========================================
 async function cargarReactivosPiloto() {
     document.getElementById('txt-pregunta').innerHTML = "Construyendo Matriz del Simulacro...";
     
-    const materias = [
-        { nombre: 'Habilidad Matemática', cant: 8 },
-        { nombre: 'Español', cant: 6 },
-        { nombre: 'Matemáticas', cant: 6 },
-        { nombre: 'Física', cant: 6 },
-        { nombre: 'Historia', cant: 6 },
-        { nombre: 'Biología', cant: 5 },
-        { nombre: 'Química', cant: 5 },
-        { nombre: 'Geografía', cant: 5 },
-        { nombre: 'Cívica y Ética', cant: 5 }
-    ];
+    const distribucionGuardada = localStorage.getItem('piloto_distribucion');
+    let distribucion = distribucionGuardada ? JSON.parse(distribucionGuardada) : {
+        'Habilidad Matemática': 6, 'Español': 6, 'Matemáticas': 6, 'Física': 6,
+        'Historia': 5, 'Biología': 5, 'Química': 5, 'Geografía': 5, 'Habilidad Verbal': 6
+    };
+
+    // 1. LÓGICA DE TRONCO COMÚN + ÁREA ESPECÍFICA
+    const planText = localStorage.getItem('simu_plan_completo') || 'ECOEMS';
+    let palabrasPermitidas = ['ECOEMS'];
+
+    if (planText.includes('UNAM')) {
+        const partes = planText.split('-');
+        const area = partes.length > 1 ? partes[1].trim() : 'UNAM'; // Extrae "UNAM A4"
+        palabrasPermitidas = ['UNAM_GENERAL', area];
+    } else if (planText.includes('IPN')) {
+        const partes = planText.split('-');
+        const area = partes.length > 1 ? partes[1].trim() : 'IPN';
+        palabrasPermitidas = ['IPN_GENERAL', area];
+    }
 
     let poolFinal = [];
+    const materias = Object.keys(distribucion).map(mat => {
+        return { nombre: mat, cant: distribucion[mat] };
+    });
 
+    // 2. EXTRACCIÓN Y FILTRADO
     for (const m of materias) {
+        // Pedimos todas las de la materia
         const { data, error } = await _supabase
             .from('reactivos')
             .select('*')
-            .eq('tipo_examen', 'ECOEMS')
             .eq('materia', m.nombre)
-            .in('complejidad', [2, 3]) 
-            .limit(m.cant);
+            .in('complejidad', [2, 3]);
         
-        if (data) poolFinal.push(...data);
+        if (data && data.length > 0) {
+            // Las pasamos por el filtro estricto (General + Área)
+            const filtrados = data.filter(r => {
+                let tipoDB = r.tipo_examen;
+                if (!tipoDB) return false;
+                
+                // Limpiamos el texto por si viene en Array o String
+                let tipoStr = Array.isArray(tipoDB) ? tipoDB.join(",").toUpperCase() : String(tipoDB).toUpperCase();
+                
+                // Si el reactivo contiene alguna de nuestras palabras permitidas, pasa el filtro
+                return palabrasPermitidas.some(p => tipoStr.includes(p.toUpperCase()));
+            });
+
+            // Revolvemos las que pasaron el filtro y cortamos solo las que pide la distribución
+            const seleccion = filtrados.sort(() => Math.random() - 0.5).slice(0, m.cant);
+            poolFinal.push(...seleccion);
+        }
     }
 
-    // Habilidad Verbal (Bloques de lectura)
-    const { data: lecturas } = await _supabase
-        .from('reactivos')
-        .select('*')
-        .eq('materia', 'Habilidad Verbal')
-        .limit(8); 
-    
-    if (lecturas) poolFinal.push(...lecturas);
-
-    return poolFinal;
+    return poolFinal.sort(() => Math.random() - 0.5); // Revolvemos todo el examen final
 }
 
 // ==========================================
