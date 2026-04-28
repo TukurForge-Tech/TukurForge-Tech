@@ -21,6 +21,26 @@ let ultimoAvisoRuido = 0;
 
 async function init() {
     try {
+        // --- 🛡️ CHECKLIST DE REQUISITOS TÉCNICOS ---
+        console.log("🔍 Validando entorno de examen...");
+        
+        // 1. Validar MathJax (Para que las fórmulas se vean bien)
+        if (!window.MathJax || typeof window.MathJax.typesetPromise !== 'function') {
+            console.warn("⚠️ MathJax no detectado o incompleto.");
+            alert("Tu navegador aún no termina de cargar el motor de matemáticas. Por favor espera 5 segundos y recarga la página.");
+            return; // Detenemos el inicio del examen
+        }
+
+        // 2. Validar que sea Computadora (Basado en el tamaño de pantalla o UserAgent)
+        const esMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (esMobile) {
+            alert("Este simulador solo está permitido en computadoras de escritorio o laptops por seguridad.");
+            window.location.href = 'dashboard.html';
+            return;
+        }
+
+        // 3. Validar Cámara y Audio (Lo que ya tenías)
+
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         const videoElement = document.getElementById('webcam'); 
         videoElement.srcObject = stream;
@@ -43,302 +63,65 @@ async function init() {
             area = 'ECOEMS'; 
         }
 
-        // 4. Asignamos la regla final
-        // 4. Asignamos la regla final
+       // 4. Asignamos la regla final
         const institucionRegla = inst.includes('ECOEMS') ? 'ECOEMS' : ((inst.includes('UNAM') || inst.includes('IPN')) ? `${inst} ${area}` : inst);
+
+        // 🛡️ EL NUEVO MOTOR: LLAMADA A LA API BÓVEDA
+        // Ya no necesitamos buscar niveles ni distribuciones aquí, la API lo hace por nosotros.
         
-        // 🧠 LA INTELIGENCIA: Si es un Repaso, buscamos el nivel en la BD
-        if (tipoPruebaEnMemoria === 'Repaso') {
-            console.log("🔍 Modo Repaso detectado. Buscando nivel reprobado en Supabase...");
-            
-            const { data: ultimoFallo } = await _supabase
-                .from('resultados_examenes')
-                .select('nivel_examen')
-                .eq('email', emailPadre)
-                .eq('nombre_alumno', nombreHijo)
-                .eq('token_hex', token) // El token viene de la URL (v)
-                .lt('puntaje_obtenido', 70) // Solo los que no pasaron
-                .order('fecha_aplicacion', { ascending: false })
-                .limit(1)
-                .single();
+        const paramsAPI = {
+            email: emailPadre,
+            token_hex: token, // El 'v' de la URL
+            nombre_alumno: nombreHijo,
+            tipo_examen: tipoPruebaEnMemoria,
+            cant_q: cantQ,
+            nivel_label: nivelLabel,
+            inst: inst,
+            area: area
+        };
 
-            if (ultimoFallo) {
-                const etiquetas = { 1: "Principiante", 2: "Medio", 3: "Avanzado" };
-                nivelLabel = etiquetas[ultimoFallo.nivel_examen];
-                console.log(`✅ Nivel recuperado de la BD: ${nivelLabel}`);
-            } else {
-                console.warn("⚠️ No se halló examen fallado previo. Usando Principiante por defecto.");
-                nivelLabel = "Principiante";
-            }
-        }
+        try {
+            console.log("🚀 Solicitando examen a la Bóveda...");
+            const response = await fetch('https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/generar-examen', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': `Bearer ${supabaseKey}` 
+                },
+                body: JSON.stringify(paramsAPI)
+            });
 
-        // Definimos el ID numérico final para la consulta de reactivos
-        const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
+            const dataAPI = await response.json();
 
-        let filtroTipos = [];
-        if (inst.includes('ECOEMS')) {
-            filtroTipos = ['ECOEMS']; 
-        } else if (inst.includes('UNAM')) {
-            filtroTipos = ['UNAM_GENERAL', area]; 
-        } else {
-            filtroTipos = [inst];
-        }
-
-        // --- FASE 1: DESVÍO DE REPASO ---
-        if (tipoPruebaEnMemoria === "Repaso") { // CORREGIDO: Evaluamos la bandera, no el nivelLabel
-            let reactivosRepaso = await obtenerReactivosRepaso(cantQ); 
-            if (!reactivosRepaso || reactivosRepaso.length === 0) {
-                alert("¡Expediente limpio! No tienes suficientes errores registrados para armar un repaso.");
-                window.location.href = 'dashboard.html';
-                return;
+            if (!dataAPI.success) {
+                throw new Error(dataAPI.error || "Error desconocido en la API");
             }
 
-            let subGrupos = {};
-            reactivosRepaso.forEach(p => {
-                let llave = "suelta_" + p.id;
-                if (p.id_grupo_lectura) llave = "grupo_" + p.id_grupo_lectura;
-                else if (p.texto_lectura && p.texto_lectura.trim() !== "") llave = "txt_" + p.texto_lectura.trim().substring(0, 30);
+            // Cargamos los reactivos que la API ya filtró, revolvió y limpió de respuestas
+            reactivos = dataAPI.reactivos;
+
+            console.log(`🎯 Examen recibido: ${reactivos.length} reactivos listos.`);
+
+            if (reactivos.length > 0) {
+                // Solo si no es PRO, descontamos intento (si tienes esa función activa)
+                if (!esPro && typeof ejecutarDescuentoIntento === 'function') ejecutarDescuentoIntento(); 
                 
-                if(!subGrupos[llave]) subGrupos[llave] = [];
-                subGrupos[llave].push(p);
-            });
+                render(); 
+                startTimer();
+            } else { 
+                alert(`La API no encontró reactivos para tu plan actual.`);
+                window.location.href = 'dashboard.html'; 
+            }
 
-            let llavesSubGrupo = Object.keys(subGrupos).sort(() => Math.random() - 0.5);
-            llavesSubGrupo.forEach(llave => {
-                reactivos.push(...subGrupos[llave]); // Empuja el bloque de lectura pegado
-            });
-
-            render();
-            startTimer();
-            return; 
-        }
-
-        // --- FASE 2: COSECHA UNIVERSAL (Sin datos en duro) ---
-        const nivelColchonID = nivelID < 3 ? nivelID + 1 : 3;
-        const { data: regla } = await _supabase.from('reglas_simulador')
-            .select('distribucion_materias')
-            .eq('institucion', institucionRegla)
-            .eq('nivel', nivelLabel)
-            .single();
-
-        if (!regla || !regla.distribucion_materias) {
-            alert(`Error: No hay distribución para ${institucionRegla} en ${nivelLabel}.`);
+        } catch (apiErr) {
+            console.error("Falla en la Bóveda:", apiErr);
+            alert(`Error de conexión segura: ${apiErr.message}`);
             window.location.href = 'dashboard.html';
-            return;
         }
 
-        const distribucion = regla.distribucion_materias;
-
-        // 🕵️‍♂️ NUEVO: EL "CHISMOSO" PARA LA CONSOLA (F12)
-        console.log("=========================================");
-        console.log("🚀 INICIANDO GENERACIÓN DE EXAMEN");
-        console.log(`🏢 Institución: ${inst}`);
-        console.log(`🎯 Área: ${area} (Regla aplicada: ${institucionRegla})`);
-        console.log(`📈 Nivel: ${nivelLabel} (ID: ${nivelID})`);
-        console.log("📦 JSON de Materias extraído de Supabase:");
-        console.table(distribucion); // Esto dibujará una tabla hermosa en tu consola
-        
-        // Sumamos los valores para ver cuánto pidió realmente la base de datos
-        let totalPedidos = Object.values(distribucion).reduce((a, b) => a + b, 0);
-        console.log(`🧮 TOTAL DE REACTIVOS PEDIDOS POR EL JSON: ${totalPedidos}`);
-        console.log("=========================================");
-
-        let reactivosPuros = [];
-        
-        let palabrasPermitidas = [institucionRegla, inst, area];
-        
-        if (inst.includes('UNAM')) {
-            // LÓGICA ESTRICTA UNAM: Tronco común (UNAM_GENERAL) + Área Específica
-            palabrasPermitidas = ['UNAM_GENERAL', institucionRegla]; 
-        } else if (inst.includes('IPN')) {
-            // LÓGICA ESTRICTA IPN: Tronco común (IPN_GENERAL) + Área Específica
-            palabrasPermitidas = ['IPN_GENERAL', institucionRegla]; 
-        }
-
-        // 🚀 MODO TURBO V3: Rescate de lecturas y Filtro exacto por COMPLEJIDAD
-        const materiasRequeridas = Object.keys(distribucion);
-        console.log("⏳ Descargando base de datos (Modo Turbo V3)...");
-        
-        const promesas = materiasRequeridas.map(mat => {
-            let consulta = _supabase.from('reactivos')
-                .select('*')
-                .eq('institucion', inst)
-                .eq('materia', mat);
-
-            // 🧠 SUPER INTELIGENCIA: Rescate de bloques de lectura completos
-            const materiasLectura = ['Habilidad Verbal', 'Comprensión de Lectura'];
-            if (!materiasLectura.includes(mat)) {
-                // 🎯 CORRECCIÓN MAGISTRAL: Filtramos por COMPLEJIDAD, no por nivel cognitivo
-                consulta = consulta.in('complejidad', [nivelID, nivelColchonID]); 
-            }
-            return consulta;
-        });
-        
-        const resultadosSupabase = await Promise.all(promesas);
-        
-        let todaLaDataCruda = [];
-        resultadosSupabase.forEach(res => {
-            if (res.data) todaLaDataCruda.push(...res.data);
-        });
-
-        console.log(`✅ ¡Descarga lista! Se trajeron ${todaLaDataCruda.length} reactivos útiles.`);
-
-        // Ahora procesamos en la memoria local, rapidísimo
-        for (const [materia, cantidad] of Object.entries(distribucion)) {
-            
-            console.log(`\n--- 🔎 Analizando: ${materia} (Meta: ${cantidad}) ---`); 
-
-            let dataCruda = todaLaDataCruda ? todaLaDataCruda.filter(r => r.materia === materia) : [];
-
-            let todos = [];
-            if (dataCruda && dataCruda.length > 0) {
-                // Filtramos localmente con BLINDAJE ESTRICTO
-                todos = dataCruda.filter(r => {
-                    let tipoDB = r.tipo_examen;
-                    if (!tipoDB) return false;
-
-                    let tipoStrLimpio = "";
-                    if (Array.isArray(tipoDB)) {
-                        tipoStrLimpio = tipoDB.join(",").toUpperCase();
-                    } else if (typeof tipoDB === 'string') {
-                        tipoStrLimpio = tipoDB.toUpperCase();
-                    }
-
-                    if (inst === 'ECOEMS') {
-                        return tipoStrLimpio.includes('ECOEMS');
-                    } else if (inst.includes('UNAM')) {
-                        return palabrasPermitidas.some(p => tipoStrLimpio.includes(p.toUpperCase()));
-                    } else {
-                        return palabrasPermitidas.some(p => tipoStrLimpio.includes(p.toUpperCase()));
-                    }
-                });
-            }
-
-            if (todos && todos.length > 0) {
-                let gruposLectura = {};
-                let sueltasBase = [];
-                let sueltasColchon = [];
-
-                todos.forEach(r => {
-                    let esLectura = false;
-                    let llave = "";
-                    if (r.id_grupo_lectura) {
-                        llave = "grupo_" + r.id_grupo_lectura;
-                        esLectura = true;
-                    } else if (r.texto_lectura && r.texto_lectura.trim() !== "") {
-                        llave = "txt_" + r.texto_lectura.trim().substring(0, 30);
-                        esLectura = true;
-                    }
-
-                    if (esLectura) {
-                        if (!gruposLectura[llave]) gruposLectura[llave] = [];
-                        gruposLectura[llave].push(r);
-                    } else {
-                        // 🎯 CORRECCIÓN MAGISTRAL: Clasificamos las sueltas por COMPLEJIDAD
-                        if (r.complejidad === nivelID) sueltasBase.push(r);
-                        if (r.complejidad === nivelColchonID) sueltasColchon.push(r);
-                    }
-                });
-
-                let seleccionados = [];
-                let llavesLectura = Object.keys(gruposLectura).sort(() => Math.random() - 0.5);
-                sueltasBase = sueltasBase.sort(() => Math.random() - 0.5);
-
-                for (let llave of llavesLectura) {
-                    let bloque = gruposLectura[llave].sort((a, b) => a.id - b.id);
-                    if (seleccionados.length + bloque.length <= cantidad + 1) { 
-                        seleccionados.push(...bloque);
-                    } else if (seleccionados.length === 0) {
-                        seleccionados.push(...bloque);
-                    }
-                    if (seleccionados.length >= cantidad) break;
-                }
-
-                while (seleccionados.length < cantidad && sueltasBase.length > 0) {
-                    seleccionados.push(sueltasBase.pop());
-                }
-                reactivosPuros.push(...seleccionados);
-
-                // REPORTE DEL CHISMOSO EN LA TERMINAL
-                console.log(`✔️ ${materia}: Se agregaron ${seleccionados.length} válidos de ${cantidad} pedidos.`);
-                if (seleccionados.length < cantidad) {
-                    console.warn(`⚠️ FALTANTE EN ${materia}: Solo hay ${seleccionados.length}, faltan ${cantidad - seleccionados.length} en la BD.`);
-                }
-
-                if (nivelID < 3) {
-                    const cantColchon = Math.ceil(cantidad * 0.5);
-                    colchonReactivos.push(...sueltasColchon.slice(0, cantColchon));
-                }
-            }
-        }
-
-        // ✂️ RECORTADOR INTELIGENTE (Fuerza la cantidad exacta a lo que diga el dashboard)
-        if (reactivosPuros.length > cantQ) {
-            console.log(`⚠️ Excedente detectado: Se armaron ${reactivosPuros.length} reactivos, pero se pidieron ${cantQ}. Aplicando recorte inteligente...`);
-            let numAQuitar = reactivosPuros.length - cantQ;
-            let reactivosAjustados = [];
-            // Recorremos de atrás para adelante quitando preguntas "sueltas" para compensar
-            for (let i = reactivosPuros.length - 1; i >= 0; i--) {
-                let r = reactivosPuros[i];
-                let esLectura = r.id_grupo_lectura || (r.texto_lectura && r.texto_lectura.trim() !== "");
-                if (!esLectura && numAQuitar > 0) {
-                    console.log(`✂️ Sacrificando 1 reactivo de: ${r.materia} para ajustar el total.`);
-                    numAQuitar--; 
-                } else {
-                    reactivosAjustados.unshift(r); 
-                }
-            }
-            reactivosPuros = reactivosAjustados;
-            
-            if (reactivosPuros.length > cantQ) {
-                reactivosPuros = reactivosPuros.slice(0, cantQ);
-            }
-        }
-        
-        console.log(`🎯 TOTAL FINAL LISTO PARA EL EXAMEN: ${reactivosPuros.length} reactivos.`);
-
-        // --- FASE 2.5: ORDENAMIENTO GARANTIZADO ---
-        let reactivosAgrupados = {};
-        reactivosPuros.forEach(r => {
-            if (!reactivosAgrupados[r.materia]) reactivosAgrupados[r.materia] = [];
-            reactivosAgrupados[r.materia].push(r);
-        });
-
-        let materiasAleatorias = Object.keys(reactivosAgrupados).sort(() => Math.random() - 0.5);
-        
-        materiasAleatorias.forEach(mat => {
-            let preguntasMateria = reactivosAgrupados[mat];
-            let subGrupos = {};
-            
-            preguntasMateria.forEach(p => {
-                let llave = "suelta_" + p.id;
-                if (p.id_grupo_lectura) llave = "grupo_" + p.id_grupo_lectura;
-                else if (p.texto_lectura && p.texto_lectura.trim() !== "") llave = "txt_" + p.texto_lectura.trim().substring(0, 30);
-                
-                if(!subGrupos[llave]) subGrupos[llave] = [];
-                subGrupos[llave].push(p);
-            });
-
-            let llavesSubGrupo = Object.keys(subGrupos).sort(() => Math.random() - 0.5);
-            
-            llavesSubGrupo.forEach(llave => {
-                reactivos.push(...subGrupos[llave]);
-            });
-        });
-
-        colchonReactivos = colchonReactivos.sort(() => Math.random() - 0.5);
-
-        if (reactivos.length > 0) {
-            if (!esPro && typeof ejecutarDescuentoIntento === 'function') ejecutarDescuentoIntento(); 
-            render(); 
-            startTimer();
-        } else { 
-            alert(`Base de datos vacía para: ${filtroTipos.join(", ")}`);
-            window.location.href = 'dashboard.html'; 
-        }
     } catch (e) { 
-        console.error("Error crítico detectado:", e);
-        alert(`Sistema interrumpido: ${e.message}. \n\nRevisa los permisos de cámara/audio o la consola.`);
+        console.error("Error crítico en init:", e);
+        alert(`Sistema interrumpido: ${e.message}`);
         window.location.href = 'dashboard.html';
     }
 }
@@ -422,45 +205,87 @@ function render() {
 
 async function procesarRespuesta() {
     const r = reactivos[index];
-    const respuestaBD = String(r.respuesta_correcta).trim().toLowerCase();
     const seleccionUser = String(seleccionActual).trim().toLowerCase();
-    const esCorrecto = (seleccionUser === respuestaBD);
+    const btnConfirm = document.getElementById('btn-confirm');
     
-    const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
-    if (typeof registrarPasoPorReactivo === 'function') await registrarPasoPorReactivo(r.id, esCorrecto, nivelID);
+    // Bloqueamos el botón para que no le dé doble clic mientras la red trabaja
+    btnConfirm.disabled = true;
+    const textoOriginalBtn = btnConfirm.innerText;
+    btnConfirm.innerText = "VALIDANDO...";
 
-    if (esCorrecto) {
-        aciertos++;
-        rachaAciertos++;
-        
-        if (rachaAciertos >= 3 && colchonReactivos.length > 0) {
-            const idxReemplazo = reactivos.findIndex((re, i) => {
-                if (i <= index) return false;
-                if (re.materia !== r.materia) return false;
-                if (re.texto_lectura && re.texto_lectura.trim() !== "") return false; 
-                return true;
-            });
-
-            if (idxReemplazo !== -1) {
-                const preguntaDura = colchonReactivos.shift(); 
-                reactivos[idxReemplazo] = preguntaDura;
-            }
-            rachaAciertos = 0; 
-        }
-    } else {
-        rachaAciertos = 0; 
-        reactivosFallados.push({
-            materia: r.materia,
-            tema: r.tema_guia || "General",
-            pregunta_id: r.id,
-            pregunta: r.pregunta,          // NUEVO: Guardamos el texto
-            correcta: r.respuesta_correcta // NUEVO: Guardamos la respuesta
+    try {
+        // 🛡️ ENVIAMOS LA RESPUESTA A LA BÓVEDA
+        const response = await fetch('https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/validar-respuesta', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${supabaseKey}` 
+            },
+            body: JSON.stringify({
+                email: localStorage.getItem('session_email'),
+                token_hex: localStorage.getItem('token_hex_hijo'),
+                nombre_alumno: localStorage.getItem('nombre_alumno'),
+                id_pregunta: r.id,
+                respuesta_alumno: seleccionUser
+            })
         });
+
+        const dataAPI = await response.json();
+
+        if (!dataAPI.success) {
+            throw new Error(dataAPI.error || "Falla de comunicación con el servidor");
+        }
+
+        const esCorrecto = dataAPI.es_correcto;
+        const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
+        
+        // Guardamos en la bitácora silenciosa de BD
+        if (typeof registrarPasoPorReactivo === 'function') await registrarPasoPorReactivo(r.id, esCorrecto, nivelID);
+
+        // Lógica de calificación local
+        if (esCorrecto) {
+            aciertos++;
+            rachaAciertos++;
+            
+            if (rachaAciertos >= 3 && colchonReactivos.length > 0) {
+                const idxReemplazo = reactivos.findIndex((re, i) => {
+                    if (i <= index) return false;
+                    if (re.materia !== r.materia) return false;
+                    if (re.texto_lectura && re.texto_lectura.trim() !== "") return false; 
+                    return true;
+                });
+
+                if (idxReemplazo !== -1) {
+                    const preguntaDura = colchonReactivos.shift(); 
+                    reactivos[idxReemplazo] = preguntaDura;
+                }
+                rachaAciertos = 0; 
+            }
+        } else {
+            rachaAciertos = 0; 
+            reactivosFallados.push({
+                materia: r.materia,
+                tema: r.tema_guia || "General",
+                pregunta_id: r.id,
+                pregunta: r.pregunta,          
+                correcta: dataAPI.respuesta_real // 🔒 La respuesta secreta nos la da la API solo si falló
+            });
+        }
+        
+        // Pasamos a la siguiente pregunta
+        index++; 
+        if (index < reactivos.length) {
+            render(); 
+        } else {
+            finalizar();
+        }
+
+    } catch (error) {
+        console.error("Error al calificar:", error);
+        alert("Hubo un ligero corte de internet al validar tu respuesta. Por favor intenta de nuevo.");
+        btnConfirm.disabled = false;
+        btnConfirm.innerText = textoOriginalBtn;
     }
-    
-    index++; 
-    if (index < reactivos.length) render(); 
-    else finalizar();
 }
 
 function startTimer() {
