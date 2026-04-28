@@ -54,7 +54,14 @@ async function init() {
 
         // 3. Validar Cámara y Audio (Lo que ya tenías)
 
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: true, 
+            audio: { 
+                noiseSuppression: true, 
+                echoCancellation: true, 
+                autoGainControl: true 
+            } 
+        });
         const videoElement = document.getElementById('webcam'); 
         videoElement.srcObject = stream;
         setupAudioMonitor(stream);
