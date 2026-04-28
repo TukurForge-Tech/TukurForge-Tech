@@ -349,9 +349,9 @@ async function finalizar() {
         fallas_academicas: reactivosFallados
     };
 
-    // Calculamos el nombre correcto del examen
-    const inst = localStorage.getItem('plan_institucion') || '';
-    const nombreFinalPrueba = (tipoPruebaEnMemoria === 'Repaso') ? 'Reto de Repaso' : (inst.includes('ECOEMS') ? 'ECOEMS GENERAL' : 'UNAM GENERAL');
+    // Calculamos el nombre correcto del examen sacándolo directo de la memoria
+    const nombrePlan = localStorage.getItem('plan_nombre_completo') || 'EXAMEN GENERAL';
+    const nombreFinalPrueba = (tipoPruebaEnMemoria === 'Repaso') ? 'Reto de Repaso' : nombrePlan;
 
     // 🛡️ CORRECCIÓN: Envolvemos en try/catch para obligar al sistema a esperar
     try {
