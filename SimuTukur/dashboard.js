@@ -75,7 +75,7 @@ async function seleccionarCurso(data, btn) {
     // 🛡️ 1. TRAEMOS TODO EL HISTORIAL (Del más viejo al más nuevo)
     const { data: historialBD } = await _supabase
         .from('resultados_examenes')
-        .select('puntaje_obtenido, tipo_prueba')
+        .select('puntaje_obtenido, tipo_prueba, nivel_examen')
         .eq('token_hex', data.token_hex)
         .eq('email', emailPadre)
         .eq('nombre_alumno', data.nombre_alumno)
@@ -111,7 +111,10 @@ async function seleccionarCurso(data, btn) {
                 if (ex.puntaje_obtenido >= 70) requiereRepaso = false; // Si aprueba el repaso, se quita el castigo
             } else {
                 if (ex.puntaje_obtenido >= 70) {
-                    racha++;
+                    // 🛡️ SOLO cuenta para la racha si el examen es de su nivel más alto
+                    if (ex.nivel_examen === nivelMaximo) {
+                        racha++;
+                    }
                     requiereRepaso = false;
                     // Si junta 3 victorias seguidas, sube de nivel permanentemente
                     if (racha >= 3 && nivelMaximo === 1) { nivelMaximo = 2; racha = 0; }
@@ -302,8 +305,11 @@ async function cargarHistorial(token, nombreHijo) {
                 if (fallosVideoTxt.includes("Ausencia")) {
                     tipsHtml += `
                         <div class="bg-yellow-900/10 border border-yellow-500/30 p-2 rounded-lg flex gap-2 items-start">
-                            <i class="fa-solid fa-user-slash text-yellow-500 text-[10px] mt-0.5"></i>
-                            <p class="text-[9px] text-gray-400 leading-tight"><strong class="text-yellow-400 uppercase tracking-wider">Salida de cuadro:</strong> Evita balancearte o salir de la toma. La cámara debe ver tu rostro siempre.</p>
+                            <i class="fa-solid fa-eye text-yellow-500 text-[10px] mt-0.5"></i>
+                            <p class="text-[9px] text-gray-400 leading-tight">
+                                <strong class="text-yellow-400 uppercase tracking-wider">Atención Visual:</strong> 
+                                Evita bostezar de forma excesiva, desviar la mirada o salir del cuadro. La IA monitorea tus gestos y presencia constante.
+                            </p>
                         </div>
                     `;
                 }
@@ -311,15 +317,21 @@ async function cargarHistorial(token, nombreHijo) {
                     tipsHtml += `
                         <div class="bg-red-900/10 border border-red-500/30 p-2 rounded-lg flex gap-2 items-start">
                             <i class="fa-solid fa-users text-red-500 text-[10px] mt-0.5"></i>
-                            <p class="text-[9px] text-gray-400 leading-tight"><strong class="text-red-400 uppercase tracking-wider">Acompañante:</strong> El software oficial te anulará si detecta a otra persona. Presenta a solas.</p>
+                            <p class="text-[9px] text-gray-400 leading-tight">
+                                <strong class="text-red-400 uppercase tracking-wider">Entorno Protegido:</strong> 
+                                Se detectó más de una persona. El protocolo oficial exige que realices la prueba en total privacidad para evitar la anulación.
+                            </p>
                         </div>
                     `;
                 }
                 if (incAudio > 0) {
                     tipsHtml += `
                         <div class="bg-orange-900/10 border border-orange-500/30 p-2 rounded-lg flex gap-2 items-start">
-                            <i class="fa-solid fa-volume-high text-orange-500 text-[10px] mt-0.5"></i>
-                            <p class="text-[9px] text-gray-400 leading-tight"><strong class="text-orange-400 uppercase tracking-wider">Ruido excesivo:</strong> Micrófono con alertas. Busca un lugar aislado y en completo silencio.</p>
+                            <i class="fa-solid fa-ear-listen text-orange-500 text-[10px] mt-0.5"></i>
+                            <p class="text-[9px] text-gray-400 leading-tight">
+                                <strong class="text-orange-400 uppercase tracking-wider">Alerta de Audio:</strong> 
+                                Detectamos sonidos ambientales o voces. Asegúrate de estar en un lugar cerrado y silencioso para no generar alertas de sospecha.
+                            </p>
                         </div>
                     `;
                 }
@@ -474,7 +486,7 @@ async function cargarHistorialChat(token, puntaje, contexto) {
                             <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
                             <span class="text-red-400 text-[9px] font-black uppercase mb-2 block tracking-widest ml-2">${f.materia}</span>
                             <div class="text-gray-300 text-sm mb-3 ml-2 overflow-x-auto">${f.pregunta}</div>
-                            <button onclick="pedirExplicacionOficial('${encodeURIComponent(f.pregunta)}', '${encodeURIComponent(f.correcta)}')" 
+                            <button onclick="pedirExplicacionOficial('${encodeURIComponent(f.pregunta).replace(/'/g, "%27")}', '${encodeURIComponent(f.correcta).replace(/'/g, "%27")}')"
                                     class="ml-2 w-[calc(100%-0.5rem)] text-cyan-400 font-bold uppercase hover:bg-cyan-900/40 border border-cyan-900 bg-cyan-900/20 py-2 rounded-lg text-[10px] tracking-wider flex items-center justify-center gap-2 transition">
                                 <i class="fa-solid fa-brain"></i> Explicar Error (1⚡)
                             </button>
