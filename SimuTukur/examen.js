@@ -24,10 +24,23 @@ async function init() {
         // --- 🛡️ CHECKLIST DE REQUISITOS TÉCNICOS ---
         console.log("🔍 Validando entorno de examen...");
         
-        // 1. Validar MathJax (Para que las fórmulas se vean bien)
+        // 1. Validar MathJax con MUCHA paciencia (Hasta 10 segundos)
+        let intentosMath = 0;
+        while (intentosMath < 20) {
+            // Si ya existe y está listo, rompemos el ciclo y avanzamos
+            if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
+                console.log("✅ Motor de matemáticas listo.");
+                break; 
+            }
+            console.log(`⏳ Esperando matemáticas... (Intento ${intentosMath + 1}/20)`);
+            await new Promise(resolve => setTimeout(resolve, 500)); // Espera medio segundo
+            intentosMath++;
+        }
+
+        // Si después de 10 largos segundos de verdad no cargó, entonces sí abortamos
         if (!window.MathJax || typeof window.MathJax.typesetPromise !== 'function') {
-            console.warn("⚠️ MathJax no detectado o incompleto.");
-            alert("Tu navegador aún no termina de cargar el motor de matemáticas. Por favor espera 5 segundos y recarga la página.");
+            console.warn("⚠️ MathJax no detectado tras límite de tiempo.");
+            alert("Tu conexión a internet parece inestable y el motor de matemáticas no pudo descargar. Por favor, asegúrate de no tener un bloqueador de anuncios (AdBlock) activo y recarga la página.");
             return; // Detenemos el inicio del examen
         }
 
