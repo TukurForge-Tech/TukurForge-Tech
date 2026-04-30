@@ -92,7 +92,7 @@ async function seleccionarCurso(data, btn) {
     localStorage.setItem('plan_area', conf.area);               
     localStorage.setItem('plan_nombre_completo', nombrePlan);   
     localStorage.setItem('es_pro', esPro);
-    localStorage.setItem('simu_creditos', data.intentos_simulacro_restantes || 0);
+    localStorage.setItem('simu_creditos', data.energia_ia || 0);
     
     actualizarDisplayCreditos();
 
@@ -196,7 +196,7 @@ async function guardarCreditosEnBD(creditosNuevos) {
 
     if (_supabase && email && token) {
         const { data, error } = await _supabase.from('usuarios_membresias')
-            .update({ intentos_simulacro_restantes: creditosNuevos })
+            .update({ energia_ia: creditosNuevos })
             .eq('email', email)
             .eq('token_hex', token)
             .eq('nombre_alumno', nombreHijo); // Solo se descuenta al niño que lo usó
@@ -455,7 +455,7 @@ async function cargarHistorialChat(token, puntaje, contexto) {
         .select('*')
         .eq('token_hex', token)
         .eq('email', email)
-        .eq('nombre_alumno', nombreHijo) // Filtramos para que no se mezcle con el hermanito
+        .eq('nombre_alumno', nombreHijo) 
         .order('created_at', { ascending: true });
 
     chatBox.innerHTML = ''; 
@@ -639,7 +639,6 @@ window.addEventListener('pageshow', function(event) {
     }
 });
 
-// NUEVO: FUNCIÓN PARA PEDIR EXPLICACIÓN DEL ERROR DESDE EL DASHBOARD OFICIAL
 async function pedirExplicacionOficial(preguntaCodificada, respuestaCodificada) {
     let tokens = parseInt(localStorage.getItem('simu_creditos')) || 0;
     
@@ -648,12 +647,6 @@ async function pedirExplicacionOficial(preguntaCodificada, respuestaCodificada) 
         return;
     }
 
-    // Cobrar Token
-    tokens -= 1;
-    localStorage.setItem('simu_creditos', tokens);
-    actualizarDisplayCreditos();
-    await guardarCreditosEnBD(tokens);
-    
     const pregunta = decodeURIComponent(preguntaCodificada);
     const correcta = decodeURIComponent(respuestaCodificada);
     const inst = localStorage.getItem('plan_institucion');
@@ -670,6 +663,8 @@ async function pedirExplicacionOficial(preguntaCodificada, respuestaCodificada) 
     try {
         const { data, error } = await _supabase.functions.invoke('explicacion_ia', {
             body: { 
+                email: email,             
+                token_hex: tokenUser,     
                 pregunta: pregunta, 
                 correcta: correcta,
                 institucion: inst,
@@ -677,8 +672,14 @@ async function pedirExplicacionOficial(preguntaCodificada, respuestaCodificada) 
             }
         });
 
-        if (error) throw error;
+        if (error || (data && data.error)) throw new Error(data?.error || error);
         
+        // 🛡️ EL SERVIDOR DICTA LA VERDAD: Actualizamos la UI con el saldo oficial
+        if (data.saldo_restante !== undefined) {
+            localStorage.setItem('simu_creditos', data.saldo_restante);
+            actualizarDisplayCreditos();
+        }
+
         const spanBurbuja = document.getElementById(idBurbujaIA);
         if(spanBurbuja && spanBurbuja.parentElement) {
             const contenedor = spanBurbuja.parentElement;
@@ -695,11 +696,6 @@ async function pedirExplicacionOficial(preguntaCodificada, respuestaCodificada) 
     } catch (error) {
         console.error(error);
         const spanBurbuja = document.getElementById(idBurbujaIA);
-        if(spanBurbuja) spanBurbuja.parentElement.innerHTML = "<span class='text-red-500'>Error de red. Te hemos devuelto tu Energía.</span>";
-        
-        tokens += 1;
-        localStorage.setItem('simu_creditos', tokens);
-        actualizarDisplayCreditos();
-        await guardarCreditosEnBD(tokens);
+        if(spanBurbuja) spanBurbuja.parentElement.innerHTML = "<span class='text-red-500'>Error de red. No se consumió energía.</span>";
     }
 }
