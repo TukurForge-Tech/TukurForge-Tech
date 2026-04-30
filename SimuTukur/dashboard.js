@@ -455,7 +455,7 @@ async function cargarHistorialChat(token, puntaje, contexto) {
         .select('*')
         .eq('token_hex', token)
         .eq('email', email)
-        .eq('nombre_alumno', nombreHijo) 
+        .eq('nombre_alumno', nombreHijo) // Filtramos para que no se mezcle con el hermanito
         .order('created_at', { ascending: true });
 
     chatBox.innerHTML = ''; 
@@ -513,17 +513,11 @@ async function enviarMensajeChat(token) {
     let energiaElement = document.getElementById('creditos-display');
     let energia = parseInt(energiaElement.innerText) || 0;
     if (energia <= 0) { dibujarBurbujaChat('simu', "Te has quedado sin Energía IA. Usa el botón 'Recargar'."); return; }
-
-    // 1. DESCONTAMOS EL TOKEN
-    energia -= 1;
-    energiaElement.innerText = energia;
-    localStorage.setItem('simu_creditos', energia);
-    await guardarCreditosEnBD(energia);
     
     dibujarBurbujaChat('alumno', textoUsuario);
     input.value = '';
 
-    // 💾 2. GUARDAMOS EN SUPABASE (El registro del Alumno)
+    // 💾 GUARDAMOS EL MENSAJE DEL ALUMNO
     await _supabase.from('chat_historial').insert([{
         token_hex: token,
         email: email,
@@ -536,24 +530,21 @@ async function enviarMensajeChat(token) {
     dibujarBurbujaChat('simu', `<span id="${idBurbujaIA}" class="animate-pulse">Simu está analizando...</span>`);
 
     try {
-        // --- 🧠 ALTERNATIVA A: AHORRO DE TOKENS (SOLO 2 MENSAJES ANTERIORES) ---
         const { data: ultimosMsgs } = await _supabase
             .from('chat_historial')
             .select('emisor, mensaje')
             .eq('token_hex', token).eq('email', email).eq('nombre_alumno', nombreHijo)
             .order('created_at', { ascending: false })
-            .limit(2); // Solo extraemos los 2 últimos mensajes para el contexto
+            .limit(2);
 
         let textoConContexto = textoUsuario;
         if (ultimosMsgs && ultimosMsgs.length > 0) {
             let contextoInfo = "HISTORIAL RECIENTE PARA CONTEXTO:\n";
-            // Invertimos para poner el orden cronológico correcto
             ultimosMsgs.reverse().forEach(m => {
                 contextoInfo += `${m.emisor.toUpperCase()}: ${m.mensaje}\n`;
             });
             textoConContexto = `${contextoInfo}\nNUEVO MENSAJE DEL ALUMNO: ${textoUsuario}`;
         }
-        // -----------------------------------------------------------------------
 
         const url = `https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/chat-simu`;
         const response = await fetch(url, {
@@ -562,16 +553,29 @@ async function enviarMensajeChat(token) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${supabaseKey}`
             },
-            // Enviamos a la IA la pregunta + el mini-historial inyectado
-            body: JSON.stringify({ contents: [{ parts: [{ text: textoConContexto }] }], generationConfig: { temperature: 0.4 } })
+            // 🛡️ AHORA ENVIAMOS EMAIL Y TOKEN_HEX PARA QUE EL SERVIDOR COBRE EN SECRETO
+            body: JSON.stringify({ 
+                email: email, 
+                token_hex: token, 
+                contents: [{ parts: [{ text: textoConContexto }] }], 
+                generationConfig: { temperature: 0.4 } 
+            })
         });
         
-        if (!response.ok) throw new Error("Falla de red en Gemini");
-        
         const data = await response.json();
-        const respuestaIA = data.candidates[0].content.parts[0].text;
         
-        // 💾 3. GUARDAMOS EN SUPABASE PRIMERO (Solo guardamos la respuesta limpia, no el bloque de contexto)
+        if (!response.ok || data.error) throw new Error(data.error || "Falla de red en Gemini");
+        
+        // 🛡️ EL SERVIDOR DICTA LA VERDAD: Actualizamos la UI con el saldo oficial
+        if (data.saldo_restante !== undefined) {
+            localStorage.setItem('simu_creditos', data.saldo_restante);
+            actualizarDisplayCreditos();
+        }
+
+        // 🛡️ LEEMOS LA RESPUESTA LIMPIA DIRECTO DEL SERVIDOR
+        const respuestaIA = data.respuesta;
+        
+        // 💾 GUARDAMOS LA RESPUESTA DE LA IA
         await _supabase.from('chat_historial').insert([{
             token_hex: token,
             email: email,
@@ -580,7 +584,7 @@ async function enviarMensajeChat(token) {
             mensaje: respuestaIA
         }]);
 
-        // 4. PINTAMOS EN PANTALLA
+        // PINTAMOS EN PANTALLA
         const spanBurbuja = document.getElementById(idBurbujaIA);
         if(spanBurbuja && spanBurbuja.parentElement) {
             const contenedor = spanBurbuja.parentElement;
@@ -595,14 +599,8 @@ async function enviarMensajeChat(token) {
         console.error("❌ Falla interceptada en el motor de Chat:", e); 
         const spanBurbuja = document.getElementById(idBurbujaIA);
         if(spanBurbuja && spanBurbuja.parentElement) {
-             spanBurbuja.parentElement.innerHTML = "<em>Error de conexión. Intenta de nuevo.</em>";
-        }
-        
-        // Reembolso del token SOLO si de verdad hubo error
-        energia += 1;
-        energiaElement.innerText = energia;
-        localStorage.setItem('simu_creditos', energia);
-        await guardarCreditosEnBD(energia);
+             spanBurbuja.parentElement.innerHTML = "<em>Error de conexión. No se consumió energía.</em>";
+        }        
     }
 }
 
@@ -639,6 +637,7 @@ window.addEventListener('pageshow', function(event) {
     }
 });
 
+// NUEVO: FUNCIÓN PARA PEDIR EXPLICACIÓN DEL ERROR DESDE EL DASHBOARD OFICIAL
 async function pedirExplicacionOficial(preguntaCodificada, respuestaCodificada) {
     let tokens = parseInt(localStorage.getItem('simu_creditos')) || 0;
     
@@ -646,6 +645,8 @@ async function pedirExplicacionOficial(preguntaCodificada, respuestaCodificada) 
         abrirModalEnergia();
         return;
     }
+
+    // ❌ AQUÍ BORRAMOS EL COBRO LOCAL, EL NAVEGADOR YA NO MANDA SOBRE EL DINERO
 
     const pregunta = decodeURIComponent(preguntaCodificada);
     const correcta = decodeURIComponent(respuestaCodificada);
@@ -663,8 +664,8 @@ async function pedirExplicacionOficial(preguntaCodificada, respuestaCodificada) 
     try {
         const { data, error } = await _supabase.functions.invoke('explicacion_ia', {
             body: { 
-                email: email,             
-                token_hex: tokenUser,     
+                email: email,             // 🛡️ Se envía para auditar saldo
+                token_hex: tokenUser,     // 🛡️ Se envía para auditar saldo
                 pregunta: pregunta, 
                 correcta: correcta,
                 institucion: inst,
@@ -697,5 +698,6 @@ async function pedirExplicacionOficial(preguntaCodificada, respuestaCodificada) 
         console.error(error);
         const spanBurbuja = document.getElementById(idBurbujaIA);
         if(spanBurbuja) spanBurbuja.parentElement.innerHTML = "<span class='text-red-500'>Error de red. No se consumió energía.</span>";
+        // ❌ AQUÍ BORRAMOS LA DEVOLUCIÓN DE TOKENS. Si falló, el servidor simplemente no cobró.
     }
 }
