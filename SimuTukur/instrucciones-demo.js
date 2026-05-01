@@ -153,21 +153,58 @@ function arrancarDemo() {
     btnComenzar.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Preparando Entorno...';
     btnComenzar.disabled = true;
 
-    // GUARDADO ESTRATÉGICO EN MEMORIA PARA EL MOTOR
+    // 🛡️ MAGIA DE TOKENS: Anclamos la energía al correo del prospecto
+    let tokensDelProspecto = localStorage.getItem(`demo_energia_${emailInput}`);
+    if (tokensDelProspecto === null) {
+        localStorage.setItem(`demo_energia_${emailInput}`, 2);
+    }
+
+    // GUARDADO ESTRATÉGICO
     localStorage.setItem('demo_email_capturado', emailInput);
     localStorage.setItem('demo_token_hex', tokenHex);
     localStorage.setItem('demo_institucion', configData.institucion);
     localStorage.setItem('demo_area', configData.area);
-    
-    // Aquí le pasamos el JSON con la distribución matemática exacta al examen
     localStorage.setItem('demo_distribucion_materias', JSON.stringify(distribucionFinalDemo));
     
-    // Limpieza de caché de exámenes pasados
     localStorage.removeItem('simu_fallas');
     localStorage.removeItem('simu_aciertos');
-    localStorage.setItem('simu_creditos', 2); // Regalo IA
+
+    const nombreExamenGuardado = configData.institucion + (configData.area && configData.area !== 'GENERAL' ? ' ' + configData.area : '');
     
-    setTimeout(() => { window.location.href = `examen-demo.html?v=${tokenHex}`; }, 800);
+    _supabase.from('prospectos_simulacro').insert([{
+        correo: emailInput,
+        nombre_tutor: "Prospecto Demo",     // Comodín para cumplir regla de tabla
+        dia_elegido: "Demo Permanente",     // Comodín para cumplir regla de tabla
+        examen: nombreExamenGuardado,
+        token_hex: tokenHex,
+        tokens_ia: 2,
+        terminos_aceptados: true
+    }]).then(({error}) => {
+        if(error) console.warn("Error guardando prospecto:", error);
+    });
+    
+    // 🎬 INYECCIÓN DEL VIDEO OFICIAL 
+    const overlayHtml = `
+        <div id="video-overlay" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center animate-fade-in">
+            <video id="video-instrucciones" class="w-full max-w-4xl rounded-xl shadow-[0_0_40px_rgba(6,182,212,0.4)]" autoplay playsinline>
+                <source src="https://pcuopqvmucmhtcdeswxh.supabase.co/storage/v1/object/public/reactivos-assets/SimuTukur/SimuTukur.mp4" type="video/mp4">
+            </video>
+            <button onclick="saltarVideo()" class="mt-8 text-gray-400 hover:text-white uppercase tracking-widest text-[10px] font-black transition-colors">
+                Omitir Video <i class="fa-solid fa-forward-step ml-1"></i>
+            </button>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', overlayHtml);
+    
+    // Lógica para saltar al examen cuando termine el video
+    const vid = document.getElementById('video-instrucciones');
+    vid.onended = saltarVideo;
+}
+
+// Función global para saltar o cuando termine el video
+window.saltarVideo = function() {
+    window.location.href = `examen-demo.html?v=${localStorage.getItem('demo_token_hex')}`;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
