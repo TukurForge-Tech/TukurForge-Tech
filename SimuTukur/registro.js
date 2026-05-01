@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     email: tempCorreo,
                     password_hijo: localStorage.getItem('simu_pass'),
                     token_hex: localStorage.getItem('simu_token'),
-                    intentos_simulacro_restantes: 200
+                    energia_ia: 200
                 });
                 
                 // 3. Borramos la memoria por seguridad
@@ -225,6 +225,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const { data: publicUrlData } = _supabase.storage.from('comprobantes').getPublicUrl(fileName);
                 urlArchivo = publicUrlData.publicUrl;
             }
+            // 👈 NUEVO: Rescatamos el cupón (si escribió uno) para avisarle a Finanzas
+            const cuponUsado = inputPromo.value.trim().toUpperCase() || 'NINGUNO';
 
             // Siempre registramos el intento de pago para tener el historial
             const { error: dbPagosError } = await _supabase.from('registro_pagos').insert({
@@ -237,7 +239,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 referencia_pago: referenciaUnica,
                 comprobante_url: urlArchivo,
                 terminos_aceptados: document.getElementById('checkLegal').checked,
-                estatus: metodoPago === "STRIPE" ? "Pendiente Stripe" : "Pendiente Transferencia"
+                estatus: metodoPago === "STRIPE" ? "Pendiente Stripe" : "Pendiente Transferencia",
+                cupon_usado: cuponUsado // 👈 ¡NUEVO! Guardamos la evidencia del descuento
             });
             if (dbPagosError) throw dbPagosError;
 
@@ -286,7 +289,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     email: correo,
                     password_hijo: inputPass.value, 
                     token_hex: tokenSeleccionado, 
-                    intentos_simulacro_restantes: 200 
+                    energia_ia: 200 
                 });
                 if (dbMembresiaError) throw dbMembresiaError;
 
