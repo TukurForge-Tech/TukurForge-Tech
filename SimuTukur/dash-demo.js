@@ -78,10 +78,11 @@ function inicializarDashDemo() {
 }
 
 async function pedirExplicacionIADemo(preguntaCodificada, respuestaCodificada) {
-    let tokens = parseInt(localStorage.getItem('simu_creditos')) || 0;
-    const chatBox = document.getElementById('chat-box');
+    const emailCapturado = localStorage.getItem('demo_email_capturado') || 'Anonimo';
+    let tokens = parseInt(localStorage.getItem(`demo_energia_${emailCapturado}`)) || 0; // 👈 Leemos su cuenta personal de tokens
     
-    // EL GRAN CIERRE DE VENTAS: Si ya no tiene tokens
+    const chatBox = document.getElementById('chat-box');
+
     if (tokens <= 0) {
         chatBox.innerHTML += `
             <div class="mb-3 animate-fade-in flex justify-center mt-6">
@@ -101,8 +102,8 @@ async function pedirExplicacionIADemo(preguntaCodificada, respuestaCodificada) {
 
     // Cobrar Token
     tokens--;
-    localStorage.setItem('simu_creditos', tokens);
-    document.getElementById('energia-display').innerText = tokens;
+    localStorage.setItem(`demo_energia_${emailCapturado}`, tokens);
+    // document.getElementById('energia-display').innerText = tokens; // Descomenta si tienes el display de energía
     
     const pregunta = decodeURIComponent(preguntaCodificada);
     const correcta = decodeURIComponent(respuestaCodificada);
@@ -123,7 +124,7 @@ async function pedirExplicacionIADemo(preguntaCodificada, respuestaCodificada) {
         const areaActual = localStorage.getItem('demo_area') || '';
 
         // Llama a la función de Supabase enviando TODAS las variables
-        const { data, error } = await _supabase.functions.invoke('explicacion_ia', {
+        const { data, error } = await _supabase.functions.invoke('explicacion_ia_demo', {
             body: { 
                 pregunta: pregunta, 
                 correcta: correcta,
