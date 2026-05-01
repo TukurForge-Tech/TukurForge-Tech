@@ -9,8 +9,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .from('config_examenes') 
                 .select('*')
                 .eq('plan', 'PRO')
-                .in('institucion', ['UNAM', 'ECOEMS', 'IPN']) // 🔒 Bloquea IPN/UAM automáticamente
-                .order('institucion', { ascending: true });
+                .in('institucion', ['UNAM', 'ECOEMS', 'IPN']) // 🔒 Bloquea UAM automáticamente
+                .order('institucion', { ascending: true })
+                .order('descripcion', { ascending: true });
 
             if (error) throw error;
 
