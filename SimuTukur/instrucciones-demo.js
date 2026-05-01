@@ -200,7 +200,7 @@ function arrancarDemo() {
     // 🎬 INYECCIÓN DEL VIDEO OFICIAL 
     const overlayHtml = `
         <div id="video-overlay" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center animate-fade-in">
-            <video id="video-instrucciones" class="w-full max-w-4xl rounded-xl shadow-[0_0_40px_rgba(6,182,212,0.4)]" autoplay playsinline>
+            <video id="video-instrucciones" class="w-full max-w-2xl rounded-xl shadow-[0_0_40px_rgba(6,182,212,0.4)]" autoplay playsinline>
                 <source src="https://pcuopqvmucmhtcdeswxh.supabase.co/storage/v1/object/public/reactivos-assets/SimuTukur/SimuTukur.mp4" type="video/mp4">
             </video>
             <button onclick="saltarVideo()" class="mt-8 text-gray-400 hover:text-white uppercase tracking-widest text-[10px] font-black transition-colors">
