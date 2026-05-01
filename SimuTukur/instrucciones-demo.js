@@ -141,10 +141,20 @@ function calcularYRenderizarProporciones(distReal) {
 
 function arrancarDemo() {
     const emailInput = document.getElementById('email-demo').value.trim();
+    const checkTerminos = document.getElementById('check-terminos-demo'); // Capturamos la casilla
     const errorMsg = document.getElementById('msg-error');
     const btnComenzar = document.getElementById('btn-comenzar');
     
+    // 1. Validar Correo
     if (!emailInput || !emailInput.includes('@') || !emailInput.includes('.')) {
+        errorMsg.innerText = "Por favor, ingresa un correo válido.";
+        errorMsg.classList.remove('hidden');
+        return;
+    }
+
+    // 2. Validar Términos Legales
+    if (checkTerminos && !checkTerminos.checked) {
+        errorMsg.innerText = "Debes aceptar los Términos y Privacidad para continuar.";
         errorMsg.classList.remove('hidden');
         return;
     }
@@ -153,13 +163,16 @@ function arrancarDemo() {
     btnComenzar.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Preparando Entorno...';
     btnComenzar.disabled = true;
 
+    // 3. Limpiamos el Escudo Anti-Trampas por si es un nuevo intento
+    sessionStorage.removeItem('demo_mina_activa');
+
     // 🛡️ MAGIA DE TOKENS: Anclamos la energía al correo del prospecto
     let tokensDelProspecto = localStorage.getItem(`demo_energia_${emailInput}`);
     if (tokensDelProspecto === null) {
         localStorage.setItem(`demo_energia_${emailInput}`, 2);
     }
 
-    // GUARDADO ESTRATÉGICO
+    // GUARDADO ESTRATÉGICO EN MEMORIA LOCAL
     localStorage.setItem('demo_email_capturado', emailInput);
     localStorage.setItem('demo_token_hex', tokenHex);
     localStorage.setItem('demo_institucion', configData.institucion);
@@ -168,21 +181,22 @@ function arrancarDemo() {
     
     localStorage.removeItem('simu_fallas');
     localStorage.removeItem('simu_aciertos');
-
+    
+    // 💰 CAPTURA DE LEAD SILENCIOSA EN SUPABASE
     const nombreExamenGuardado = configData.institucion + (configData.area && configData.area !== 'GENERAL' ? ' ' + configData.area : '');
     
     _supabase.from('prospectos_simulacro').insert([{
         correo: emailInput,
-        nombre_tutor: "Prospecto Demo",     // Comodín para cumplir regla de tabla
-        dia_elegido: "Demo Permanente",     // Comodín para cumplir regla de tabla
+        nombre_tutor: "Prospecto Demo",     
+        dia_elegido: "Demo Permanente",     
         examen: nombreExamenGuardado,
         token_hex: tokenHex,
         tokens_ia: 2,
-        terminos_aceptados: true
+        terminos_aceptados: true // Ahora sí sabemos que es true
     }]).then(({error}) => {
         if(error) console.warn("Error guardando prospecto:", error);
     });
-    
+
     // 🎬 INYECCIÓN DEL VIDEO OFICIAL 
     const overlayHtml = `
         <div id="video-overlay" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center animate-fade-in">
