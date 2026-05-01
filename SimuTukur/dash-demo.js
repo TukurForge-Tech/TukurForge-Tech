@@ -103,8 +103,12 @@ async function pedirExplicacionIADemo(preguntaCodificada, respuestaCodificada) {
     // Cobrar Token
     tokens--;
     localStorage.setItem(`demo_energia_${emailCapturado}`, tokens);
-    // document.getElementById('energia-display').innerText = tokens; // Descomenta si tienes el display de energía
     
+    const displayEnergia = document.getElementById('energia-display');
+    if (displayEnergia) {
+        displayEnergia.innerText = tokens;
+    }
+
     const pregunta = decodeURIComponent(preguntaCodificada);
     const correcta = decodeURIComponent(respuestaCodificada);
     
@@ -157,8 +161,9 @@ async function pedirExplicacionIADemo(preguntaCodificada, respuestaCodificada) {
         document.getElementById('spinner-demo').remove();
         chatBox.innerHTML += `<div class="text-red-500 text-xs text-center p-2 bg-red-900/20 rounded border border-red-500/30">Error conectando con la IA. Se ha devuelto tu Token.</div>`;
         tokens++;
-        localStorage.setItem('simu_creditos', tokens);
-        document.getElementById('energia-display').innerText = tokens;
+        localStorage.setItem(`demo_energia_${emailCapturado}`, tokens); // ✅ AHORA SÍ SE LO DEVUELVE A SU CORREO
+        const displayEnergia = document.getElementById('energia-display');
+        if (displayEnergia) displayEnergia.innerText = tokens;
     }
 }
 
