@@ -1,6 +1,25 @@
 // simulacro.js - Lógica de registro para el evento en vivo
 
 document.addEventListener('DOMContentLoaded', () => {
+
+    // Mostrar/Ocultar detalles del curso
+    const tomaCursoSelect = document.getElementById('tomaCurso');
+    const detallesCursoDiv = document.getElementById('detallesCurso');
+
+    if (tomaCursoSelect) {
+        tomaCursoSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'si') {
+                detallesCursoDiv.classList.remove('hidden');
+                detallesCursoDiv.classList.add('grid');
+            } else {
+                detallesCursoDiv.classList.add('hidden');
+                detallesCursoDiv.classList.remove('grid');
+                document.getElementById('tipoCurso').value = "";
+                document.getElementById('nombreEscuela').value = "";
+            }
+        });
+    }
+
     // 1. Cargamos los exámenes desde la BD al abrir la página
     cargarExamenesBD();
 
@@ -25,20 +44,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const dia = document.getElementById('diaElegido').value;
 
-            // ==========================================
-            // ASIGNACIÓN DE ENLACES DE GOOGLE MEET
-            // (Reemplaza estas URLs con las reales de tu calendario)
-            // ==========================================
-            let ligaOficialMeet = "";
-            if (dia === "Sabado_10AM") {
-                ligaOficialMeet = "https://meet.google.com/ixs-bpch-fws"; 
-            } else if (dia === "Sabado_12PM") {
-                ligaOficialMeet = "https://meet.google.com/amb-zphp-nhb"; 
-            } else if (dia === "Domingo_10AM") {
-                ligaOficialMeet = "https://meet.google.com/sat-rpgy-qet"; 
-            } else if (dia === "Domingo_12PM") {
-                ligaOficialMeet = "https://meet.google.com/cmn-pvqa-jkb"; 
-            }
+            const codigoPadrino = document.getElementById('codigoPadrino').value.trim().toUpperCase();
+            const tomaCurso = document.getElementById('tomaCurso').value;
+            const tipoCurso = document.getElementById('tipoCurso').value;
+            const nombreEscuela = document.getElementById('nombreEscuela').value.trim();
+            const objetivo = document.getElementById('objetivoSimulacro').value;
 
             try {
                 // ==========================================
@@ -52,7 +62,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         telefono: telefono,
                         examen: nombreExamenFiltro,
                         token_hex: tokenSeleccionado, // Guardamos el token exacto
-                        dia_elegido: dia 
+                        dia_elegido: dia,
+                        codigo_padrino: codigoPadrino,
+                        toma_curso: tomaCurso,
+                        tipo_curso: tipoCurso,
+                        nombre_escuela: nombreEscuela,
+                        objetivo_principal: objetivo 
                     }
                 ]);
 
@@ -67,8 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         alumno_nombre: alumno, 
                         correo_destino: correo, 
                         examen_elegido: nombreExamenFiltro,
-                        horario_elegido: dia,
-                        link_meet: ligaOficialMeet
+                        horario_elegido: dia
                     }
                 });
 
@@ -82,12 +96,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 3. ACTUALIZAR INTERFAZ AL ÉXITO (¡Esto faltaba!)
                 // ==========================================
                 document.getElementById('formSimulacro').classList.add('hidden');
-                
-                const linkElement = document.getElementById('linkMeet');
-                linkElement.href = ligaOficialMeet;
-                linkElement.innerText = ligaOficialMeet;
-                
                 document.getElementById('mensajeExito').classList.remove('hidden');
+
+                // ENCENDEMOS EL RELOJ
+                iniciarCuentaRegresiva();
 
             } catch (err) {
                 // ¡También faltaba cerrar el error principal de Supabase!
@@ -154,5 +166,77 @@ async function cargarExamenesBD() {
     } catch (err) {
         console.error("Error conectando a Supabase:", err);
         select.innerHTML = '<option value="" disabled selected class="text-red-400">Error de red. Recarga la página.</option>';
+    }
+}
+
+// ==========================================
+// MOTOR DE CUENTA REGRESIVA PARA EL EXAMEN
+// ==========================================
+
+function iniciarCuentaRegresiva() {
+    // 🎯 FECHA EXACTA DEL EVENTO (Sábado 16 de Mayo de 2026 a las 10:00:00 AM)
+    const fechaExamen = new Date('May 16, 2026 10:00:00').getTime();
+
+    const intervalo = setInterval(() => {
+        const ahora = new Date().getTime();
+        const distancia = fechaExamen - ahora;
+
+        // Cálculos matemáticos de tiempo
+        const dias = Math.floor(distancia / (1000 * 60 * 60 * 24));
+        const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
+        const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
+
+        const contadorEl = document.getElementById('contadorTimer');
+        
+        // Si aún falta tiempo, pintamos el reloj
+        if (distancia > 0) {
+            if(contadorEl) {
+                // Le damos formato 00d 00h 00m 00s
+                contadorEl.innerHTML = `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+            }
+        } else {
+            // ¡EL TIEMPO LLEGÓ A CERO! Desbloqueamos todo y detenemos el reloj
+            clearInterval(intervalo);
+            desbloquearBotonExamen();
+        }
+    }, 1000); // Se actualiza cada segundo
+}
+
+function desbloquearBotonExamen() {
+    const btn = document.getElementById('btnExamen');
+    const badge = document.getElementById('badgeEstado');
+    const icono = document.getElementById('iconoExamen');
+    const textoAdv = document.getElementById('textoAdvertencia');
+    const contador = document.getElementById('contadorTimer');
+
+    if(btn) {
+        // Le quitamos lo gris y bloqueado, y le ponemos el diseño activo
+        btn.classList.remove('bg-gray-800', 'text-gray-500', 'cursor-not-allowed', 'border-gray-700', 'pointer-events-none');
+        btn.classList.add('bg-cyan-600', 'text-white', 'cursor-pointer', 'border-cyan-400', 'hover:bg-cyan-500', 'shadow-[0_0_15px_rgba(6,182,212,0.6)]');
+        
+        // 🔗 AQUÍ PONES LA LIGA REAL DE TU EXAMEN
+        btn.href = "tu_pagina_de_login.html"; 
+        btn.target = "_blank";
+    }
+
+    if(badge) {
+        badge.classList.remove('bg-gray-700', 'text-gray-400');
+        badge.classList.add('bg-green-500', 'text-white', 'animate-pulse');
+        badge.innerText = "¡ABIERTO!";
+    }
+
+    if(icono) {
+        icono.classList.add('animate-bounce', 'text-green-300');
+    }
+
+    if(textoAdv) {
+        textoAdv.classList.remove('text-yellow-500');
+        textoAdv.classList.add('text-green-400');
+        textoAdv.innerHTML = '<i class="fa-solid fa-door-open mr-1"></i> ¡Las puertas están abiertas! Ya puedes ingresar al simulador.';
+    }
+
+    if(contador) {
+        contador.style.display = 'none'; // Escondemos el reloj porque ya empezó
     }
 }
