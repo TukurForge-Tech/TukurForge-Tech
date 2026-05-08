@@ -38,13 +38,26 @@ document.addEventListener('DOMContentLoaded', () => {
             (async () => {
                 const datos = JSON.parse(datosStr);
                 try {
-                    // Guardamos al prospecto (codigo_padrino va vacío)
+                    /* Guardamos al prospecto (codigo_padrino va vacío)
                     await _supabase.from('prospectos_simulacro').insert([{
                         nombre_tutor: datos.tutor, nombre_alumno: datos.alumno, correo: datos.correo,
                         telefono: datos.telefono, examen: datos.examen, token_hex: datos.token_hex,
                         dia_elegido: datos.dia_elegido, codigo_padrino: '', 
                         toma_curso: datos.toma_curso, tipo_curso: datos.tipo_curso, 
                         nombre_escuela: datos.nombre_escuela, objetivo_principal: datos.objetivo_principal
+                    }]);*/
+
+                    // Guardamos al prospecto (codigo_padrino va vacío)
+                    await _supabase.from('prospectos_simulacro').insert([{
+                        nombre_tutor: datos.tutor, nombre_alumno: datos.alumno, correo: datos.correo,
+                        telefono: datos.telefono, examen: datos.examen, token_hex: datos.token_hex,
+                        dia_elegido: datos.dia_elegido, codigo_padrino: '', 
+                        toma_curso: datos.toma_curso, tipo_curso: datos.tipo_curso, 
+                        // 👇 AGREGADOS AQUÍ
+                        tipo_escuela: datos.tipo_escuela,
+                        nombre_escuela: datos.nombre_escuela, 
+                        objetivo_principal: datos.objetivo_principal,
+                        autoriza_datos_padrino: datos.autoriza_datos_padrino
                     }]);
 
                     // Guardamos el recibo financiero en la tabla satélite
@@ -123,6 +136,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const tipoCurso = document.getElementById('tipoCurso').value;
             const nombreEscuela = document.getElementById('nombreEscuela').value.trim();
             const objetivo = document.getElementById('objetivoSimulacro').value;
+            const checkAutorizacion = document.getElementById('checkDatosPadrino');
+
+            // 👇 NUEVA VALIDACIÓN DEL PADRE/TUTOR AQUÍ (Antes de revisar duplicados)
+            if (codigoPadrinoInput !== "" && !checkAutorizacion.checked) {
+                alert("Para aplicar la beca del patrocinador, el padre o tutor debe aceptar los términos de auditoría marcando la casilla correspondiente.");
+                btn.innerHTML = '<i class="fa-solid fa-video mr-2"></i> RESERVAR MI LUGAR';
+                btn.disabled = false;
+                return; // Cortamos la ejecución
+            }
 
             // 🔍 VALIDACIÓN ANTI-DUPLICADOS
             const { data: yaExiste } = await _supabase
@@ -183,12 +205,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('formSimulacro').classList.add('hidden');
                     document.getElementById('panelPago58').classList.remove('hidden');
                     
-                    // Guardamos temporalmente los datos en el navegador para cuando regresen de Stripe
+                    /* Guardamos temporalmente los datos en el navegador para cuando regresen de Stripe
                     sessionStorage.setItem('datosRegistroPendiente', JSON.stringify({
                         tutor, alumno, correo, telefono, examen: nombreExamenFiltro, 
                         token_hex: tokenSeleccionado, dia_elegido: dia, 
                         toma_curso: tomaCurso, tipo_curso: tipoCurso, 
                         nombre_escuela: nombreEscuela, objetivo_principal: objetivo
+                    }));*/
+
+                    // Guardamos temporalmente los datos en el navegador para cuando regresen de Stripe
+                    sessionStorage.setItem('datosRegistroPendiente', JSON.stringify({
+                        tutor, alumno, correo, telefono, examen: nombreExamenFiltro, 
+                        token_hex: tokenSeleccionado, dia_elegido: dia, 
+                        toma_curso: tomaCurso, tipo_curso: tipoCurso, 
+                        // 👇 AGREGADOS AQUÍ
+                        tipo_escuela: tipoEscuela, 
+                        nombre_escuela: nombreEscuela, 
+                        objetivo_principal: objetivo,
+                        autoriza_datos_padrino: checkAutorizacion ? checkAutorizacion.checked : false
                     }));
 
                     // Cortamos la ejecución aquí, no guardamos en la BD hasta que paguen
@@ -197,12 +231,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // ==========================================
                 // 3. GUARDADO DIRECTO (SÓLO SI TIENEN CÓDIGO VÁLIDO)
-                // ==========================================
+                /* ==========================================
                 const { error: insertError } = await _supabase.from('prospectos_simulacro').insert([{ 
                     nombre_tutor: tutor, nombre_alumno: alumno, correo: correo, telefono: telefono,
                     examen: nombreExamenFiltro, token_hex: tokenSeleccionado, dia_elegido: dia,
                     codigo_padrino: codigoPadrinoInput, toma_curso: tomaCurso, tipo_curso: tipoCurso,
                     nombre_escuela: nombreEscuela, objetivo_principal: objetivo
+                }]);*/
+
+                // ==========================================
+                // 3. GUARDADO DIRECTO (SÓLO SI TIENEN CÓDIGO VÁLIDO)
+                // ==========================================
+                const { error: insertError } = await _supabase.from('prospectos_simulacro').insert([{ 
+                    nombre_tutor: tutor, nombre_alumno: alumno, correo: correo, telefono: telefono,
+                    examen: nombreExamenFiltro, token_hex: tokenSeleccionado, dia_elegido: dia,
+                    codigo_padrino: codigoPadrinoInput, toma_curso: tomaCurso, tipo_curso: tipoCurso,
+                    // 👇 AGREGADOS AQUÍ
+                    tipo_escuela: tipoEscuela,
+                    nombre_escuela: nombreEscuela, 
+                    objetivo_principal: objetivo,
+                    autoriza_datos_padrino: checkAutorizacion.checked
                 }]);
 
                 if (insertError) throw insertError;
