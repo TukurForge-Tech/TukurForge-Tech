@@ -19,69 +19,7 @@
             <img src="https://pcuopqvmucmhtcdeswxh.supabase.co/storage/v1/object/public/reactivos-assets/SimuTukur/SimuTukur2.jpeg" alt="SimuTukur" class="w-16 h-16 mx-auto rounded-xl border border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.5)] mb-4">
             <h1 class="text-3xl md:text-4xl font-black italic tracking-tighter text-cyan-400 uppercase">Gran Simulacro Nacional</h1>
             <h2 class="text-lg font-bold text-gray-300 mt-1">Evalúa tu nivel real</h2>
-            <p class="text-xs text-gray-400 mt-3 leading-relaxed">Mídete con reactivos reales, descubre tus debilidades y entrena con Inteligencia Artificial. <br><span class="text-cyan-400 font-bold bg-cyan-900/30 px-2 py-1 rounded mt-2 inline-block"><i class="fa-solid fa-broadcast-tower text-orange-500 mr-1"></i> Transmisión Exclusiva en Vivo</span></p>
-        </div>
-
-        <form id="formSimulacro" class="space-y-4 relative z-10">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tutor (Padre)</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-user absolute left-3 top-3 text-cyan-500 text-sm"></i>
-                        <input type="text" id="nombreTutor" required class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg pl-9 pr-3 py-2.5 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition" placeholder="Nombre completo">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Aspirante (Hijo)</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-user-graduate absolute left-3 top-3 text-cyan-500 text-sm"></i>
-                        <input type="text" id="nombreAlumno" required class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg pl-9 pr-3 py-2.5 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition" placeholder="Nombre del alumno">
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Correo Electrónico</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-envelope absolute left-3 top-3 text-cyan-500 text-sm"></i>
-                        <input type="email" id="correoTutor" required class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg pl-9 pr-3 py-2.5 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition" placeholder="correo@ejemplo.com">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">WhatsApp</label>
-                    <div class="relative">
-                        <i class="fa-brands fa-whatsapp absolute left-3 top-3 text-cyan-500 text-sm"></i>
-                        <input type="tel" id="telefonoTutor" required minlength="10" maxlength="10" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg pl-9 pr-3 py-2.5 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition" placeholder="10 dígitos">
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-800 pt-4 mt-2">
-                <div>
-                    <label class="block text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-1">Examen a Presentar</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-file-signature absolute left-3 top-3 text-cyan-500 text-sm"></i>
-                        <select id="examenElegido" required class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg pl-9 pr-3 py-2.5 focus:border-cyan-500 outline-none appearance-none cursor-pointer">
-                            <option value="" disabled selected>Cargando exámenes...</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-[10px] text-cyan-400 uppercase font-black tracking-widest mb-1 ml-1">Tipo de Secundaria</label>
-                        <select id="tipoEscuela" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-sm focus:border-cyan-500 outline-none transition appearance-none text-white">
-                            <option value="publica">Secundaria Pública</option>
-                            <option value="privada">Secundaria Privada</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] text-cyan-400 uppercase font-black tracking-widest mb-1 ml-1">Nombre de tu Escuela</label>
-                        <input type="text" id="nombreEscuela" placeholder="Ej. Secundaria Diurna 115" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-sm focus:border-cyan-500 outline-none transition text-white">
-                    </div>
-                </div>
-
+            <p class="text-xs text-gray-400 mt-3 leading-relaxed">Mídete con reactivos tipo examen creados por IA. Descubre tus puntos débiles bajo un entorno real con monitoreo de cámara y micrófono. <br>
                 <div>
                     <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Fecha y Hora del Evento</label>
                     <div class="w-full bg-cyan-900/20 border border-cyan-500/50 text-cyan-400 text-sm font-bold rounded-lg px-3 py-3 text-center flex flex-col items-center justify-center">
@@ -90,52 +28,71 @@
                     </div>
                     <input type="hidden" id="diaElegido" value="Sábado 16 de Mayo, 10:00 AM">
                 </div>
-            </div>
+                <span class="text-cyan-400 font-bold bg-cyan-900/30 px-2 py-1 rounded mt-2 inline-block"><i class="fa-solid fa-broadcast-tower text-orange-500 mr-1"></i> Transmisión Exclusiva en Vivo</span></p>
+        </div>
 
-            <div class="grid grid-cols-1 gap-4 border-t border-gray-800 pt-4 mt-4">
-                
+        <form id="formSimulacro" class="space-y-4 relative z-10">
+
+            <div class="space-y-6">
                 <div>
-                    <label class="block text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-1">Código de Beca / Padrino (Opcional)</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-ticket absolute left-3 top-3 text-cyan-500 text-sm"></i>
-                        <input type="text" id="codigoPadrino" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg pl-9 pr-3 py-2.5 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none uppercase transition" placeholder="Ej: PADRINO2026">
+                    <label class="block text-[10px] text-cyan-400 uppercase font-black mb-1 ml-1">Tutor (Padre de Familia)</label>
+                    <input type="text" id="nombreTutor" required placeholder="Nombre completo del tutor" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white focus:border-cyan-500 outline-none transition">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] text-cyan-400 uppercase font-black mb-1 ml-1">Aspirante (Hijo/a)</label>
+                    <input type="text" id="nombreAlumno" required placeholder="Nombre completo del alumno" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white focus:border-cyan-500 outline-none transition">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] text-cyan-400 uppercase font-black mb-1 ml-1">Correo Electrónico</label>
+                        <input type="email" id="correoTutor" required placeholder="ejemplo@correo.com" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white focus:border-cyan-500 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-cyan-400 uppercase font-black mb-1 ml-1">WhatsApp</label>
+                        <input type="tel" id="telefonoTutor" required minlength="10" maxlength="10" placeholder="10 dígitos" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white focus:border-cyan-500 outline-none transition">
                     </div>
                 </div>
 
-                <div class="mt-3 flex items-start bg-slate-900/40 p-3 rounded-lg border border-slate-700/50">
-                    <input type="checkbox" id="checkDatosPadrino" class="w-4 h-4 mt-0.5 border border-slate-700 rounded bg-slate-900/50 accent-cyan-500 cursor-pointer shrink-0">
-                    <label for="checkDatosPadrino" class="ml-2 text-[10px] text-gray-400 leading-tight cursor-pointer">
-                        Como padre/tutor, acepto que se comparta un <strong class="text-cyan-400">reporte enmascarado</strong> de asistencia con el patrocinador para auditar esta beca. Mis datos de contacto directo NO serán expuestos.
-                    </label>
+                <div class="border-t border-gray-800 pt-4 mt-2">
+                    <label class="block text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-1 ml-1">Examen a Presentar</label>
+                    <select id="examenElegido" required class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white focus:border-cyan-500 outline-none appearance-none cursor-pointer">
+                        <option value="" disabled selected>Cargando exámenes...</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] text-cyan-400 uppercase font-black mb-1 ml-1">Tipo de Escuela</label>
+                        <select id="tipoEscuela" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white outline-none">
+                            <option value="publica">Pública</option>
+                            <option value="particular">Particular</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-cyan-400 uppercase font-black mb-1 ml-1">Nombre de tu Secundaria/Prepa</label>
+                        <input type="text" id="nombreEscuela" placeholder="Ej. Secundaria 115" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white focus:border-cyan-500 outline-none transition">
+                    </div>
                 </div>
 
                 <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">¿Estás tomando algún curso de preparación?</label>
-                    <select id="tomaCurso" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:border-cyan-500 outline-none cursor-pointer">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1">¿Estás tomando algún curso de preparación?</label>
+                    <select id="tomaCurso" required class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white focus:border-cyan-500 outline-none cursor-pointer transition">
                         <option value="" disabled selected>Selecciona una opción...</option>
                         <option value="si">Sí, estoy en un curso</option>
                         <option value="no">No, me preparo por mi cuenta</option>
                     </select>
                 </div>
 
-                <div id="detallesCurso" class="hidden grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tipo de Curso</label>
-                        <select id="tipoCurso" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:border-cyan-500 outline-none cursor-pointer">
-                            <option value="" disabled selected>Elige tipo...</option>
-                            <option value="oficial">Oficial (UNAM, IPN, etc.)</option>
-                            <option value="particular">Particular / Privado</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Nombre de la Escuela</label>
-                        <input type="text" id="nombreEscuela" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:border-cyan-500 outline-none" placeholder="Ej: CONAMAT, Guillot, etc.">
-                    </div>
+                <div id="detallesCurso" class="hidden mt-4">
+                    <label class="block text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-1 ml-1">Nombre de la Institución o Curso</label>
+                    <input type="text" id="nombreEscuelaCurso" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white focus:border-cyan-500 outline-none transition" placeholder="Ej: CONAMAT, Guillot, Asesoría particular, etc.">
                 </div>
 
                 <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">¿Cuál es tu objetivo principal con este simulador?</label>
-                    <select id="objetivoSimulacro" required class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:border-cyan-500 outline-none cursor-pointer">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1">¿Cuál es tu objetivo principal con este simulador?</label>
+                    <select id="objetivoSimulacro" required class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white focus:border-cyan-500 outline-none cursor-pointer">
                         <option value="" disabled selected>Selecciona tu objetivo...</option>
                         <option value="validar_curso">A) Validar si lo que aprendí en mi curso es suficiente.</option>
                         <option value="medir_autodidacta">B) He estudiado por mi cuenta y quiero medir mis conocimientos reales.</option>
@@ -143,27 +100,31 @@
                         <option value="apoyo_economico">D) Mi familia pasa por una situación difícil y busco dar lo mejor de mí.</option>
                     </select>
                 </div>
-            </div>
 
-            <button type="submit" id="btnRegistro" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black italic tracking-widest py-3 rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.4)] transition transform hover:-translate-y-0.5 mt-6">
-                <i class="fa-solid fa-video mr-2"></i> RESERVAR MI LUGAR
-            </button>
+                <div class="bg-cyan-500/5 p-4 rounded-xl border border-cyan-500/20">
+                    <label class="block text-[10px] text-cyan-400 uppercase font-black mb-2 ml-1">Código de Beca / Padrino (Opcional)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="codigoPadrino" placeholder="Ej. PADRINO2026" class="flex-grow bg-black/40 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white uppercase font-bold tracking-widest focus:border-cyan-500 outline-none transition">
+                        <button type="button" onclick="validarCodigoPadrino()" class="bg-cyan-600 hover:bg-cyan-500 px-4 rounded-lg font-bold text-xs transition">VALIDAR</button>
+                    </div>
+                    
+                    <div id="contenedorCheck" class="mt-4 flex items-start opacity-50 transition-opacity">
+                        <input type="checkbox" id="checkDatosPadrino" class="w-4 h-4 mt-1 accent-cyan-500 cursor-pointer">
+                        <label for="checkDatosPadrino" class="ml-2 text-[10px] text-gray-400 leading-tight cursor-pointer">
+                            Como padre/tutor, acepto que se comparta un <span class="text-cyan-400 font-bold text-[9px] uppercase tracking-tighter">reporte enmascarado</span> de asistencia con el patrocinador para fines de auditoría. Mis datos directos NO serán expuestos.
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <p id="txtCosto" class="text-center text-[10px] text-gray-500 mb-2 italic">Cuota simbólica de recuperación por infraestructura: $58 MXN</p>
+                    <button type="submit" id="btnRegistro" class="w-full bg-slate-800 hover:bg-slate-700 text-gray-400 font-black py-4 rounded-xl uppercase tracking-widest transition-all shadow-lg flex justify-center items-center gap-2 border border-slate-700">
+                        <i class="fa-solid fa-lock" id="iconoBoton"></i>
+                        <span id="textoBoton">Realizar Pago ($58 MXN)</span>
+                    </button>
+                </div>
+            </div>
         </form>
-
-        <div id="panelPago58" class="hidden text-center mt-4 bg-gray-900/90 p-8 rounded-xl border border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.2)]">
-            <div class="inline-block bg-cyan-900/30 p-4 rounded-full mb-4">
-                <i class="fa-solid fa-lock text-4xl text-cyan-400"></i>
-            </div>
-            <h3 class="text-2xl font-black italic text-white uppercase tracking-tighter mb-2">Cuota de Recuperación</h3>
-            <p class="text-sm text-gray-300 mb-6">Para asegurar tu lugar en el Gran Simulacro en Vivo sin un código de beca, es necesario cubrir la cuota operativa de <strong class="text-green-400 text-lg">$58.00 MXN</strong>.</p>
-            
-            <div class="grid grid-cols-1 gap-4">
-                <button id="btnStripePago" onclick="llamarApiStripe()" class="w-full flex items-center justify-center bg-[#635BFF] hover:bg-[#524ac9] text-white font-bold py-4 px-4 rounded-lg transition transform hover:-translate-y-1 shadow-lg shadow-indigo-500/30">
-                    <i class="fa-brands fa-stripe text-3xl mr-3"></i> Pagar $58 MXN de forma segura
-                </button>
-            </div>
-            <p class="text-[10px] text-gray-500 mt-4"><i class="fa-solid fa-shield-halved mr-1"></i> Tus pagos están protegidos y encriptados por Stripe.</p>
-        </div>
 
         <!-- PANTALLA DE ÉXITO CON LINK INMEDIATO Y AVISO DE SPAM -->
 
