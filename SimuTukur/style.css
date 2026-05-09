@@ -145,3 +145,9 @@ a[href="registro.html"].group {
     margin-top: 15px;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
+/* Forzar que las opciones del menú desplegable sean oscuras */
+.select-tukur option {
+    background-color: #050a14 !important; /* Fondo azul marino muy oscuro */
+    color: #ffffff !important; /* Letra blanca */
+    font-weight: 600;
+}
