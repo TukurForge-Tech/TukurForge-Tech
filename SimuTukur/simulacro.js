@@ -38,22 +38,18 @@ document.addEventListener('DOMContentLoaded', () => {
             (async () => {
                 const datos = JSON.parse(datosStr);
                 try {
-                    /* Guardamos al prospecto (codigo_padrino va vacío)
-                    await _supabase.from('prospectos_simulacro').insert([{
-                        nombre_tutor: datos.tutor, nombre_alumno: datos.alumno, correo: datos.correo,
-                        telefono: datos.telefono, examen: datos.examen, token_hex: datos.token_hex,
-                        dia_elegido: datos.dia_elegido, codigo_padrino: '', 
-                        toma_curso: datos.toma_curso, tipo_curso: datos.tipo_curso, 
-                        nombre_escuela: datos.nombre_escuela, objetivo_principal: datos.objetivo_principal
-                    }]);*/
-
-                    // Guardamos al prospecto (codigo_padrino va vacío)
-                    await _supabase.from('prospectos_simulacro').insert([{
-                        nombre_tutor: datos.tutor, nombre_alumno: datos.alumno, correo: datos.correo,
-                        telefono: datos.telefono, examen: datos.examen, token_hex: datos.token_hex,
-                        dia_elegido: datos.dia_elegido, codigo_padrino: '', 
-                        toma_curso: datos.toma_curso, tipo_curso: datos.tipo_curso, 
-                        // 👇 AGREGADOS AQUÍ
+                     // Guardamos al prospecto (codigo_padrino va vacío)
+                     await _supabase.from('prospectos_simulacro').insert([{
+                        nombre_tutor: datos.tutor, 
+                        nombre_alumno: datos.alumno, 
+                        correo: datos.correo,
+                        telefono: datos.telefono, 
+                        examen: datos.examen, 
+                        token_hex: datos.token_hex,
+                        dia_elegido: datos.dia_elegido, 
+                        codigo_padrino: '', 
+                        toma_curso: datos.toma_curso,
+                        institucion_curso: datos.institucion_curso, // <-- NUEVO
                         tipo_escuela: datos.tipo_escuela,
                         nombre_escuela: datos.nombre_escuela, 
                         objetivo_principal: datos.objetivo_principal,
@@ -91,20 +87,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Mostrar/Ocultar detalles del curso
+    // ==========================================
+    // LÓGICA DINÁMICA: Mostrar/Ocultar Curso
+    // ==========================================
     const tomaCursoSelect = document.getElementById('tomaCurso');
     const detallesCursoDiv = document.getElementById('detallesCurso');
+    const nombreEscuelaCursoInput = document.getElementById('nombreEscuelaCurso');
 
     if (tomaCursoSelect) {
         tomaCursoSelect.addEventListener('change', (e) => {
             if (e.target.value === 'si') {
+                // Mostramos el campo y lo volvemos obligatorio
                 detallesCursoDiv.classList.remove('hidden');
-                detallesCursoDiv.classList.add('grid');
+                nombreEscuelaCursoInput.required = true;
             } else {
+                // Ocultamos el campo, quitamos la obligatoriedad y borramos lo que haya escrito
                 detallesCursoDiv.classList.add('hidden');
-                detallesCursoDiv.classList.remove('grid');
-                document.getElementById('tipoCurso').value = "";
-                document.getElementById('nombreEscuela').value = "";
+                nombreEscuelaCursoInput.required = false;
+                nombreEscuelaCursoInput.value = ''; 
+            }
+            
+            // Si tienes una función que revisa si el botón final se debe encender, llámala aquí
+            if (typeof revisarFormularioCompleto === 'function') {
+                revisarFormularioCompleto();
             }
         });
     }
@@ -129,19 +134,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectExamen = document.getElementById('examenElegido');
             const tokenSeleccionado = selectExamen.value; 
             const nombreExamenFiltro = selectExamen.options[selectExamen.selectedIndex].dataset.nombreExamen;
-            const dia = document.getElementById('diaElegido').value;
-            
+            const dia = "16 de Mayo";
+
             const codigoPadrinoInput = document.getElementById('codigoPadrino').value.trim().toUpperCase();
-            const tomaCurso = document.getElementById('tomaCurso').value;
-            const tipoCurso = document.getElementById('tipoCurso').value;
+            const tipoEscuela = document.getElementById('tipoEscuela').value; // <-- TE FALTABA ESTE
             const nombreEscuela = document.getElementById('nombreEscuela').value.trim();
+            const tomaCurso = document.getElementById('tomaCurso').value;
+            const nombreEscuelaCurso = document.getElementById('nombreEscuelaCurso').value.trim(); // <-- TE FALTABA ESTE
             const objetivo = document.getElementById('objetivoSimulacro').value;
             const checkAutorizacion = document.getElementById('checkDatosPadrino');
 
             // 👇 NUEVA VALIDACIÓN DEL PADRE/TUTOR AQUÍ (Antes de revisar duplicados)
             if (codigoPadrinoInput !== "" && !checkAutorizacion.checked) {
                 alert("Para aplicar la beca del patrocinador, el padre o tutor debe aceptar los términos de auditoría marcando la casilla correspondiente.");
-                btn.innerHTML = '<i class="fa-solid fa-video mr-2"></i> RESERVAR MI LUGAR';
+                // Restauramos el botón respetando su diseño actual (Pago o Beca)
+                document.getElementById('iconoBoton').className = window.modoRegistro === 'beca' ? 'fa-solid fa-ticket' : 'fa-solid fa-lock';
+                document.getElementById('textoBoton').innerText = window.modoRegistro === 'beca' ? 'Reservar mi lugar Becado' : 'Realizar Pago ($58 MXN)';
                 btn.disabled = false;
                 return; // Cortamos la ejecución
             }
@@ -155,7 +163,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (yaExiste) {
                 alert("Este correo ya está registrado para el simulacro.");
-                btn.innerHTML = '<i class="fa-solid fa-video mr-2"></i> RESERVAR MI LUGAR';
+                // Restauramos el botón respetando su diseño actual (Pago o Beca)
+                document.getElementById('iconoBoton').className = window.modoRegistro === 'beca' ? 'fa-solid fa-ticket' : 'fa-solid fa-lock';
+                document.getElementById('textoBoton').innerText = window.modoRegistro === 'beca' ? 'Reservar mi lugar Becado' : 'Realizar Pago ($58 MXN)';
                 btn.disabled = false;
                 return; // Detiene el registro
             }
@@ -177,7 +187,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Si no existe o no está activo
                     if (errorCodigo || !codigoBD || !codigoBD.activo) {
                         alert("❌ El código de beca ingresado no es válido o ya expiró.");
-                        btn.innerHTML = '<i class="fa-solid fa-video mr-2"></i> RESERVAR MI LUGAR';
+                        // Restauramos el botón respetando su diseño actual (Pago o Beca)
+                        document.getElementById('iconoBoton').className = window.modoRegistro === 'beca' ? 'fa-solid fa-ticket' : 'fa-solid fa-lock';
+                        document.getElementById('textoBoton').innerText = window.modoRegistro === 'beca' ? 'Reservar mi lugar Becado' : 'Realizar Pago ($58 MXN)';
                         btn.disabled = false;
                         return; // Detenemos el registro
                     }
@@ -185,7 +197,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Si ya se acabaron los lugares de ese diputado
                     if (codigoBD.usos_actuales >= codigoBD.limite_usos) {
                         alert("⚠️ Los lugares gratuitos para este código se han agotado. Puedes registrarte sin código cubriendo la cuota de recuperación.");
-                        btn.innerHTML = '<i class="fa-solid fa-video mr-2"></i> RESERVAR MI LUGAR';
+                        // Restauramos el botón respetando su diseño actual (Pago o Beca)
+                        document.getElementById('iconoBoton').className = window.modoRegistro === 'beca' ? 'fa-solid fa-ticket' : 'fa-solid fa-lock';
+                        document.getElementById('textoBoton').innerText = window.modoRegistro === 'beca' ? 'Reservar mi lugar Becado' : 'Realizar Pago ($58 MXN)';
                         btn.disabled = false;
                         return; // Detenemos el registro
                     }
@@ -200,54 +214,41 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 2. FLUJO SIN CÓDIGO (COBRO DE $58 PESOS)
                     // ==========================================
                     esRegistroPagado = true;
-                    
-                    // Aquí detenemos el flujo para mostrar las opciones de pago
-                    document.getElementById('formSimulacro').classList.add('hidden');
-                    document.getElementById('panelPago58').classList.remove('hidden');
-                    
-                    /* Guardamos temporalmente los datos en el navegador para cuando regresen de Stripe
-                    sessionStorage.setItem('datosRegistroPendiente', JSON.stringify({
-                        tutor, alumno, correo, telefono, examen: nombreExamenFiltro, 
-                        token_hex: tokenSeleccionado, dia_elegido: dia, 
-                        toma_curso: tomaCurso, tipo_curso: tipoCurso, 
-                        nombre_escuela: nombreEscuela, objetivo_principal: objetivo
-                    }));*/
 
                     // Guardamos temporalmente los datos en el navegador para cuando regresen de Stripe
-                    sessionStorage.setItem('datosRegistroPendiente', JSON.stringify({
-                        tutor, alumno, correo, telefono, examen: nombreExamenFiltro, 
-                        token_hex: tokenSeleccionado, dia_elegido: dia, 
-                        toma_curso: tomaCurso, tipo_curso: tipoCurso, 
-                        // 👇 AGREGADOS AQUÍ
-                        tipo_escuela: tipoEscuela, 
+                     sessionStorage.setItem('datosRegistroPendiente', JSON.stringify({
+                        tutor, alumno, correo, telefono, 
+                        examen: nombreExamenFiltro, 
+                        token_hex: tokenSeleccionado, 
+                        dia_elegido: dia, 
+                        toma_curso: tomaCurso,
+                        institucion_curso: nombreEscuelaCurso,
+                        tipo_escuela: tipoEscuela,
                         nombre_escuela: nombreEscuela, 
                         objetivo_principal: objetivo,
                         autoriza_datos_padrino: checkAutorizacion ? checkAutorizacion.checked : false
                     }));
 
-                    // Cortamos la ejecución aquí, no guardamos en la BD hasta que paguen
-                    return; 
+                    // 🔥 CAMBIO CLAVE: Lanzamos Stripe directo
+                    await llamarApiStripe();
+                    return;
                 }
 
                 // ==========================================
                 // 3. GUARDADO DIRECTO (SÓLO SI TIENEN CÓDIGO VÁLIDO)
-                /* ==========================================
-                const { error: insertError } = await _supabase.from('prospectos_simulacro').insert([{ 
-                    nombre_tutor: tutor, nombre_alumno: alumno, correo: correo, telefono: telefono,
-                    examen: nombreExamenFiltro, token_hex: tokenSeleccionado, dia_elegido: dia,
-                    codigo_padrino: codigoPadrinoInput, toma_curso: tomaCurso, tipo_curso: tipoCurso,
-                    nombre_escuela: nombreEscuela, objetivo_principal: objetivo
-                }]);*/
-
-                // ==========================================
-                // 3. GUARDADO DIRECTO (SÓLO SI TIENEN CÓDIGO VÁLIDO)
                 // ==========================================
                 const { error: insertError } = await _supabase.from('prospectos_simulacro').insert([{ 
-                    nombre_tutor: tutor, nombre_alumno: alumno, correo: correo, telefono: telefono,
-                    examen: nombreExamenFiltro, token_hex: tokenSeleccionado, dia_elegido: dia,
-                    codigo_padrino: codigoPadrinoInput, toma_curso: tomaCurso, tipo_curso: tipoCurso,
-                    // 👇 AGREGADOS AQUÍ
-                    tipo_escuela: tipoEscuela,
+                    nombre_tutor: tutor, 
+                    nombre_alumno: alumno, 
+                    correo: correo, 
+                    telefono: telefono,
+                    examen: nombreExamenFiltro, 
+                    token_hex: tokenSeleccionado, 
+                    dia_elegido: dia,
+                    codigo_padrino: codigoPadrinoInput, 
+                    toma_curso: tomaCurso,
+                    institucion_curso: nombreEscuelaCurso, // <-- NUEVO (Y borraste tipo_curso)
+                    tipo_escuela: tipoEscuela, // <-- NUEVO
                     nombre_escuela: nombreEscuela, 
                     objetivo_principal: objetivo,
                     autoriza_datos_padrino: checkAutorizacion.checked
@@ -267,7 +268,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) {
                 console.error("Error en el registro:", err);
                 alert("Hubo un error al registrarte. Verifica tu conexión.");
-                btn.innerHTML = '<i class="fa-solid fa-video mr-2"></i> RESERVAR MI LUGAR';
+                // Restauramos el botón respetando su diseño actual (Pago o Beca)
+                document.getElementById('iconoBoton').className = window.modoRegistro === 'beca' ? 'fa-solid fa-ticket' : 'fa-solid fa-lock';
+                document.getElementById('textoBoton').innerText = window.modoRegistro === 'beca' ? 'Reservar mi lugar Becado' : 'Realizar Pago ($58 MXN)';
                 btn.disabled = false;
             }
         });
@@ -407,8 +410,13 @@ function desbloquearBotonExamen() {
 // CONEXIÓN SEGURA CON STRIPE (EDGE FUNCTION)
 // ==========================================
 async function llamarApiStripe() {
-    const btn = document.getElementById('btnStripePago');
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-3"></i> Encriptando sesión...';
+
+    const btn = document.getElementById('btnRegistro');
+    const icono = document.getElementById('iconoBoton');
+    const texto = document.getElementById('textoBoton');
+    
+    icono.className = 'fa-solid fa-spinner fa-spin';
+    texto.innerText = 'Conectando al Banco...';
     btn.disabled = true;
 
     // Recuperamos los datos del alumno que dejamos en pausa
@@ -433,7 +441,7 @@ async function llamarApiStripe() {
                 telefono: datos.telefono,
                 dia_elegido: datos.dia_elegido,
                 toma_curso: datos.toma_curso,
-                tipo_curso: datos.tipo_curso,
+                institucion_curso: datos.institucion_curso,
                 nombre_escuela: datos.nombre_escuela,
                 objetivo: datos.objetivo_principal
             }
@@ -451,7 +459,58 @@ async function llamarApiStripe() {
     } catch (err) {
         console.error("Error conectando con la bóveda de Stripe:", err);
         alert("Tuvimos un problema al conectar con el banco. Intenta en un momento.");
-        btn.innerHTML = '<i class="fa-brands fa-stripe text-3xl mr-3"></i> Pagar $58 MXN de forma segura';
+        // Restauramos el botón si falla
+        icono.className = 'fa-solid fa-lock';
+        texto.innerText = 'Realizar Pago ($58 MXN)';
         btn.disabled = false;
+
+    }
+}
+
+// Función que valida el código y cambia la personalidad del botón
+async function validarCodigoPadrino() {
+    const codigo = document.getElementById('codigoPadrino').value.trim().toUpperCase();
+    const btnPrincipal = document.getElementById('btnRegistro'); // <-- ID Corregido
+    const iconoBoton = document.getElementById('iconoBoton'); // <-- Control del ícono
+    const textoBoton = document.getElementById('textoBoton'); // <-- Control del texto
+    const txtCosto = document.getElementById('txtCosto');
+    const contenedorCheck = document.getElementById('contenedorCheck');
+
+    if (codigo === "") {
+        alert("Por favor escribe un código antes de validar.");
+        return;
+    }
+
+    // 🔥 Tabla corregida a 'codigos_padrinos' y verificamos que esté activo
+    const { data: padrinoValido } = await _supabase.from('codigos_padrinos')
+        .select('*')
+        .eq('codigo', codigo)
+        .eq('activo', true)
+        .maybeSingle();
+
+    if (padrinoValido) {
+        // CAMBIO DE PERSONALIDAD A "MODO BECA"
+        btnPrincipal.classList.remove('bg-slate-800', 'text-gray-400');
+        btnPrincipal.classList.add('bg-green-600', 'text-white', 'hover:bg-green-500');
+        
+        iconoBoton.className = 'fa-solid fa-ticket';
+        textoBoton.innerText = 'Reservar mi lugar Becado';
+        
+        txtCosto.innerHTML = "✅ Beneficio aplicado: Tu lugar está 100% patrocinado.";
+        contenedorCheck.classList.remove('opacity-50');
+        
+        window.modoRegistro = 'beca';
+    } else {
+        alert("El código no existe, ha caducado o está mal escrito.");
+        // REGRESO A MODO PAGO
+        btnPrincipal.classList.remove('bg-green-600', 'text-white', 'hover:bg-green-500');
+        btnPrincipal.classList.add('bg-slate-800', 'text-gray-400');
+        
+        iconoBoton.className = 'fa-solid fa-lock';
+        textoBoton.innerText = 'Realizar Pago ($58 MXN)';
+        
+        txtCosto.innerHTML = "Cuota simbólica de recuperación por infraestructura: $58 MXN";
+        contenedorCheck.classList.add('opacity-50');
+        window.modoRegistro = 'pago';
     }
 }
