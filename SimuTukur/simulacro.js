@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 🛡️ GUARDIA DE SEGURIDAD (CIERRE DE PUERTAS)
   // ==========================================
   // Fecha y hora de corte (Ej: Sábado 16 de Mayo a las 10:15 AM)
-  const fechaCorte = new Date("May 16, 2026 10:15:00").getTime();
+  const fechaCorte = new Date('2026-05-16T10:15:00').getTime();
   const ahora = new Date().getTime();
 
   if (ahora > fechaCorte) {
@@ -428,7 +428,7 @@ async function cargarExamenesBD() {
 
 function iniciarCuentaRegresiva() {
   // 🎯 FECHA EXACTA DEL EVENTO (Sábado 16 de Mayo de 2026 a las 10:00:00 AM)
-  const fechaExamen = new Date("May 16, 2026 10:00:00").getTime();
+  const fechaExamen = new Date("2026-05-16T10:00:00").getTime();
 
   const intervalo = setInterval(() => {
     const ahora = new Date().getTime();
