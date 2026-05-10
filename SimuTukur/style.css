@@ -109,7 +109,7 @@ a[href="registro.html"].group {
 }
 
 /* =========================================
-   DISEÑO DE LISTAS TUKUR (IMAGEN 2)
+   DISEÑO DE LISTAS TUKUR
 ========================================= */
 .select-tukur {
     appearance: none !important;
@@ -136,6 +136,18 @@ a[href="registro.html"].group {
     background-color: rgba(6, 182, 212, 0.05) !important;
 }
 
+.select-tukur optgroup {
+    background-color: #050a14 !important; 
+    color: #06b6d4 !important; 
+    font-weight: 900 !important;
+}
+
+.select-tukur option {
+    background-color: #0f172a !important; 
+    color: #ffffff !important; 
+    font-weight: 600 !important;
+}
+
 /* Contenedor de mensaje legal (Padrinos) */
 .check-padrino-box {
     background: rgba(6, 182, 212, 0.1);
@@ -144,10 +156,4 @@ a[href="registro.html"].group {
     padding: 20px;
     margin-top: 15px;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-/* Forzar que las opciones del menú desplegable sean oscuras */
-.select-tukur option {
-    background-color: #050a14 !important; /* Fondo azul marino muy oscuro */
-    color: #ffffff !important; /* Letra blanca */
-    font-weight: 600;
 }
