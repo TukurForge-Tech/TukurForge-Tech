@@ -554,36 +554,26 @@ async function validarCodigoPadrino() {
     }, 10);
     // CAMBIO DE PERSONALIDAD A "MODO BECA"
     btnPrincipal.classList.remove("bg-slate-800", "text-gray-400");
-    btnPrincipal.classList.add(
-      "bg-green-600",
-      "text-white",
-      "hover:bg-green-500",
-    );
+    btnPrincipal.classList.add("bg-green-600", "text-white", "hover:bg-green-500");
 
     iconoBoton.className = "fa-solid fa-ticket";
     textoBoton.innerText = "Reservar mi lugar Becado";
 
-    txtCosto.innerHTML =
-      "✅ Beneficio aplicado: Tu lugar está 100% patrocinado.";
+    txtCosto.innerHTML = "✅ Beneficio aplicado: Tu lugar está 100% patrocinado.";
     contenedorCheck.classList.remove("opacity-50");
 
     window.modoRegistro = "beca";
-    } else {
-        alert("El código no existe, ha caducado o está mal escrito.");
-        // REGRESO A MODO PAGO
-        btnPrincipal.classList.remove(
-        "bg-green-600",
-        "text-white",
-        "hover:bg-green-500",
-        );
-        btnPrincipal.classList.add("bg-slate-800", "text-gray-400");
+  } else {
+    alert("El código no existe, ha caducado o está mal escrito.");
+    // REGRESO A MODO PAGO
+    btnPrincipal.classList.remove("bg-green-600", "text-white", "hover:bg-green-500");
+    btnPrincipal.classList.add("bg-slate-800", "text-gray-400");
 
-        iconoBoton.className = "fa-solid fa-lock";
-        textoBoton.innerText = "Realizar Pago ($58 MXN)";
+    iconoBoton.className = "fa-solid fa-lock";
+    textoBoton.innerText = "Realizar Pago ($58 MXN)";
 
-        txtCosto.innerHTML =
-        "Cuota simbólica de recuperación por infraestructura: $58 MXN";
-        contenedorCheck.classList.add("opacity-50");
-        window.modoRegistro = "pago";
-    }
+    txtCosto.innerHTML = "Cuota simbólica de recuperación por infraestructura: $58 MXN";
+    contenedorCheck.classList.add("opacity-50");
+    window.modoRegistro = "pago";
+  }
 }
