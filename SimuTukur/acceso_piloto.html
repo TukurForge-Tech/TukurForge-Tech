@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acceso Oficial | SimuTukur Piloto</title>
+    <link rel="icon" type="image/jpeg" href="https://pcuopqvmucmhtcdeswxh.supabase.co/storage/v1/object/public/reactivos-assets/SimuTukur/SimuTukur2.jpeg">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -22,7 +23,32 @@
             <p class="text-gray-400 text-sm mt-2 uppercase tracking-widest">Portal de Evaluación Piloto</p>
         </div>
 
-        <div class="space-y-6">
+        <div id="contenedorRelojAcceso" class="mb-2 text-center">
+            <p class="text-[11px] text-cyan-500 uppercase tracking-[0.2em] font-black mb-4">El simulador se abre en:</p>
+            <div class="flex justify-center items-center gap-3 text-white">
+                <div class="flex flex-col items-center w-12">
+                    <span id="dias_acceso" class="text-3xl font-black text-cyan-400 neon-glow">00</span>
+                    <span class="text-[8px] uppercase tracking-widest text-gray-500 mt-1">Días</span>
+                </div>
+                <span class="text-2xl text-cyan-900/50 -mt-3 font-light">|</span>
+                <div class="flex flex-col items-center w-12">
+                    <span id="horas_acceso" class="text-3xl font-black text-cyan-400 neon-glow">00</span>
+                    <span class="text-[8px] uppercase tracking-widest text-gray-500 mt-1">Horas</span>
+                </div>
+                <span class="text-2xl text-cyan-900/50 -mt-3 font-light">|</span>
+                <div class="flex flex-col items-center w-12">
+                    <span id="minutos_acceso" class="text-3xl font-black text-cyan-400 neon-glow">00</span>
+                    <span class="text-[8px] uppercase tracking-widest text-gray-500 mt-1">Minutos</span>
+                </div>
+                <span class="text-2xl text-cyan-900/50 -mt-3 font-light">|</span>
+                <div class="flex flex-col items-center w-12">
+                    <span id="segundos_acceso" class="text-3xl font-black text-cyan-400 neon-glow">00</span>
+                    <span class="text-[8px] uppercase tracking-widest text-gray-500 mt-1">Segundos</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="formularioLogin" class="space-y-6 hidden">
             <div>
                 <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Correo de Registro (Tutor)</label>
                 <div class="relative">
@@ -32,13 +58,12 @@
                 </div>
             </div>
             
-           <!-- CHECKBOX DE AVISO DE PRIVACIDAD -->
             <div class="flex items-start mt-5 mb-6 bg-slate-900/30 p-3 rounded-xl border border-slate-800/50">
                 <div class="flex items-center mt-0.5">
                     <input id="terminos_checkbox" type="checkbox" class="w-5 h-5 border border-slate-700 rounded bg-slate-900/50 focus:ring-2 focus:ring-cyan-500 cursor-pointer accent-cyan-500 shrink-0">
                 </div>
                 <label for="terminos_checkbox" class="ml-3 text-xs text-gray-400 leading-relaxed cursor-pointer">
-                    Al ingresar, acepto el <a href="privacidad.html" target="_blank" class="text-cyan-400 font-bold hover:underline">Aviso de Privacidad</a> y los <a href="terminos.html" target="_blank" class="text-cyan-400 font-bold hover:underline">Términos de Servicio</a>, consintiendo el uso temporal de mi cámara/micrófono exclusivamente para la telemetría.
+                    Al ingresar, acepto el <a href="privacidad.html" target="_blank" class="text-cyan-400 font-bold hover:underline">Aviso de Privacidad</a> y los <a href="terminos.html" target="_blank" class="text-cyan-400 font-bold hover:underline">Términos de Servicio</a>, consintiendo el uso temporal de cámara/micrófono exclusivamente para telemetría.
                 </label>
             </div>
 
@@ -46,8 +71,9 @@
                 <span id="btn_text">Acceder al Simulador</span>
                 <i id="btn_spinner" class="fa-solid fa-circle-notch fa-spin hidden ml-2"></i>
             </button>
+            <p id="error_msg" class="text-red-400 text-sm font-bold text-center mt-4 hidden bg-red-900/20 py-2 rounded-lg"></p>
         </div>
-        <p id="error_msg" class="text-red-400 text-sm font-bold text-center mt-4 hidden bg-red-900/20 py-2 rounded-lg"></p>
+        
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
