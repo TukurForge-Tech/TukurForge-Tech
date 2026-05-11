@@ -351,18 +351,33 @@ document.addEventListener("DOMContentLoaded", () => {
         // 4. DISPARADOR DE CORREO AL PADRINO
         // ==========================================
         if (codigoPadrinoInput !== "" && datosPadrino && datosPadrino.correo_padrino) {
-          const partesNombre = alumno.split(' ');
-          const alumnoEnmascarado = partesNombre[0] + (partesNombre[1] ? ' ' + partesNombre[1].charAt(0) + '.' : '');
+          
+          // 1. Enmascaramos el correo (ej. homactuario@gmail.com -> hom***@gmail.com)
+          const partesCorreo = correo.split('@');
+          const correoEnmascarado = partesCorreo[0].substring(0, 3) + '***@' + partesCorreo[1];
 
-          // Invocamos la nueva función
+          // 2. Extraemos el texto "legible" de los menús desplegables para que el correo se vea profesional
+          const selectObjetivo = document.getElementById("objetivoSimulacro");
+          const textoObjetivo = selectObjetivo.options[selectObjetivo.selectedIndex].text;
+          
+          const selectTomaCurso = document.getElementById("tomaCurso");
+          const textoTomaCurso = selectTomaCurso.options[selectTomaCurso.selectedIndex].text;
+          
+          const selectTipoEscuela = document.getElementById("tipoEscuela");
+          const textoTipoEscuela = selectTipoEscuela.options[selectTipoEscuela.selectedIndex].text;
+
+          // 3. Invocamos la nueva función con datos puramente estadísticos
           _supabase.functions.invoke("correo-padrino", {
             body: {
               correo_padrino: datosPadrino.correo_padrino,
               codigo_usado: codigoPadrinoInput,
-              alumno_enmascarado: alumnoEnmascarado,
+              correo_enmascarado: correoEnmascarado,
+              examen_aplicado: nombreExamenFiltro,
+              tipo_institucion: textoTipoEscuela,
+              tomo_curso: textoTomaCurso,
+              objetivo: textoObjetivo,
               usos_actuales: datosPadrino.usos_actuales + 1,
-              limite_usos: datosPadrino.limite_usos,
-              escuela: nombreEscuela
+              limite_usos: datosPadrino.limite_usos
             },
           }).catch(err => console.error("Error enviando aviso al padrino:", err));
         }
