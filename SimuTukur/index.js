@@ -1,4 +1,49 @@
+// ==========================================
+// MOTOR DE LA CORTINA PROMOCIONAL
+// ==========================================
+const fechaGranSimulacro = new Date('2026-05-16T10:00:00').getTime();
+
+function iniciarRelojCortina() {
+    const cortina = document.getElementById('cortinaSimulacro');
+    if (!cortina) return; // Si no hay cortina, no hacemos nada
+
+    setInterval(() => {
+        const ahora = new Date().getTime();
+        const distancia = fechaGranSimulacro - ahora;
+
+        if (distancia > 0) {
+            const dias = Math.floor(distancia / (1000 * 60 * 60 * 24));
+            const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
+            const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
+
+            if (document.getElementById("dias_cortina")) document.getElementById("dias_cortina").innerText = dias.toString().padStart(2, '0');
+            if (document.getElementById("horas_cortina")) document.getElementById("horas_cortina").innerText = horas.toString().padStart(2, '0');
+            if (document.getElementById("minutos_cortina")) document.getElementById("minutos_cortina").innerText = minutos.toString().padStart(2, '0');
+            if (document.getElementById("segundos_cortina")) document.getElementById("segundos_cortina").innerText = segundos.toString().padStart(2, '0');
+        } else {
+            // Llegó la hora, mostramos ceros
+            if (document.getElementById("dias_cortina")) document.getElementById("dias_cortina").innerText = "00";
+            if (document.getElementById("horas_cortina")) document.getElementById("horas_cortina").innerText = "00";
+            if (document.getElementById("minutos_cortina")) document.getElementById("minutos_cortina").innerText = "00";
+            if (document.getElementById("segundos_cortina")) document.getElementById("segundos_cortina").innerText = "00";
+        }
+    }, 1000);
+}
+
+// Función global para ocultar la cortina con una transición suave
+window.cerrarCortina = function() {
+    const cortina = document.getElementById('cortinaSimulacro');
+    if (cortina) {
+        cortina.classList.add('opacity-0');
+        setTimeout(() => {
+            cortina.classList.add('hidden');
+        }, 500); // Espera a que termine la animación de Tailwind
+    }
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
+    iniciarRelojCortina();
     const examDropdown = document.getElementById('exam-dropdown');
     const startDemoBtn = document.getElementById('start-demo-btn');
 
