@@ -143,8 +143,11 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const btn = document.getElementById("btnRegistro");
-      btn.innerHTML =
-        '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Procesando...';
+      const iconoBoton = document.getElementById("iconoBoton");
+      const textoBoton = document.getElementById("textoBoton");
+      
+      iconoBoton.className = "fa-solid fa-spinner fa-spin";
+      textoBoton.innerText = "Procesando...";
       btn.disabled = true;
 
       // Recolección de datos
@@ -175,21 +178,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const checkLegalGeneral = document.getElementById("checkLegalGeneral").checked;
 
       // 👇 NUEVA VALIDACIÓN DEL PADRE/TUTOR AQUÍ (Antes de revisar duplicados)
-      if (codigoPadrinoInput !== "" && !checkAutorizacion.checked) {
-        alert(
-          "Para aplicar la beca del patrocinador, el padre o tutor debe aceptar los términos de auditoría marcando la casilla correspondiente.",
-        );
-        // Restauramos el botón respetando su diseño actual (Pago o Beca)
-        document.getElementById("iconoBoton").className =
-          window.modoRegistro === "beca"
-            ? "fa-solid fa-ticket"
-            : "fa-solid fa-lock";
-        document.getElementById("textoBoton").innerText =
-          window.modoRegistro === "beca"
-            ? "Reservar mi lugar Becado"
-            : "Realizar Pago ($58 MXN)";
-        btn.disabled = false;
-        return; // Cortamos la ejecución
+      // 👇 NUEVA VALIDACIÓN DEL PADRE/TUTOR Y CÓDIGO SIN VALIDAR
+      if (codigoPadrinoInput !== "") {
+        if (window.modoRegistro !== "beca") {
+          alert("Escribiste un código de beca pero no lo has validado. Por favor, dale clic al botón azul de 'VALIDAR'.");
+          iconoBoton.className = "fa-solid fa-lock";
+          textoBoton.innerText = "Realizar Pago ($58 MXN)";
+          btn.disabled = false;
+          return;
+        }
+
+        if (!checkAutorizacion.checked) {
+          alert("Para aplicar la beca del patrocinador, el padre o tutor debe aceptar los términos de auditoría marcando la casilla correspondiente.");
+          iconoBoton.className = "fa-solid fa-ticket";
+          textoBoton.innerText = "Reservar mi lugar Becado";
+          btn.disabled = false;
+          return;
+        }
       }
 
       // 🔍 VALIDACIÓN ANTI-DUPLICADOS
