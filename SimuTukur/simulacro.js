@@ -344,6 +344,28 @@ document.addEventListener("DOMContentLoaded", () => {
           },
         });
 
+        // ==========================================
+        // 4. DISPARADOR DE CORREO AL PADRINO
+        // ==========================================
+        if (codigoPadrinoInput !== "" && codigoBD && codigoBD.correo_padrino) {
+          // Enmascaramos el nombre (Ej. "Homar Rodriguez" -> "Homar R.")
+          const partesNombre = alumno.split(' ');
+          const alumnoEnmascarado = partesNombre[0] + (partesNombre[1] ? ' ' + partesNombre[1].charAt(0) + '.' : '');
+
+          // Invocamos la nueva función
+          _supabase.functions.invoke("correo-padrino", {
+            body: {
+              correo_padrino: codigoBD.correo_padrino,
+              codigo_usado: codigoPadrinoInput,
+              alumno_enmascarado: alumnoEnmascarado,
+              usos_actuales: codigoBD.usos_actuales + 1,
+              limite_usos: codigoBD.limite_usos,
+              escuela: nombreEscuela
+            },
+          }).catch(err => console.error("Error enviando aviso al padrino:", err));
+          // Usamos .catch() al final para que si falla el correo del padrino, no le marque error al alumno en su pantalla.
+        }
+
         document.getElementById("formSimulacro").classList.add("hidden");
         document.getElementById("mensajeExito").classList.remove("hidden");
       } catch (err) {
