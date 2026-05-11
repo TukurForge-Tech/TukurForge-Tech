@@ -61,6 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
               nombre_escuela: datos.nombre_escuela,
               objetivo_principal: datos.objetivo_principal,
               autoriza_datos_padrino: datos.autoriza_datos_padrino,
+              terminos_aceptados: datos.terminos_aceptados
             },
           ]);
 
@@ -171,6 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .value.trim(); // <-- TE FALTABA ESTE
       const objetivo = document.getElementById("objetivoSimulacro").value;
       const checkAutorizacion = document.getElementById("checkDatosPadrino");
+      const checkLegalGeneral = document.getElementById("checkLegalGeneral").checked;
 
       // 👇 NUEVA VALIDACIÓN DEL PADRE/TUTOR AQUÍ (Antes de revisar duplicados)
       if (codigoPadrinoInput !== "" && !checkAutorizacion.checked) {
@@ -290,6 +292,7 @@ document.addEventListener("DOMContentLoaded", () => {
               autoriza_datos_padrino: checkAutorizacion
                 ? checkAutorizacion.checked
                 : false,
+              terminos_aceptados: checkLegalGeneral
             }),
           );
 
@@ -319,6 +322,7 @@ document.addEventListener("DOMContentLoaded", () => {
               nombre_escuela: nombreEscuela,
               objetivo_principal: objetivo,
               autoriza_datos_padrino: checkAutorizacion.checked,
+              terminos_aceptados: checkLegalGeneral
             },
           ]);
 
