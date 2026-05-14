@@ -1,7 +1,7 @@
 // ==========================================
 // MOTOR DE LA CORTINA PROMOCIONAL
 // ==========================================
-const fechaGranSimulacro = new Date('2026-05-16T10:00:00').getTime();
+const fechaGranSimulacro = new Date('2026-05-23T10:00:00').getTime();
 
 function iniciarRelojCortina() {
     const cortina = document.getElementById('cortinaSimulacro');
