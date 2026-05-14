@@ -4,9 +4,9 @@
 // 1. FECHAS GLOBALES DE OPERACIÓN
 // ==========================================
 // Fecha del evento para el reloj (16 de Mayo de 2026 a las 10:00 AM)
-const fechaExamen = new Date('2026-05-16T10:00:00').getTime();
+const fechaExamen = new Date('2026-05-23T10:00:00').getTime();
 // Fecha de cierre de puertas (16 de Mayo a las 10:15 AM)
-const fechaCorte = new Date('2026-05-16T10:15:00').getTime();
+const fechaCorte = new Date('2026-05-23T10:15:00').getTime();
 
 document.addEventListener("DOMContentLoaded", () => {
   const ahora = new Date().getTime();
