@@ -3,7 +3,7 @@
 // CORTINA DE ACCESO (RELOJ BLOQUEADOR)
 // ==========================================
 // Fecha y hora exacta en la que se abrirá la puerta del examen (16 Mayo 2026 10:00 AM)
-const fechaAperturaExamen = new Date('2026-05-16T10:00:00').getTime();
+const fechaAperturaExamen = new Date('2026-05-23T10:00:00').getTime();
 
 document.addEventListener('DOMContentLoaded', () => {
     iniciarRelojBloqueador();
