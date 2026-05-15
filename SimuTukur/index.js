@@ -2,6 +2,21 @@
 // MOTOR DE LA PÁGINA PRINCIPAL (DEMO)
 // ==========================================
 
+// Reloj del Banner Flotante
+const fechaGranSimulacro = new Date('2026-05-23T10:00:00').getTime();
+
+setInterval(() => {
+    const ahora = new Date().getTime();
+    const distancia = fechaGranSimulacro - ahora;
+
+    if (distancia > 0) {
+        document.getElementById("dias_banner").innerText = Math.floor(distancia / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+        document.getElementById("horas_banner").innerText = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+        document.getElementById("minutos_banner").innerText = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+        document.getElementById("segundos_banner").innerText = Math.floor((distancia % (1000 * 60)) / 1000).toString().padStart(2, '0');
+    }
+}, 1000);
+
 document.addEventListener('DOMContentLoaded', async () => {
     const examDropdown = document.getElementById('exam-dropdown');
     const startDemoBtn = document.getElementById('start-demo-btn');
