@@ -82,7 +82,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
-// Auto-scroll al Demo al cargar la página
-window.onload = function() {
-    document.getElementById('zona-demo').scrollIntoView({ behavior: 'smooth' });
-};
+window.addEventListener('load', () => {
+    // Usamos un pequeño retraso de 100ms para asegurar que el navegador ya calculó la altura de todo
+    setTimeout(() => {
+        const seccionDemo = document.getElementById('zona-demo');
+        if (seccionDemo) {
+            seccionDemo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 100);
+});
