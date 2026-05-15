@@ -81,13 +81,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = `instrucciones-demo.html?v=${token}`;
     });
 });
-
-window.addEventListener('load', () => {
-    // Usamos un pequeño retraso de 100ms para asegurar que el navegador ya calculó la altura de todo
-    setTimeout(() => {
-        const seccionDemo = document.getElementById('zona-demo');
-        if (seccionDemo) {
-            seccionDemo.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }, 100);
-});
