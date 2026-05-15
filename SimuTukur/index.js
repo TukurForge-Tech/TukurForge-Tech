@@ -81,3 +81,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = `instrucciones-demo.html?v=${token}`;
     });
 });
+
+// Auto-scroll al Demo al cargar la página
+window.onload = function() {
+    document.getElementById('zona-demo').scrollIntoView({ behavior: 'smooth' });
+};
