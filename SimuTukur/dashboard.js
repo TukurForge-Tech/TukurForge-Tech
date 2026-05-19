@@ -734,7 +734,7 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
             .from('bitacora_reactivos_vistos')
             .select(`
                 es_correcto,
-                reactivos ( materia, pregunta )
+                reactivos ( materia, pregunta, respuesta_correcta, opcion_a, opcion_b, opcion_c, opcion_d )
             `)
             .eq('email', email)
             .lte('created_at', fechaFin)
@@ -775,10 +775,10 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
             if (datos.incorrectas.length > 0) {
                 htmlAccordion += `<p class="text-[9px] text-red-400 font-bold mt-1 mb-1 uppercase tracking-widest">🎯 Retos a Mejorar</p>`;
                 datos.incorrectas.forEach((pregunta) => {
-                    // FIX: Convertimos la letra a minúscula para que coincida con la columna (ej. de "B" a "b")
                     const letraCorrecta = pregunta.respuesta_correcta ? pregunta.respuesta_correcta.toLowerCase() : ''; 
                     const textoCorrecto = pregunta[`opcion_${letraCorrecta}`] || 'No disponible';
                     const preguntaLimpia = encodeURIComponent(pregunta.pregunta).replace(/'/g, "%27");
+                    const correctaLimpia = encodeURIComponent(textoCorrecto).replace(/'/g, "%27"); // NUEVO
 
                     htmlAccordion += `
                         <details class="mb-1 bg-red-900/10 border border-red-900/30 rounded p-1.5 group cursor-pointer">
@@ -789,7 +789,7 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
                             <div class="mt-2 text-[10px] text-gray-300 space-y-2 border-t border-red-900/30 pt-2 cursor-default">
                                 <p class="text-white bg-black/30 p-1 rounded"><strong>Pregunta:</strong> ${pregunta.pregunta}</p>
                                 <p class="text-green-400 bg-green-900/10 p-1 rounded"><strong>La correcta era:</strong> ${textoCorrecto}</p>
-                                <button onclick="enviarPreguntaRápidaAlChat('${preguntaLimpia}', false)"
+                                <button onclick="enviarPreguntaRápidaAlChat('${preguntaLimpia}', false, '${correctaLimpia}')"
                                         class="w-full bg-cyan-800 hover:bg-cyan-700 text-white py-1.5 rounded border border-cyan-600 transition uppercase tracking-widest text-[9px] font-bold mt-1">
                                     🤖 ¿Por qué es esta la correcta?
                                 </button>
@@ -803,10 +803,10 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
             if (datos.correctas.length > 0) {
                 htmlAccordion += `<p class="text-[9px] text-green-400 font-bold mt-2 mb-1 uppercase tracking-widest">✅ Dominado</p>`;
                 datos.correctas.forEach((pregunta) => {
-                    // NUEVO: Sacamos la respuesta correcta también para las dominadas
                     const letraCorrecta = pregunta.respuesta_correcta ? pregunta.respuesta_correcta.toLowerCase() : ''; 
                     const textoCorrecto = pregunta[`opcion_${letraCorrecta}`] || 'No disponible';
                     const preguntaLimpia = encodeURIComponent(pregunta.pregunta).replace(/'/g, "%27");
+                    const correctaLimpia = encodeURIComponent(textoCorrecto).replace(/'/g, "%27"); // NUEVO
                     
                     htmlAccordion += `
                         <details class="mb-1 bg-green-900/10 border border-green-900/30 rounded p-1.5 group cursor-pointer">
@@ -817,7 +817,7 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
                             <div class="mt-2 text-[10px] text-gray-300 space-y-2 border-t border-green-900/30 pt-2 cursor-default">
                                 <p class="text-white bg-black/30 p-1 rounded"><strong>Pregunta:</strong> ${pregunta.pregunta}</p>
                                 <p class="text-green-400 bg-green-900/10 p-1 rounded"><strong>Tu respuesta (Correcta):</strong> ${textoCorrecto}</p>
-                                <button onclick="enviarPreguntaRápidaAlChat('${preguntaLimpia}', true)"
+                                <button onclick="enviarPreguntaRápidaAlChat('${preguntaLimpia}', true, '${correctaLimpia}')"
                                         class="w-full bg-cyan-800 hover:bg-cyan-700 text-white py-1.5 rounded border border-cyan-600 transition uppercase tracking-widest text-[9px] font-bold mt-1">
                                     🤖 Repasar concepto
                                 </button>
@@ -838,19 +838,17 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
     }
 }
 
-function enviarPreguntaRápidaAlChat(preguntaCodificada, esCorrecta) {
-    // Decodificamos y limpiamos caracteres que rompen el JSON
-    let pregunta = decodeURIComponent(preguntaCodificada)
-        .replace(/"/g, "'") // Cambia comillas dobles por simples
-        .replace(/\n/g, " "); // Quita saltos de línea
+function enviarPreguntaRápidaAlChat(preguntaCodificada, esCorrecta, correctaCodificada) {
+    let pregunta = decodeURIComponent(preguntaCodificada).replace(/"/g, "'").replace(/\n/g, " ");
+    let respuestaCorrecta = decodeURIComponent(correctaCodificada).replace(/"/g, "'").replace(/\n/g, " ");
 
     const input = document.getElementById('user-input');
     const btnEnviar = document.getElementById('btnEnviar');
 
     if (esCorrecta) {
-        input.value = `Tuve esta pregunta correcta, pero quiero repasarla. ¿Me explicas el concepto?: ${pregunta}`;
+        input.value = `Tuve esta pregunta correcta (la respuesta es "${respuestaCorrecta}"), pero quiero repasarla. ¿Me explicas el concepto?: ${pregunta}`;
     } else {
-        input.value = `Fallé en esta pregunta y necesito que me expliques paso a paso por qué. Pregunta: ${pregunta}`;
+        input.value = `Fallé en esta pregunta. La respuesta correcta era "${respuestaCorrecta}". Necesito que me expliques paso a paso por qué. Pregunta: ${pregunta}`;
     }
 
     btnEnviar.click();
