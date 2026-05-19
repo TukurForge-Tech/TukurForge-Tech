@@ -775,7 +775,8 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
             if (datos.incorrectas.length > 0) {
                 htmlAccordion += `<p class="text-[9px] text-red-400 font-bold mt-1 mb-1 uppercase tracking-widest">🎯 Retos a Mejorar</p>`;
                 datos.incorrectas.forEach((pregunta) => {
-                    const letraCorrecta = pregunta.respuesta_correcta; 
+                    // FIX: Convertimos la letra a minúscula para que coincida con la columna (ej. de "B" a "b")
+                    const letraCorrecta = pregunta.respuesta_correcta ? pregunta.respuesta_correcta.toLowerCase() : ''; 
                     const textoCorrecto = pregunta[`opcion_${letraCorrecta}`] || 'No disponible';
                     const preguntaLimpia = encodeURIComponent(pregunta.pregunta).replace(/'/g, "%27");
 
@@ -802,7 +803,11 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
             if (datos.correctas.length > 0) {
                 htmlAccordion += `<p class="text-[9px] text-green-400 font-bold mt-2 mb-1 uppercase tracking-widest">✅ Dominado</p>`;
                 datos.correctas.forEach((pregunta) => {
+                    // NUEVO: Sacamos la respuesta correcta también para las dominadas
+                    const letraCorrecta = pregunta.respuesta_correcta ? pregunta.respuesta_correcta.toLowerCase() : ''; 
+                    const textoCorrecto = pregunta[`opcion_${letraCorrecta}`] || 'No disponible';
                     const preguntaLimpia = encodeURIComponent(pregunta.pregunta).replace(/'/g, "%27");
+                    
                     htmlAccordion += `
                         <details class="mb-1 bg-green-900/10 border border-green-900/30 rounded p-1.5 group cursor-pointer">
                             <summary class="text-[9px] text-gray-400 group-hover:text-white truncate list-none flex justify-between">
@@ -811,6 +816,7 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
                             </summary>
                             <div class="mt-2 text-[10px] text-gray-300 space-y-2 border-t border-green-900/30 pt-2 cursor-default">
                                 <p class="text-white bg-black/30 p-1 rounded"><strong>Pregunta:</strong> ${pregunta.pregunta}</p>
+                                <p class="text-green-400 bg-green-900/10 p-1 rounded"><strong>Tu respuesta (Correcta):</strong> ${textoCorrecto}</p>
                                 <button onclick="enviarPreguntaRápidaAlChat('${preguntaLimpia}', true)"
                                         class="w-full bg-cyan-800 hover:bg-cyan-700 text-white py-1.5 rounded border border-cyan-600 transition uppercase tracking-widest text-[9px] font-bold mt-1">
                                     🤖 Repasar concepto
