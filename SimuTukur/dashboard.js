@@ -253,7 +253,7 @@ async function cargarHistorial(token, nombreHijo) {
             return;
         }
         
-        contenedor.innerHTML = data.map(reg => {
+        contenedor.innerHTML = data.map((reg, index) => {
             // 2. EXTRAEMOS DATOS DEL JSON
             let aciertosTotales = 0;
             let preguntasTotales = 0;
@@ -369,8 +369,12 @@ async function cargarHistorial(token, nombreHijo) {
                     </div>
                 </div>
                 
-                <!-- AQUÍ APARECEN TUS TIPS DINÁMICOS -->
                 ${tipsHtml}
+                
+                <button onclick="desplegarMaterias('${token}', '${emailPadre}', '${nombreHijo}', '${reg.fecha_aplicacion}', ${preguntasTotales}, 'detalle-examen-${index}')" class="w-full mt-3 bg-cyan-900/30 hover:bg-cyan-900/60 border border-cyan-800 text-cyan-400 text-[10px] font-bold uppercase py-2 rounded transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-layer-group"></i> Ver Resultados por Materia
+                </button>
+                <div id="detalle-examen-${index}" class="hidden mt-2 transition-all"></div>
                 
             </div>
             `;
@@ -700,4 +704,114 @@ async function pedirExplicacionOficial(preguntaCodificada, respuestaCodificada) 
         if(spanBurbuja) spanBurbuja.parentElement.innerHTML = "<span class='text-red-500'>Error de red. No se consumió energía.</span>";
         // ❌ AQUÍ BORRAMOS LA DEVOLUCIÓN DE TOKENS. Si falló, el servidor simplemente no cobró.
     }
+}
+// ==========================================
+// NUEVO: DESPLIEGUE DE MATERIAS Y CHAT DIRECTO
+// ==========================================
+
+async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPreguntas, containerId) {
+    const contenedor = document.getElementById(containerId);
+
+    // Si ya está abierto, lo cerramos
+    if (!contenedor.classList.contains('hidden') && contenedor.innerHTML !== '') {
+        contenedor.classList.add('hidden');
+        return;
+    }
+
+    contenedor.innerHTML = '<p class="text-[10px] text-cyan-500 animate-pulse text-center mt-2">Analizando bitácora...</p>';
+    contenedor.classList.remove('hidden');
+
+    try {
+        // Truco maestro: Traemos las preguntas exactas de ESE examen basándonos en la fecha límite y la cantidad de preguntas.
+        const { data: bitacora, error } = await _supabase
+            .from('bitacora_reactivos_vistos')
+            .select(`
+                es_correcto,
+                reactivos ( materia, pregunta )
+            `)
+            .eq('email', email)
+            .lte('created_at', fechaFin)
+            .order('created_at', { ascending: false })
+            .limit(cantidadPreguntas);
+
+        if (error) throw error;
+
+        // Agrupamos por materia
+        const resultadosPorMateria = {};
+        bitacora.forEach(item => {
+            const materia = item.reactivos?.materia || 'General';
+            if (!resultadosPorMateria[materia]) {
+                resultadosPorMateria[materia] = { correctas: [], incorrectas: [] };
+            }
+            if (item.es_correcto) {
+                resultadosPorMateria[materia].correctas.push(item.reactivos);
+            } else {
+                resultadosPorMateria[materia].incorrectas.push(item.reactivos);
+            }
+        });
+
+        // Construimos el Acordeón
+        let htmlAccordion = '';
+        for (const [materia, datos] of Object.entries(resultadosPorMateria)) {
+            const total = datos.correctas.length + datos.incorrectas.length;
+
+            htmlAccordion += `
+                <div class="mb-2 bg-black/60 p-2 rounded-lg border border-gray-800">
+                    <h4 class="text-yellow-500 font-bold text-[10px] mb-1 flex justify-between items-center cursor-pointer hover:text-yellow-400" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                        <span class="uppercase tracking-widest">${materia}</span>
+                        <span class="bg-yellow-900/40 text-yellow-500 px-2 py-0.5 rounded">${datos.correctas.length}/${total} Aciertos <i class="fa-solid fa-chevron-down ml-1 text-[8px]"></i></span>
+                    </h4>
+                    <div class="hidden space-y-1 mt-2 border-t border-gray-800 pt-2">
+            `;
+
+            // Bucle para Retos a Mejorar (Malas)
+            if (datos.incorrectas.length > 0) {
+                htmlAccordion += `<p class="text-[9px] text-red-400 font-bold mt-1 mb-1 uppercase tracking-widest">🎯 Retos a Mejorar</p>`;
+                datos.incorrectas.forEach((pregunta) => {
+                    htmlAccordion += `
+                        <button onclick="enviarPreguntaRápidaAlChat('${encodeURIComponent(pregunta.pregunta).replace(/'/g, "%27")}', false)"
+                                class="text-[9px] text-gray-400 hover:text-white block w-full text-left truncate bg-red-900/10 hover:bg-red-900/30 p-1.5 rounded border border-red-900/30 transition">
+                            ❌ Error - Explicar
+                        </button>
+                    `;
+                });
+            }
+
+            // Bucle para Dominado (Buenas / Chiripas)
+            if (datos.correctas.length > 0) {
+                htmlAccordion += `<p class="text-[9px] text-green-400 font-bold mt-2 mb-1 uppercase tracking-widest">✅ Dominado</p>`;
+                datos.correctas.forEach((pregunta) => {
+                    htmlAccordion += `
+                        <button onclick="enviarPreguntaRápidaAlChat('${encodeURIComponent(pregunta.pregunta).replace(/'/g, "%27")}', true)"
+                                class="text-[9px] text-gray-400 hover:text-white block w-full text-left truncate bg-green-900/10 hover:bg-green-900/30 p-1.5 rounded border border-green-900/30 transition">
+                            ✔️ Acierto - Repasar
+                        </button>
+                    `;
+                });
+            }
+
+            htmlAccordion += `</div></div>`;
+        }
+
+        contenedor.innerHTML = htmlAccordion;
+
+    } catch (err) {
+        console.error("Error cargando materias:", err);
+        contenedor.innerHTML = '<p class="text-red-500 text-[10px] text-center">Error de conexión.</p>';
+    }
+}
+
+function enviarPreguntaRápidaAlChat(preguntaCodificada, esCorrecta) {
+    const pregunta = decodeURIComponent(preguntaCodificada);
+    const input = document.getElementById('user-input');
+    const btnEnviar = document.getElementById('btnEnviar');
+
+    if (esCorrecta) {
+        input.value = `Tuve esta pregunta correcta, pero quiero repasarla para estar 100% seguro de que no fue suerte. ¿Me explicas el concepto? \n"${pregunta}"`;
+    } else {
+        input.value = `Fallé en esta pregunta y necesito que me expliques paso a paso por qué. \n"${pregunta}"`;
+    }
+
+    // Disparamos el clic del botón Enviar automáticamente
+    btnEnviar.click();
 }
