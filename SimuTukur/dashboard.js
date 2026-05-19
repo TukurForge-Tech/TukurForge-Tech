@@ -338,11 +338,17 @@ async function cargarHistorial(token, nombreHijo) {
                 tipsHtml += `</div>`;
             }
 
+            // Determinar el nivel en texto
+            let textoNivel = "Repaso";
+            if (reg.nivel_examen === 1) textoNivel = "Principiante";
+            else if (reg.nivel_examen === 2) textoNivel = "Medio";
+            else if (reg.nivel_examen === 3) textoNivel = "Avanzado";
+
             // 5. RENDERIZADO DE LA TARJETA CON LOS TIPS INTEGRADOS
             return `
             <div class="card-glass p-4 border-l-4 border-cyan-500 bg-white/5 transition-all hover:bg-white/10 mb-3">
                 <div class="flex justify-between items-center text-[10px] sm:text-xs mb-3 border-b border-white/5 pb-2">
-                    <span class="text-cyan-400 font-black uppercase tracking-tighter">${reg.tipo_prueba}</span>
+                    <span class="text-cyan-400 font-black uppercase tracking-tighter">${reg.tipo_prueba} <span class="text-white ml-1">| ${textoNivel}</span></span>
                     <span class="text-gray-500">${new Date(reg.fecha_aplicacion).toLocaleDateString()}</span>
                 </div>
 
@@ -357,17 +363,19 @@ async function cargarHistorial(token, nombreHijo) {
                     </div>
                 </div>
 
-                <div class="flex justify-between items-center bg-black/40 rounded-lg p-2 border border-slate-800">
-                    <span class="text-[8px] text-gray-500 uppercase font-bold tracking-widest">Biometría IA</span>
-                    <div class="flex gap-4 pr-1">
-                        <div title="Audio: ${incAudio} alertas" class="flex items-center gap-1 cursor-help">
-                            <i class="fa-solid fa-microphone text-[11px] ${colorAudio}"></i>
+                <details class="bg-black/40 rounded-lg border border-slate-800 mb-2 cursor-pointer group">
+                    <summary class="p-2 text-[9px] text-gray-500 uppercase font-bold tracking-widest group-hover:text-cyan-400 transition-colors list-none flex justify-between items-center">
+                        <span>Biometría IA</span> <i class="fa-solid fa-caret-down"></i>
+                    </summary>
+                    <div class="p-3 border-t border-slate-800 flex justify-around">
+                        <div title="Audio: ${incAudio} alertas" class="flex items-center gap-2">
+                            <i class="fa-solid fa-microphone text-sm ${colorAudio}"></i> <span class="text-[10px] text-gray-300">${incAudio} alertas</span>
                         </div>
-                        <div title="Video: ${incVideo} alertas" class="flex items-center gap-1 cursor-help">
-                            <i class="fa-solid fa-camera text-[11px] ${colorVideo}"></i>
+                        <div title="Video: ${incVideo} alertas" class="flex items-center gap-2">
+                            <i class="fa-solid fa-camera text-sm ${colorVideo}"></i> <span class="text-[10px] text-gray-300">${incVideo} alertas</span>
                         </div>
                     </div>
-                </div>
+                </details>
                 
                 ${tipsHtml}
                 
@@ -375,7 +383,6 @@ async function cargarHistorial(token, nombreHijo) {
                     <i class="fa-solid fa-layer-group"></i> Ver Resultados por Materia
                 </button>
                 <div id="detalle-examen-${index}" class="hidden mt-2 transition-all"></div>
-                
             </div>
             `;
         }).join('');
@@ -768,11 +775,25 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
             if (datos.incorrectas.length > 0) {
                 htmlAccordion += `<p class="text-[9px] text-red-400 font-bold mt-1 mb-1 uppercase tracking-widest">🎯 Retos a Mejorar</p>`;
                 datos.incorrectas.forEach((pregunta) => {
+                    const letraCorrecta = pregunta.respuesta_correcta; 
+                    const textoCorrecto = pregunta[`opcion_${letraCorrecta}`] || 'No disponible';
+                    const preguntaLimpia = encodeURIComponent(pregunta.pregunta).replace(/'/g, "%27");
+
                     htmlAccordion += `
-                        <button onclick="enviarPreguntaRápidaAlChat('${encodeURIComponent(pregunta.pregunta).replace(/'/g, "%27")}', false)"
-                                class="text-[9px] text-gray-400 hover:text-white block w-full text-left truncate bg-red-900/10 hover:bg-red-900/30 p-1.5 rounded border border-red-900/30 transition">
-                            ❌ Error - Explicar
-                        </button>
+                        <details class="mb-1 bg-red-900/10 border border-red-900/30 rounded p-1.5 group cursor-pointer">
+                            <summary class="text-[9px] text-gray-400 group-hover:text-white truncate list-none flex justify-between">
+                                <span>❌ Error: ${pregunta.pregunta.substring(0, 35)}...</span>
+                                <i class="fa-solid fa-caret-down text-[8px] mt-1"></i>
+                            </summary>
+                            <div class="mt-2 text-[10px] text-gray-300 space-y-2 border-t border-red-900/30 pt-2 cursor-default">
+                                <p class="text-white bg-black/30 p-1 rounded"><strong>Pregunta:</strong> ${pregunta.pregunta}</p>
+                                <p class="text-green-400 bg-green-900/10 p-1 rounded"><strong>La correcta era:</strong> ${textoCorrecto}</p>
+                                <button onclick="enviarPreguntaRápidaAlChat('${preguntaLimpia}', false)"
+                                        class="w-full bg-cyan-800 hover:bg-cyan-700 text-white py-1.5 rounded border border-cyan-600 transition uppercase tracking-widest text-[9px] font-bold mt-1">
+                                    🤖 ¿Por qué es esta la correcta?
+                                </button>
+                            </div>
+                        </details>
                     `;
                 });
             }
@@ -781,11 +802,21 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
             if (datos.correctas.length > 0) {
                 htmlAccordion += `<p class="text-[9px] text-green-400 font-bold mt-2 mb-1 uppercase tracking-widest">✅ Dominado</p>`;
                 datos.correctas.forEach((pregunta) => {
+                    const preguntaLimpia = encodeURIComponent(pregunta.pregunta).replace(/'/g, "%27");
                     htmlAccordion += `
-                        <button onclick="enviarPreguntaRápidaAlChat('${encodeURIComponent(pregunta.pregunta).replace(/'/g, "%27")}', true)"
-                                class="text-[9px] text-gray-400 hover:text-white block w-full text-left truncate bg-green-900/10 hover:bg-green-900/30 p-1.5 rounded border border-green-900/30 transition">
-                            ✔️ Acierto - Repasar
-                        </button>
+                        <details class="mb-1 bg-green-900/10 border border-green-900/30 rounded p-1.5 group cursor-pointer">
+                            <summary class="text-[9px] text-gray-400 group-hover:text-white truncate list-none flex justify-between">
+                                <span>✔️ Acierto: ${pregunta.pregunta.substring(0, 35)}...</span>
+                                <i class="fa-solid fa-caret-down text-[8px] mt-1"></i>
+                            </summary>
+                            <div class="mt-2 text-[10px] text-gray-300 space-y-2 border-t border-green-900/30 pt-2 cursor-default">
+                                <p class="text-white bg-black/30 p-1 rounded"><strong>Pregunta:</strong> ${pregunta.pregunta}</p>
+                                <button onclick="enviarPreguntaRápidaAlChat('${preguntaLimpia}', true)"
+                                        class="w-full bg-cyan-800 hover:bg-cyan-700 text-white py-1.5 rounded border border-cyan-600 transition uppercase tracking-widest text-[9px] font-bold mt-1">
+                                    🤖 Repasar concepto
+                                </button>
+                            </div>
+                        </details>
                     `;
                 });
             }
@@ -802,16 +833,19 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
 }
 
 function enviarPreguntaRápidaAlChat(preguntaCodificada, esCorrecta) {
-    const pregunta = decodeURIComponent(preguntaCodificada);
+    // Decodificamos y limpiamos caracteres que rompen el JSON
+    let pregunta = decodeURIComponent(preguntaCodificada)
+        .replace(/"/g, "'") // Cambia comillas dobles por simples
+        .replace(/\n/g, " "); // Quita saltos de línea
+
     const input = document.getElementById('user-input');
     const btnEnviar = document.getElementById('btnEnviar');
 
     if (esCorrecta) {
-        input.value = `Tuve esta pregunta correcta, pero quiero repasarla para estar 100% seguro de que no fue suerte. ¿Me explicas el concepto? \n"${pregunta}"`;
+        input.value = `Tuve esta pregunta correcta, pero quiero repasarla. ¿Me explicas el concepto?: ${pregunta}`;
     } else {
-        input.value = `Fallé en esta pregunta y necesito que me expliques paso a paso por qué. \n"${pregunta}"`;
+        input.value = `Fallé en esta pregunta y necesito que me expliques paso a paso por qué. Pregunta: ${pregunta}`;
     }
 
-    // Disparamos el clic del botón Enviar automáticamente
     btnEnviar.click();
 }
