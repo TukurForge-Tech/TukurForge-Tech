@@ -228,6 +228,14 @@ function render() {
     if(typeof MathJax !== 'undefined') MathJax.typesetPromise();
 }
 
+// Función auxiliar para traducir la letra (A,B,C,D) al texto real de la respuesta
+function obtenerTextoOpcion(letra, item) {
+    if (!letra) return "No respondida / Tiempo agotado";
+    const mapa = { 'A': item.opcion_a, 'B': item.opcion_b, 'C': item.opcion_c, 'D': item.opcion_d };
+    // Si la BD guarda la letra devuelve el texto, si la BD ya guardaba el texto, lo devuelve tal cual
+    return mapa[letra] || letra; 
+}
+
 function procesarRespuesta() {
     if (!seleccionActual) return;
     const item = reactivos[index];
@@ -238,7 +246,8 @@ function procesarRespuesta() {
         reactivosFallados.push({
             pregunta: item.pregunta,
             materia: item.materia,
-            correcta: item.respuesta_correcta
+            correcta: obtenerTextoOpcion(item.respuesta_correcta, item),
+            tu_respuesta: obtenerTextoOpcion(seleccionActual, item) // AQUÍ CAPTURAMOS LO QUE ÉL PUSO
         });
     }
     
@@ -271,7 +280,8 @@ function iniciarCronometro() {
                 reactivosFallados.push({
                     pregunta: reactivos[index].pregunta,
                     materia: reactivos[index].materia,
-                    correcta: reactivos[index].respuesta_correcta
+                    correcta: obtenerTextoOpcion(reactivos[index].respuesta_correcta, reactivos[index]),
+                    tu_respuesta: "No respondida / Tiempo agotado" // SI NO CONTESTÓ, LE DECIMOS POR QUÉ
                 });
                 index++;
             }
