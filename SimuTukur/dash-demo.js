@@ -63,7 +63,18 @@ function inicializarDashDemo() {
                 <div class="bg-black/50 border border-slate-700/50 p-4 rounded-xl relative overflow-hidden group">
                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
                     <span class="text-red-400 text-[9px] font-black uppercase mb-2 block tracking-widest ml-2">${falla.materia}</span>
-                    <div class="text-gray-300 text-sm mb-3 ml-2 overflow-x-auto">${falla.pregunta}</div>
+                    <div class="text-gray-300 text-sm mb-3 ml-2 overflow-x-auto latex-container">${falla.pregunta}</div>
+                    
+                    <div class="ml-2 mb-4 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs">
+                        <div class="mb-3">
+                            <span class="text-red-400 font-bold uppercase text-[9px] tracking-widest block mb-1 flex items-center gap-1"><i class="fa-solid fa-xmark"></i> Tu respuesta:</span>
+                            <span class="text-gray-300 latex-container block bg-black/40 p-2 rounded border border-red-500/20">${falla.tu_respuesta}</span>
+                        </div>
+                        <div>
+                            <span class="text-green-400 font-bold uppercase text-[9px] tracking-widest block mb-1 flex items-center gap-1"><i class="fa-solid fa-check"></i> Respuesta Correcta:</span>
+                            <span class="text-gray-300 latex-container block bg-black/40 p-2 rounded border border-green-500/20">${falla.correcta}</span>
+                        </div>
+                    </div>
                     
                     <button onclick="pedirExplicacionIADemo('${encodeURIComponent(falla.pregunta)}', '${encodeURIComponent(falla.correcta)}')" 
                             class="ml-2 w-[calc(100%-0.5rem)] text-cyan-400 font-bold uppercase hover:bg-cyan-900/40 hover:border-cyan-400 transition text-center border border-cyan-900 bg-cyan-900/20 py-2 rounded-lg text-[10px] tracking-wider flex items-center justify-center gap-2 group-hover:shadow-[0_0_10px_rgba(6,182,212,0.2)]">
