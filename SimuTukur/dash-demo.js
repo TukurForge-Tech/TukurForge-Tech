@@ -11,7 +11,8 @@ function inicializarDashDemo() {
     // Extraer datos del demo
     const aciertos = parseInt(localStorage.getItem('simu_aciertos')) || 0;
     const totalPreguntas = parseInt(localStorage.getItem('demo_total_preguntas')) || 15;
-    const fallas = JSON.parse(localStorage.getItem('simu_fallas') || '[]');
+    // Leemos el historial completo en lugar de solo fallas
+    const historial = JSON.parse(localStorage.getItem('simu_historial') || '[]');
     
     // Semáforo de Telemetría
     const incAudio = JSON.parse(localStorage.getItem('simu_inc_audio') || '[]').length;
@@ -47,7 +48,7 @@ function inicializarDashDemo() {
                     </div>
                 </div>
 
-                <p class="text-[10px] uppercase text-cyan-400 font-black mb-3 tracking-widest border-b border-white/10 pb-2"><i class="fa-solid fa-bullseye mr-1"></i> Mapa de Vulnerabilidades (Fallas)</p>
+                <p class="text-[10px] uppercase text-cyan-400 font-black mb-3 tracking-widest border-b border-white/10 pb-2"><i class="fa-solid fa-bullseye mr-1"></i> Mapa de Resultados (Aciertos y Fallas)</p>
                 <div id="lista-fallas" class="space-y-3 max-h-72 overflow-y-auto pr-2 scroll-smooth"></div>
             </div>
         </div>
@@ -55,30 +56,42 @@ function inicializarDashDemo() {
 
     const listaHtml = document.getElementById('lista-fallas');
     
-    if (fallas.length === 0) {
-        listaHtml.innerHTML = `<p class="text-center text-gray-500 italic py-4">Examen perfecto. ¡Excelente trabajo!</p>`;
+    if (historial.length === 0) {
+        listaHtml.innerHTML = `<p class="text-center text-gray-500 italic py-4">No hay datos del examen.</p>`;
     } else {
-        fallas.forEach((falla) => {
+        historial.forEach((item) => {
+            // Evaluamos si es un acierto para pintar de verde o de rojo
+            const colorBorde = item.es_acierto ? 'bg-green-500' : 'bg-red-500';
+            const colorTexto = item.es_acierto ? 'text-green-400' : 'text-red-400';
+            const badgeTuRespuesta = item.es_acierto 
+                ? '<i class="fa-solid fa-check-double"></i> ¡Acertaste!' 
+                : '<i class="fa-solid fa-xmark"></i> Tu respuesta (Incorrecta):';
+            
+            // Si acertó, no hace falta mostrar la caja de "Respuesta Correcta" doble vez
+            const cajaCorrecta = item.es_acierto ? '' : `
+                <div class="mt-3 pt-3 border-t border-slate-700/50">
+                    <span class="text-green-400 font-bold uppercase text-[9px] tracking-widest block mb-1 flex items-center gap-1"><i class="fa-solid fa-check"></i> Respuesta Correcta:</span>
+                    <span class="text-gray-300 latex-container block bg-black/40 p-2 rounded border border-green-500/20">${item.correcta}</span>
+                </div>
+            `;
+
             listaHtml.innerHTML += `
                 <div class="bg-black/50 border border-slate-700/50 p-4 rounded-xl relative overflow-hidden group">
-                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
-                    <span class="text-red-400 text-[9px] font-black uppercase mb-2 block tracking-widest ml-2">${falla.materia}</span>
-                    <div class="text-gray-300 text-sm mb-3 ml-2 overflow-x-auto latex-container">${falla.pregunta}</div>
+                    <div class="absolute left-0 top-0 bottom-0 w-1 ${colorBorde}"></div>
+                    <span class="${colorTexto} text-[9px] font-black uppercase mb-2 block tracking-widest ml-2">${item.materia}</span>
+                    <div class="text-gray-300 text-sm mb-3 ml-2 overflow-x-auto latex-container">${item.pregunta}</div>
                     
                     <div class="ml-2 mb-4 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs">
-                        <div class="mb-3">
-                            <span class="text-red-400 font-bold uppercase text-[9px] tracking-widest block mb-1 flex items-center gap-1"><i class="fa-solid fa-xmark"></i> Tu respuesta:</span>
-                            <span class="text-gray-300 latex-container block bg-black/40 p-2 rounded border border-red-500/20">${falla.tu_respuesta}</span>
-                        </div>
                         <div>
-                            <span class="text-green-400 font-bold uppercase text-[9px] tracking-widest block mb-1 flex items-center gap-1"><i class="fa-solid fa-check"></i> Respuesta Correcta:</span>
-                            <span class="text-gray-300 latex-container block bg-black/40 p-2 rounded border border-green-500/20">${falla.correcta}</span>
+                            <span class="${colorTexto} font-bold uppercase text-[9px] tracking-widest block mb-1 flex items-center gap-1">${badgeTuRespuesta}</span>
+                            <span class="text-gray-300 latex-container block bg-black/40 p-2 rounded border ${item.es_acierto ? 'border-green-500/20' : 'border-red-500/20'}">${item.tu_respuesta}</span>
                         </div>
+                        ${cajaCorrecta}
                     </div>
                     
-                    <button onclick="pedirExplicacionIADemo('${encodeURIComponent(falla.pregunta)}', '${encodeURIComponent(falla.correcta)}')" 
+                    <button onclick="pedirExplicacionIADemo('${encodeURIComponent(item.pregunta)}', '${encodeURIComponent(item.correcta)}')" 
                             class="ml-2 w-[calc(100%-0.5rem)] text-cyan-400 font-bold uppercase hover:bg-cyan-900/40 hover:border-cyan-400 transition text-center border border-cyan-900 bg-cyan-900/20 py-2 rounded-lg text-[10px] tracking-wider flex items-center justify-center gap-2 group-hover:shadow-[0_0_10px_rgba(6,182,212,0.2)]">
-                        <i class="fa-solid fa-brain"></i> Explicar Error (Cuesta 1⚡)
+                        <i class="fa-solid fa-brain"></i> Explicar esta pregunta (Cuesta 1⚡)
                     </button>
                 </div>
             `;

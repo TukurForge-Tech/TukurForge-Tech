@@ -1,7 +1,7 @@
 // examen-demo.js - Motor Clon Oficial (Adaptado para 15 mins y Embudo de Ventas)
 
 let reactivos = [];         
-let reactivosFallados = []; 
+let historialRespuestas = []; 
 let incidenciasAudio = [];
 let incidenciasVideo = [];
 let index = 0;
@@ -166,7 +166,7 @@ async function cargarReactivosDesdeMatriz() {
         alert("⚠️ REPORTE DE BD (Solo para ti, socio):\nFaltan preguntas para cumplir la matriz:\n\n" + alertasDebug.join("\n"));
     }
 
-    return poolFinal.sort(() => Math.random() - 0.5);
+    return poolFinal;
 }
 
 // ==========================================
@@ -231,28 +231,37 @@ function render() {
 // Función auxiliar para traducir la letra (A,B,C,D) al texto real de la respuesta
 function obtenerTextoOpcion(letra, item) {
     if (!letra) return "No respondida / Tiempo agotado";
+    // Forzamos a mayúscula y quitamos espacios para que siempre empate con la BD
+    const letraLimpia = letra.trim().toUpperCase(); 
     const mapa = { 'A': item.opcion_a, 'B': item.opcion_b, 'C': item.opcion_c, 'D': item.opcion_d };
-    // Si la BD guarda la letra devuelve el texto, si la BD ya guardaba el texto, lo devuelve tal cual
-    return mapa[letra] || letra; 
+    return mapa[letraLimpia] || letra; 
 }
 
 function procesarRespuesta() {
     if (!seleccionActual) return;
     const item = reactivos[index];
+    let esAcierto = false;
     
-    if (seleccionActual === item.respuesta_correcta) {
+    // 👇 BLINDAJE ANTI-ESPACIOS INVISIBLES 👇
+    const miSeleccion = seleccionActual.trim().toUpperCase();
+    const correctaBD = (item.respuesta_correcta || "").trim().toUpperCase();
+    
+    if (miSeleccion === correctaBD) {
         aciertos++;
-    } else {
-        reactivosFallados.push({
-            pregunta: item.pregunta,
-            materia: item.materia,
-            correcta: obtenerTextoOpcion(item.respuesta_correcta, item),
-            tu_respuesta: obtenerTextoOpcion(seleccionActual, item) // AQUÍ CAPTURAMOS LO QUE ÉL PUSO
-        });
+        esAcierto = true;
     }
     
-    // Guardado Local (Nada de BD para no gastar dinero en prospectos)
-    localStorage.setItem('simu_fallas', JSON.stringify(reactivosFallados));
+    // Ahora guardamos TODAS las respuestas, correctas e incorrectas
+    historialRespuestas.push({
+        pregunta: item.pregunta,
+        materia: item.materia,
+        correcta: obtenerTextoOpcion(item.respuesta_correcta, item),
+        tu_respuesta: obtenerTextoOpcion(seleccionActual, item),
+        es_acierto: esAcierto
+    });
+    
+    // Cambiamos el nombre en memoria a "simu_historial"
+    localStorage.setItem('simu_historial', JSON.stringify(historialRespuestas));
     localStorage.setItem('simu_aciertos', aciertos);
     
     index++;
@@ -271,21 +280,21 @@ function iniciarCronometro() {
         
         el.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
         
-        if (tiempoSeg <= 300) el.classList.add('text-red-500', 'animate-pulse'); // Presión últimos 5 mins
+        if (tiempoSeg <= 300) el.classList.add('text-red-500', 'animate-pulse');
         
         if(tiempoSeg <= 0) {
             clearInterval(timerIntervalLocal);
-            // Si se acaba el tiempo, marcamos las restantes como mal
             while(index < reactivos.length) {
-                reactivosFallados.push({
+                historialRespuestas.push({
                     pregunta: reactivos[index].pregunta,
                     materia: reactivos[index].materia,
                     correcta: obtenerTextoOpcion(reactivos[index].respuesta_correcta, reactivos[index]),
-                    tu_respuesta: "No respondida / Tiempo agotado" // SI NO CONTESTÓ, LE DECIMOS POR QUÉ
+                    tu_respuesta: "No respondida / Tiempo agotado",
+                    es_acierto: false
                 });
                 index++;
             }
-            localStorage.setItem('simu_fallas', JSON.stringify(reactivosFallados));
+            localStorage.setItem('simu_historial', JSON.stringify(historialRespuestas));
             finalizarDemo();
         }
     }, 1000);
