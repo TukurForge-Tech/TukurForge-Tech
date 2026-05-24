@@ -43,22 +43,66 @@
     <main class="grid grid-cols-12 h-[calc(100vh-100px)]">
         
         <!-- VENTA FINAL (Gancho izquierdo) -->
-        <aside class="col-span-3 border-r border-gray-800 p-6 flex flex-col bg-black/20 overflow-y-auto items-center text-center">
-            <i class="fa-solid fa-graduation-cap text-6xl text-cyan-500 mb-6 drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]"></i>
-            <h3 class="text-xl font-black uppercase italic tracking-tighter mb-4 text-white">¿Quieres dominar tu examen?</h3>
-            <p class="text-gray-400 text-xs leading-relaxed mb-6">
-                Acabas de probar solo 15 preguntas. El Simulador Oficial contiene cientos de retos adaptativos, explicaciones ilimitadas y rutas de mejora garantizadas.
-            </p>
-            <div class="bg-cyan-900/20 border border-cyan-500/50 p-4 rounded-xl w-full mb-6 text-left">
-                <ul class="text-xs text-gray-300 space-y-3 font-bold">
-                    <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i> Exámenes Completos</li>
-                    <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i> Tutoría IA 24/7</li>
-                    <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i> Telemetría y Estadísticas</li>
-                </ul>
+        <aside class="col-span-3 border-r border-gray-800 bg-gradient-to-b from-[#0a1120] to-[#050a14] p-4 md:p-6 flex flex-col relative overflow-y-auto custom-scrollbar text-center z-10">
+            
+            <div class="absolute -top-10 -right-10 w-48 h-48 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="relative z-10 mb-4 mt-2">
+                <div class="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-full bg-cyan-900/30 border border-cyan-500/50 mb-3 shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+                    <i class="fa-solid fa-graduation-cap text-2xl md:text-3xl text-cyan-400"></i>
+                </div>
+                <h3 class="text-lg md:text-xl font-black italic text-white tracking-tighter uppercase leading-tight mb-2">
+                    ¿Quieres <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Asegurar</span><br>tu Lugar?
+                </h3>
+                <p class="text-slate-400 text-[10px] md:text-[11px] leading-relaxed px-1">
+                    El 80% reprueba por falta de práctica real. Pasa al nivel profesional.
+                </p>
             </div>
-            <a href="registro.html" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all transform hover:-translate-y-1 block">
-                Inscríbete Ahora
-            </a>
+
+            <div class="space-y-2 mb-4 flex-1 relative z-10 text-left px-1">
+                <div class="flex items-start gap-3 bg-white/5 p-2.5 rounded-xl border border-white/10 hover:border-cyan-500/30 transition-colors">
+                    <div class="bg-cyan-900/50 p-1.5 rounded-lg mt-0.5"><i class="fa-solid fa-infinity text-cyan-400 text-[10px]"></i></div>
+                    <div>
+                        <p class="text-[10px] font-black text-white uppercase tracking-wider">Simuladores Ilimitados</p>
+                        <p class="text-[9px] text-slate-400 mt-0.5">Exámenes con el algoritmo oficial.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3 bg-white/5 p-2.5 rounded-xl border border-white/10 hover:border-cyan-500/30 transition-colors">
+                    <div class="bg-cyan-900/50 p-1.5 rounded-lg mt-0.5"><i class="fa-solid fa-user-astronaut text-cyan-400 text-[10px]"></i></div>
+                    <div>
+                        <p class="text-[10px] font-black text-white uppercase tracking-wider">Tutoría IA 24/7</p>
+                        <p class="text-[9px] text-slate-400 mt-0.5">Explicaciones de cada reactivo.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3 bg-white/5 p-2.5 rounded-xl border border-white/10 hover:border-cyan-500/30 transition-colors">
+                    <div class="bg-cyan-900/50 p-1.5 rounded-lg mt-0.5"><i class="fa-solid fa-route text-cyan-400 text-[10px]"></i></div>
+                    <div>
+                        <p class="text-[10px] font-black text-white uppercase tracking-wider">Rutas de Mejora</p>
+                        <p class="text-[9px] text-slate-400 mt-0.5">Detectamos tus puntos débiles.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative group z-10 mt-auto w-full shrink-0">
+                <div class="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl blur opacity-50 group-hover:opacity-100 transition duration-200"></div>
+                <a href="registro.html" class="relative w-full bg-[#050a14] border border-cyan-500 text-white font-black py-3 md:py-4 rounded-xl uppercase tracking-widest text-[10px] md:text-xs flex justify-center items-center gap-2 hover:bg-slate-900 transition-colors">
+                    Acceder al Simulador <i class="fa-solid fa-arrow-right ml-1 text-cyan-400"></i>
+                </a>
+            </div>
+            <div class="mt-4 flex flex-col items-center justify-center gap-1.5 relative z-10 shrink-0 border-t border-slate-800 pt-3 w-full">
+                <p class="text-[9px] text-slate-500 uppercase tracking-widest font-bold flex items-center gap-1.5">
+                    <i class="fa-solid fa-lock text-slate-400"></i> Pago 100% Seguro
+                </p>
+                <div class="flex items-center justify-center gap-3 text-slate-400 mt-1">
+                    <i class="fa-brands fa-stripe text-4xl hover:text-white transition-colors" title="Stripe"></i>
+                    
+                    <div class="h-4 w-px bg-slate-700"></div> 
+                    
+                    <i class="fa-brands fa-cc-visa text-2xl hover:text-white transition-colors" title="Visa"></i>
+                    <i class="fa-brands fa-cc-mastercard text-2xl hover:text-white transition-colors" title="Mastercard"></i>
+                    <i class="fa-brands fa-cc-amex text-2xl hover:text-white transition-colors" title="American Express"></i>
+                </div>
+            </div>
         </aside>
 
         <!-- CHAT CON LA IA Y RESULTADOS -->
@@ -76,11 +120,18 @@
                     <!-- Aquí se inyectan los resultados desde JS -->
                 </div>
 
-                <div class="p-3 border-t border-white/5 bg-black/40 shrink-0">
-                    <p class="text-center text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                        Selecciona una duda en tus resultados para usar tu Energía IA.
-                    </p>
+                <div class="p-4 border-t border-cyan-500/30 bg-gradient-to-r from-cyan-900/40 to-blue-900/40 shrink-0 relative overflow-hidden shadow-[0_-10px_20px_rgba(6,182,212,0.1)] z-20">
+                    <div class="absolute inset-0 bg-cyan-500/10 animate-pulse pointer-events-none"></div>
+                    <div class="relative z-10 flex flex-col items-center justify-center text-center">
+                        <p class="text-cyan-300 font-black tracking-widest uppercase text-xs md:text-sm mb-1.5 drop-shadow-md">
+                            <i class="fa-solid fa-wand-magic-sparkles text-yellow-400 mr-2 animate-bounce"></i> ¡Pon a prueba tu Energía IA!
+                        </p>
+                        <p class="text-[10px] text-cyan-100/90 font-bold uppercase tracking-wider">
+                            Da clic en el botón <span class="bg-cyan-800 px-2 py-0.5 rounded text-white mx-1 border border-cyan-500 shadow-sm"><i class="fa-solid fa-brain mr-1"></i> Explicar esta pregunta</span> debajo de tus errores.
+                        </p>
+                    </div>
                 </div>
+
             </div>
         </section>
     </main>

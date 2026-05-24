@@ -14,12 +14,22 @@ function inicializarDashDemo() {
     // Leemos el historial completo en lugar de solo fallas
     const historial = JSON.parse(localStorage.getItem('simu_historial') || '[]');
     
-    // Semáforo de Telemetría
+    // Semáforo de Telemetría (Lógica original)
     const incAudio = JSON.parse(localStorage.getItem('simu_inc_audio') || '[]').length;
     const incVideo = JSON.parse(localStorage.getItem('simu_inc_video') || '[]').length;
 
     const semaforoAudio = incAudio === 0 ? '🟢 Excelente' : (incAudio <= 2 ? '🟡 Ruido Menor' : '🔴 Crítico');
     const semaforoVideo = incVideo === 0 ? '🟢 Excelente' : (incVideo <= 2 ? '🟡 Distracción' : '🔴 Crítico');
+
+    // 👇 NUEVO: Tips Pedagógicos Dinámicos 👇
+    const tipAudio = incAudio === 0 
+        ? 'Entorno ideal. Mantén este nivel de silencio en tu examen real.' 
+        : 'Tip: Busca una habitación cerrada o avisa a tu familia para evitar ruidos de fondo.';
+        
+    const tipVideo = incVideo === 0 
+        ? 'Postura y enfoque perfectos. ¡Sigue así!' 
+        : 'Tip: Asegúrate de estar bien iluminado de frente y evita voltear o bostezar en exceso.';
+    // 👆 FIN DE TIPS 👆
     
     const score = (aciertos / totalPreguntas) * 100;
     const colorCalif = score >= 70 ? 'text-green-500' : 'text-red-500';
@@ -37,20 +47,34 @@ function inicializarDashDemo() {
                     <p class="text-xs mt-2 ${colorCalif} font-bold">${score >= 70 ? 'Competitivo' : 'Requiere Entrenamiento Urgente'}</p>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <div class="bg-black/60 p-3 rounded-xl border border-slate-700 flex flex-col items-center text-center">
-                        <span class="text-[9px] uppercase font-bold text-gray-400 mb-1"><i class="fa-solid fa-microphone"></i> Concentración Audio</span>
-                        <span class="text-[10px] uppercase font-bold">${semaforoAudio}</span>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-black/60 pt-3 rounded-xl border border-slate-700 flex flex-col items-center text-center overflow-hidden shadow-lg">
+                        <div class="mb-3 px-3">
+                            <span class="text-[10px] uppercase font-bold text-gray-400 mb-1 block"><i class="fa-solid fa-microphone"></i> Audio</span>
+                            <span class="text-xs uppercase font-black tracking-wide block">${semaforoAudio}</span>
+                        </div>
+                        <div class="mt-auto w-full bg-slate-800 border-l-4 border-cyan-500 p-3 text-xs text-white font-medium leading-relaxed flex items-start gap-2 text-left shadow-inner">
+                            <i class="fa-solid fa-lightbulb text-yellow-400 mt-0.5 text-sm"></i>
+                            <span>${tipAudio}</span>
+                        </div>
                     </div>
-                    <div class="bg-black/60 p-3 rounded-xl border border-slate-700 flex flex-col items-center text-center">
-                        <span class="text-[9px] uppercase font-bold text-gray-400 mb-1"><i class="fa-solid fa-camera"></i> Monitoreo Visual</span>
-                        <span class="text-[10px] uppercase font-bold">${semaforoVideo}</span>
+                    
+                    <div class="bg-black/60 pt-3 rounded-xl border border-slate-700 flex flex-col items-center text-center overflow-hidden shadow-lg">
+                        <div class="mb-3 px-3">
+                            <span class="text-[10px] uppercase font-bold text-gray-400 mb-1 block"><i class="fa-solid fa-camera"></i> Visual</span>
+                            <span class="text-xs uppercase font-black tracking-wide block">${semaforoVideo}</span>
+                        </div>
+                        <div class="mt-auto w-full bg-slate-800 border-l-4 border-cyan-500 p-3 text-xs text-white font-medium leading-relaxed flex items-start gap-2 text-left shadow-inner">
+                            <i class="fa-solid fa-lightbulb text-yellow-400 mt-0.5 text-sm"></i>
+                            <span>${tipVideo}</span>
+                        </div>
                     </div>
                 </div>
 
                 <p class="text-[10px] uppercase text-cyan-400 font-black mb-3 tracking-widest border-b border-white/10 pb-2"><i class="fa-solid fa-bullseye mr-1"></i> Mapa de Resultados (Aciertos y Fallas)</p>
-                <div id="lista-fallas" class="space-y-3 max-h-72 overflow-y-auto pr-2 scroll-smooth"></div>
-            </div>
+                <div id="lista-fallas" class="space-y-3 max-h-72 overflow-y-auto pr-2 scroll-smooth custom-scrollbar"></div>
+
+                </div>
         </div>
     `;
 
