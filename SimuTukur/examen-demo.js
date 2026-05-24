@@ -1,6 +1,15 @@
 // examen-demo.js - Motor Clon Oficial (Adaptado para 15 mins y Embudo de Ventas)
 
 let reactivos = [];         
+let respuestasUsuario = []; // NUEVA: Matriz exacta de 15 espacios
+let preguntasMarcadas = [];
+let incidenciasAudio = [];
+let incidenciasVideo = [];
+let index = 0;
+let tiempoSeg = 15 * 60; // 15 Minutos EXACTOS
+let timerIntervalLocal;
+let ultimoAvisoRuido = 0;
+/*let reactivos = [];         
 let historialRespuestas = []; 
 let incidenciasAudio = [];
 let incidenciasVideo = [];
@@ -9,7 +18,7 @@ let aciertos = 0;
 let seleccionActual = null;
 let tiempoSeg = 15 * 60; // 15 Minutos EXACTOS
 let timerIntervalLocal;
-let ultimoAvisoRuido = 0;
+let ultimoAvisoRuido = 0;*/
 
 // ==========================================
 // ESCUDO ANTI-TRAMPAS (Botón Atrás)
@@ -49,12 +58,16 @@ async function init() {
         reactivos = await cargarReactivosDesdeMatriz();
         
         if(reactivos.length > 0) {
-            document.getElementById('lbl-estado').innerText = "Vigilancia Biométrica Activa";
+            respuestasUsuario = new Array(reactivos.length).fill(null);
+            preguntasMarcadas = new Array(reactivos.length).fill(false);
+
+            document.getElementById('pantalla-carga').style.display = 'none';
             render();
             iniciarCronometro(); 
         }
 
     } catch (err) {
+        console.error("Error real del sistema:", err);
         alert("Para vivir la experiencia real del simulador, debes otorgar permisos de cámara y micrófono.");
         window.location.href = 'index.html';
     }
@@ -169,110 +182,144 @@ async function cargarReactivosDesdeMatriz() {
     return poolFinal;
 }
 
-// ==========================================
-// 3. RENDERIZADO IDENTICO AL OFICIAL
-// ==========================================
+// Función para dibujar la cuadrícula superior (Iconos más pequeños para 140 preguntas)
+function renderGrid() {
+    const grid = document.getElementById('grid-navegacion');
+    grid.innerHTML = '';
+    let respondidas = 0;
+
+    for (let i = 0; i < reactivos.length; i++) {
+        const btn = document.createElement('button');
+        const estaRespondida = respuestasUsuario[i] !== null;
+        if (estaRespondida) respondidas++;
+
+        // Cajas más pequeñas (w-6 h-6) y texto diminuto (text-[10px])
+        let clases = 'w-6 h-6 rounded text-[10px] font-bold transition-all flex items-center justify-center border ';
+        const estaMarcada = preguntasMarcadas[i];
+        
+        if (i === index) {
+            clases += 'bg-cyan-600 border-cyan-400 text-white shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-110 z-10';
+        } else if (estaMarcada) {
+            clases += 'bg-yellow-400 border-yellow-300 text-black shadow-[0_0_10px_rgba(250,204,21,0.6)] hover:bg-yellow-300'; // AMARILLO ELÉCTRICO
+            btn.innerHTML = '<i class="fa-solid fa-xmark text-xs"></i>';
+        } else if (estaRespondida) {
+            clases += 'bg-red-900/60 border-red-500 text-red-400 hover:bg-red-800'; // ROJO para contestadas
+            btn.innerHTML = '<i class="fa-solid fa-check text-[10px]"></i>';
+        } else {
+            clases += 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'; // Vacío
+            btn.innerHTML = (i + 1);
+        }
+
+        btn.className = clases;
+        btn.innerHTML = estaRespondida ? '<i class="fa-solid fa-check text-[10px]"></i>' : (i + 1);
+        btn.onclick = () => { index = i; render(); }; 
+        
+        grid.appendChild(btn);
+    }
+    document.getElementById('progreso-txt').innerText = `RESPONDIDAS: ${respondidas} / ${reactivos.length}`;
+}
+
+// El Renderizado Maestro
 function render() {
     if (index >= reactivos.length) { finalizarDemo(); return; }
 
     const item = reactivos[index];
-    seleccionActual = null;
-    
+    renderGrid(); 
     document.getElementById('label-materia').innerText = item.materia;
-    document.getElementById('progreso-txt').innerText = `Q. ${index + 1} / ${reactivos.length}`;
     
-    const wBar = ((index) / reactivos.length) * 100;
-    document.getElementById('progress-bar').style.width = wBar + "%";
-    
-    const btnConfirm = document.getElementById('btn-confirm');
-    btnConfirm.disabled = true;
+    const colLectura = document.getElementById('col-lectura');
+    const colPregunta = document.getElementById('col-pregunta');
 
-    // Manejo de textos
-    let textoHtml = "";
     if (item.texto_lectura && item.texto_lectura.trim() !== "") {
-        textoHtml = `<div class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-sm text-slate-300 mb-4 max-h-48 overflow-y-auto italic">
-                        <i class="fa-solid fa-book-open text-cyan-500 mr-2"></i> ${item.texto_lectura}
-                     </div>`;
+        colLectura.classList.remove('hidden');
+        colLectura.classList.add('lg:flex', 'lg:w-[55%]'); 
+        colPregunta.className = 'w-full lg:w-[45%] h-full overflow-y-auto custom-scrollbar transition-all duration-300 pr-2 pb-4';
+        document.getElementById('txt-lectura').innerHTML = item.texto_lectura;
+    } else {
+        colLectura.classList.add('hidden');
+        colLectura.classList.remove('lg:flex', 'lg:w-[55%]');
+        colPregunta.className = 'w-full h-full overflow-y-auto custom-scrollbar transition-all duration-300 pr-2 pb-4';
     }
 
-    document.getElementById('txt-pregunta').innerHTML = textoHtml + item.pregunta;
+    // Inyectamos el número 1), 2) antes de la pregunta
+    document.getElementById('txt-pregunta').innerHTML = `<span class="font-black text-cyan-400 mr-2">${index + 1})</span> ${item.pregunta}`;
 
     const divOpciones = document.getElementById('opciones-grid');
     divOpciones.innerHTML = '';
     
     const letras = ['A', 'B', 'C', 'D'];
+    const miRespuestaGuardada = respuestasUsuario[index] ? respuestasUsuario[index].seleccion : null;
+
     [item.opcion_a, item.opcion_b, item.opcion_c, item.opcion_d].forEach((op, i) => {
         if (!op) return;
-        
         const btn = document.createElement('button');
-        btn.className = 'w-full text-left bg-black/40 border border-slate-700 p-4 rounded-xl hover:border-cyan-500 transition-all text-sm md:text-base flex items-start gap-4 focus:outline-none op-btn group';
+        const esSeleccionada = miRespuestaGuardada === letras[i];
         
-        btn.innerHTML = `
-            <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center font-bold shrink-0 mt-0.5 border border-slate-700 group-hover:scale-110 transition-transform">${letras[i]}</div>
-            <div class="flex-1 pt-1 overflow-x-auto latex-container">${op}</div>
-        `;
+        // Cajas de respuesta más compactas (p-3 en lugar de p-4 y gap-3)
+        btn.className = 'w-full text-left bg-black/40 border p-3 rounded-xl transition-all text-sm flex items-start gap-3 focus:outline-none op-btn group ' + 
+                       (esSeleccionada ? 'border-red-500 bg-red-900/20' : 'border-slate-700 hover:border-cyan-500');
         
-        btn.onclick = () => {
-            document.querySelectorAll('.op-btn').forEach(b => {
-                b.classList.remove('border-cyan-500', 'bg-cyan-900/20');
-                b.querySelector('div').classList.remove('bg-cyan-500', 'text-black', 'border-cyan-400');
-            });
-            btn.classList.add('border-cyan-500', 'bg-cyan-900/20');
-            btn.querySelector('div').classList.add('bg-cyan-500', 'text-black', 'border-cyan-400');
-            seleccionActual = letras[i];
-            btnConfirm.disabled = false;
-        };
+        // Letras A, B, C, D más compactas (w-6 h-6 en lugar de w-8 h-8)
+        const divLetraClass = 'w-6 h-6 text-xs rounded-md flex items-center justify-center font-bold shrink-0 mt-0.5 border transition-transform ' +
+                             (esSeleccionada ? 'bg-red-500 text-white border-red-400 scale-110' : 'bg-slate-800 border-slate-700 group-hover:scale-110');
+
+        btn.innerHTML = `<div class="${divLetraClass}">${letras[i]}</div><div class="flex-1 latex-container">${op}</div>`;
+        btn.onclick = () => procesarRespuestaActuario(letras[i], item);
         divOpciones.appendChild(btn);
     });
 
+    // Botones de Íconos (Tamaño reducido)
+    const btnAnt = document.getElementById('btn-anterior');
+    const btnSig = document.getElementById('btn-siguiente');
+
+    if (index === 0) btnAnt.classList.add('invisible');
+    else { btnAnt.classList.remove('invisible'); btnAnt.onclick = () => { index--; render(); }; }
+
+    if (index === reactivos.length - 1) {
+        btnSig.innerHTML = '<i class="fa-solid fa-flag-checkered mr-2"></i> Finalizar';
+        btnSig.className = "px-3 md:px-5 py-2.5 rounded-lg bg-green-600 hover:bg-green-500 text-white shadow-[0_0_10px_rgba(34,197,94,0.3)] transition-all flex items-center justify-center font-bold text-[10px] md:text-xs uppercase tracking-wider";
+        btnSig.onclick = () => validarCierreExamen(false);
+    } else {
+        btnSig.innerHTML = 'Siguiente <i class="fa-solid fa-chevron-right ml-2"></i>';
+        btnSig.className = "px-3 md:px-5 py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_10px_rgba(6,182,212,0.3)] transition-all flex items-center justify-center font-bold text-[10px] md:text-xs uppercase tracking-wider";
+        btnSig.onclick = () => { index++; render(); };
+    }
+
     if(typeof MathJax !== 'undefined') MathJax.typesetPromise();
-}
-
-// Función auxiliar para traducir la letra (A,B,C,D) al texto real de la respuesta
-function obtenerTextoOpcion(letra, item) {
-    if (!letra) return "No respondida / Tiempo agotado";
-    // Forzamos a mayúscula y quitamos espacios para que siempre empate con la BD
-    const letraLimpia = letra.trim().toUpperCase(); 
-    const mapa = { 'A': item.opcion_a, 'B': item.opcion_b, 'C': item.opcion_c, 'D': item.opcion_d };
-    return mapa[letraLimpia] || letra; 
-}
-
-function procesarRespuesta() {
-    if (!seleccionActual) return;
-    const item = reactivos[index];
-    let esAcierto = false;
     
-    // 👇 BLINDAJE ANTI-ESPACIOS INVISIBLES 👇
-    const miSeleccion = seleccionActual.trim().toUpperCase();
+    // 👇 EL TOQUE MÁGICO: Reiniciar el scroll hacia arriba al cambiar de pregunta
+    document.getElementById('col-pregunta').scrollTop = 0;
+}
+
+// CORRECCIÓN DEL BUG: Usamos obtenerTextoOpcionNueva
+function procesarRespuestaActuario(letra, item) {
+    const miSeleccion = letra.trim().toUpperCase();
     const correctaBD = (item.respuesta_correcta || "").trim().toUpperCase();
     
-    if (miSeleccion === correctaBD) {
-        aciertos++;
-        esAcierto = true;
-    }
-    
-    // Ahora guardamos TODAS las respuestas, correctas e incorrectas
-    historialRespuestas.push({
+    respuestasUsuario[index] = {
         pregunta: item.pregunta,
         materia: item.materia,
-        correcta: obtenerTextoOpcion(item.respuesta_correcta, item),
-        tu_respuesta: obtenerTextoOpcion(seleccionActual, item),
-        es_acierto: esAcierto
-    });
+        correcta: obtenerTextoOpcionNueva(correctaBD, item), // <-- Aquí estaba el error
+        tu_respuesta: obtenerTextoOpcionNueva(miSeleccion, item), // <-- Aquí estaba el error
+        seleccion: miSeleccion,
+        es_acierto: (miSeleccion === correctaBD)
+    };
     
-    // Cambiamos el nombre en memoria a "simu_historial"
-    localStorage.setItem('simu_historial', JSON.stringify(historialRespuestas));
-    localStorage.setItem('simu_aciertos', aciertos);
-    
-    index++;
     render();
 }
 
-// ==========================================
-// 4. CRONÓMETRO AUTÓNOMO
-// ==========================================
+// NUEVA FUNCIÓN: Pone o quita la bandera amarilla
+function toggleMarcarPregunta() {
+    preguntasMarcadas[index] = !preguntasMarcadas[index];
+    renderGrid(); // Solo repintamos la cuadrícula de arriba sin recargar la pregunta
+}
+
 function iniciarCronometro() {
     const el = document.getElementById('timer');
+    const ahora = new Date();
+    const fin = new Date(ahora.getTime() + tiempoSeg * 1000);
+    document.getElementById('lbl-hora-inicio').innerText = `Inicio: ${ahora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+    document.getElementById('lbl-hora-fin').innerText = `Termina: ${fin.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
     timerIntervalLocal = setInterval(() => {
         tiempoSeg--;
         let m = Math.floor(tiempoSeg / 60);
@@ -284,20 +331,49 @@ function iniciarCronometro() {
         
         if(tiempoSeg <= 0) {
             clearInterval(timerIntervalLocal);
-            while(index < reactivos.length) {
-                historialRespuestas.push({
-                    pregunta: reactivos[index].pregunta,
-                    materia: reactivos[index].materia,
-                    correcta: obtenerTextoOpcion(reactivos[index].respuesta_correcta, reactivos[index]),
-                    tu_respuesta: "No respondida / Tiempo agotado",
-                    es_acierto: false
-                });
-                index++;
-            }
-            localStorage.setItem('simu_historial', JSON.stringify(historialRespuestas));
-            finalizarDemo();
+            // Mandamos llamar el cierre limpio, forzando la entrega sin preguntar
+            validarCierreExamen(true); 
         }
     }, 1000);
+}
+
+// NUEVA FUNCIÓN: Valida el cierre del examen (Con parámetro para cuando se acaba el tiempo)
+function validarCierreExamen(forzadoPorTiempo = false) {
+    const faltantes = respuestasUsuario.filter(r => r === null).length;
+    
+    // Si el usuario le dio clic a finalizar, le preguntamos. Si el tiempo se acabó, no preguntamos.
+    if (faltantes > 0 && !forzadoPorTiempo) {
+        if (!confirm(`Te faltan ${faltantes} preguntas por contestar en el mapa. ¿Seguro que quieres entregar el examen?`)) return;
+    }
+    
+    // Contamos aciertos
+    let aciertosFinales = respuestasUsuario.filter(r => r !== null && r.es_acierto).length;
+    
+    // Rellenamos las vacías para que el Dashboard no falle
+    const historialLimpio = respuestasUsuario.map((r, i) => {
+        if (r !== null) return r;
+        const item = reactivos[i];
+        return {
+            pregunta: item.pregunta,
+            materia: item.materia,
+            correcta: obtenerTextoOpcionNueva((item.respuesta_correcta || ""), item),
+            tu_respuesta: "No respondida / Dejada en blanco",
+            seleccion: null,
+            es_acierto: false
+        };
+    });
+
+    localStorage.setItem('simu_historial', JSON.stringify(historialLimpio));
+    localStorage.setItem('simu_aciertos', aciertosFinales);
+    finalizarDemo();
+}
+
+// Nueva función auxiliar de texto
+function obtenerTextoOpcionNueva(letra, item) {
+    if (!letra) return "No respondida";
+    const letraLimpia = letra.trim().toUpperCase(); 
+    const mapa = { 'A': item.opcion_a, 'B': item.opcion_b, 'C': item.opcion_c, 'D': item.opcion_d };
+    return mapa[letraLimpia] || letra; 
 }
 
 // ==========================================
