@@ -127,6 +127,12 @@ async function seleccionarCurso(data, btn) {
         });
     }
 
+    // 👇 INYECTAMOS EL DESBLOQUEO MAESTRO AQUÍ 👇
+    // Forzamos a que siempre tenga acceso a nivel 3 y apagamos el repaso
+    nivelMaximo = 3; 
+    requiereRepaso = false; 
+    // 👆 ------------------------------------- 👆
+
     // 3. LIMPIEZA DE URL (Anti-Trampas visual)
     const params = new URLSearchParams(window.location.search);
     const esReciente = params.has('res');
@@ -240,7 +246,7 @@ async function cargarHistorial(token, nombreHijo) {
         const { data, error } = await _supabase
             .from('resultados_examenes')
             // 1. AÑADIMOS 'detalles_fallas' A LA CONSULTA PARA SACAR EL JSON
-            .select('tipo_prueba, fecha_aplicacion, puntaje_obtenido, detalles_fallas')
+            .select('tipo_prueba, fecha_aplicacion, puntaje_obtenido, detalles_fallas, nivel_examen')
             .eq('token_hex', token)
             .eq('email', emailPadre)           // CANDADO 1
             .eq('nombre_alumno', nombreHijo)   // 🔒 CANDADO 2
@@ -476,41 +482,6 @@ async function cargarHistorialChat(token, puntaje, contexto) {
         dibujarBurbujaChat('simu', "¡Hola! Estoy listo para ayudarte a entrenar. Selecciona un nivel o hazme una pregunta directa.");
     }
 
-    // NUEVO: PINTAR MAPA DE VULNERABILIDADES SI ES RECIENTE
-    if (contexto === "reciente") {
-        const { data: ultimoExamen } = await _supabase.from('resultados_examenes')
-            .select('detalles_fallas')
-            .eq('token_hex', token).eq('email', email).eq('nombre_alumno', nombreHijo)
-            .order('fecha_aplicacion', { ascending: false }).limit(1).single();
-
-        if (ultimoExamen && ultimoExamen.detalles_fallas && ultimoExamen.detalles_fallas.fallas_academicas) {
-            const fallas = ultimoExamen.detalles_fallas.fallas_academicas;
-            if (fallas.length > 0) {
-                let htmlFallas = `<div class="bg-gray-800/80 p-5 rounded-2xl rounded-tl-none border border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.2)] text-gray-200 mt-4 mb-4">
-                    <p class="text-[10px] uppercase text-cyan-400 font-black mb-3 tracking-widest border-b border-white/10 pb-2"><i class="fa-solid fa-bullseye mr-1"></i> Vulnerabilidades Detectadas</p>
-                    <div class="space-y-3 max-h-72 overflow-y-auto pr-2 scroll-smooth">`;
-                
-                fallas.forEach(f => {
-                    if(f.pregunta && f.correcta) {
-                        htmlFallas += `
-                        <div class="bg-black/50 border border-slate-700/50 p-4 rounded-xl relative overflow-hidden group">
-                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
-                            <span class="text-red-400 text-[9px] font-black uppercase mb-2 block tracking-widest ml-2">${f.materia}</span>
-                            <div class="text-gray-300 text-sm mb-3 ml-2 overflow-x-auto">${f.pregunta}</div>
-                            <button onclick="pedirExplicacionOficial('${encodeURIComponent(f.pregunta).replace(/'/g, "%27")}', '${encodeURIComponent(f.correcta).replace(/'/g, "%27")}')"
-                                    class="ml-2 w-[calc(100%-0.5rem)] text-cyan-400 font-bold uppercase hover:bg-cyan-900/40 border border-cyan-900 bg-cyan-900/20 py-2 rounded-lg text-[10px] tracking-wider flex items-center justify-center gap-2 transition">
-                                <i class="fa-solid fa-brain"></i> Explicar Error (1⚡)
-                            </button>
-                        </div>`;
-                    }
-                });
-                htmlFallas += `</div></div>`;
-                chatBox.innerHTML += htmlFallas;
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
-        }
-    }
-
 }
 
 async function enviarMensajeChat(token) {
@@ -719,7 +690,6 @@ async function pedirExplicacionOficial(preguntaCodificada, respuestaCodificada) 
 async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPreguntas, containerId) {
     const contenedor = document.getElementById(containerId);
 
-    // Si ya está abierto, lo cerramos
     if (!contenedor.classList.contains('hidden') && contenedor.innerHTML !== '') {
         contenedor.classList.add('hidden');
         return;
@@ -729,11 +699,12 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
     contenedor.classList.remove('hidden');
 
     try {
-        // Truco maestro: Traemos las preguntas exactas de ESE examen basándonos en la fecha límite y la cantidad de preguntas.
+        // 1. AHORA PEDIMOS LA NUEVA COLUMNA `opcion_seleccionada`
         const { data: bitacora, error } = await _supabase
             .from('bitacora_reactivos_vistos')
             .select(`
                 es_correcto,
+                opcion_seleccionada,
                 reactivos ( materia, pregunta, respuesta_correcta, opcion_a, opcion_b, opcion_c, opcion_d )
             `)
             .eq('email', email)
@@ -743,7 +714,7 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
 
         if (error) throw error;
 
-        // Agrupamos por materia
+        // 2. AGRUPAMOS POR MATERIA (Guardamos el objeto completo, no solo el reactivo)
         const resultadosPorMateria = {};
         bitacora.forEach(item => {
             const materia = item.reactivos?.materia || 'General';
@@ -751,15 +722,17 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
                 resultadosPorMateria[materia] = { correctas: [], incorrectas: [] };
             }
             if (item.es_correcto) {
-                resultadosPorMateria[materia].correctas.push(item.reactivos);
+                resultadosPorMateria[materia].correctas.push(item);
             } else {
-                resultadosPorMateria[materia].incorrectas.push(item.reactivos);
+                resultadosPorMateria[materia].incorrectas.push(item);
             }
         });
 
-        // Construimos el Acordeón
+        const materiasOrdenadas = Object.keys(resultadosPorMateria).sort();
+
         let htmlAccordion = '';
-        for (const [materia, datos] of Object.entries(resultadosPorMateria)) {
+        for (const materia of materiasOrdenadas) {
+            const datos = resultadosPorMateria[materia];
             const total = datos.correctas.length + datos.incorrectas.length;
 
             htmlAccordion += `
@@ -771,14 +744,23 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
                     <div class="hidden space-y-1 mt-2 border-t border-gray-800 pt-2">
             `;
 
-            // Bucle para Retos a Mejorar (Malas)
+            // FASE ROJA: RETOS A MEJORAR
             if (datos.incorrectas.length > 0) {
                 htmlAccordion += `<p class="text-[9px] text-red-400 font-bold mt-1 mb-1 uppercase tracking-widest">🎯 Retos a Mejorar</p>`;
-                datos.incorrectas.forEach((pregunta) => {
+                datos.incorrectas.forEach((item) => {
+                    const pregunta = item.reactivos;
                     const letraCorrecta = pregunta.respuesta_correcta ? pregunta.respuesta_correcta.toLowerCase() : ''; 
                     const textoCorrecto = pregunta[`opcion_${letraCorrecta}`] || 'No disponible';
                     const preguntaLimpia = encodeURIComponent(pregunta.pregunta).replace(/'/g, "%27");
-                    const correctaLimpia = encodeURIComponent(textoCorrecto).replace(/'/g, "%27"); // NUEVO
+                    const correctaLimpia = encodeURIComponent(textoCorrecto).replace(/'/g, "%27");
+                    
+                    // 🛡️ REGLA DE DEGRADACIÓN ELEGANTE PARA ERRORES
+                    let infoSeleccion = `<p class="text-red-400 bg-red-900/10 p-1 rounded"><strong>Te equivocaste en esta pregunta</strong></p>`;
+                    if (item.opcion_seleccionada) {
+                        const letraSel = item.opcion_seleccionada.toLowerCase();
+                        const textoSel = pregunta[`opcion_${letraSel}`] || 'N/A';
+                        infoSeleccion = `<p class="text-red-400 bg-red-900/10 p-1 rounded"><strong>Tu respuesta (${item.opcion_seleccionada.toUpperCase()}):</strong> ${textoSel}</p>`;
+                    }
 
                     htmlAccordion += `
                         <details class="mb-1 bg-red-900/10 border border-red-900/30 rounded p-1.5 group cursor-pointer">
@@ -788,7 +770,8 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
                             </summary>
                             <div class="mt-2 text-[10px] text-gray-300 space-y-2 border-t border-red-900/30 pt-2 cursor-default">
                                 <p class="text-white bg-black/30 p-1 rounded"><strong>Pregunta:</strong> ${pregunta.pregunta}</p>
-                                <p class="text-green-400 bg-green-900/10 p-1 rounded"><strong>La correcta era:</strong> ${textoCorrecto}</p>
+                                ${infoSeleccion}
+                                <p class="text-green-400 bg-green-900/10 p-1 rounded"><strong>La correcta era (${letraCorrecta.toUpperCase()}):</strong> ${textoCorrecto}</p>
                                 <button onclick="enviarPreguntaRápidaAlChat('${preguntaLimpia}', false, '${correctaLimpia}')"
                                         class="w-full bg-cyan-800 hover:bg-cyan-700 text-white py-1.5 rounded border border-cyan-600 transition uppercase tracking-widest text-[9px] font-bold mt-1">
                                     🤖 ¿Por qué es esta la correcta?
@@ -799,15 +782,22 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
                 });
             }
 
-            // Bucle para Dominado (Buenas / Chiripas)
+            // FASE VERDE: DOMINADO
             if (datos.correctas.length > 0) {
                 htmlAccordion += `<p class="text-[9px] text-green-400 font-bold mt-2 mb-1 uppercase tracking-widest">✅ Dominado</p>`;
-                datos.correctas.forEach((pregunta) => {
+                datos.correctas.forEach((item) => {
+                    const pregunta = item.reactivos;
                     const letraCorrecta = pregunta.respuesta_correcta ? pregunta.respuesta_correcta.toLowerCase() : ''; 
                     const textoCorrecto = pregunta[`opcion_${letraCorrecta}`] || 'No disponible';
                     const preguntaLimpia = encodeURIComponent(pregunta.pregunta).replace(/'/g, "%27");
-                    const correctaLimpia = encodeURIComponent(textoCorrecto).replace(/'/g, "%27"); // NUEVO
+                    const correctaLimpia = encodeURIComponent(textoCorrecto).replace(/'/g, "%27");
                     
+                    // 🛡️ REGLA DE DEGRADACIÓN ELEGANTE PARA ACIERTOS
+                    let infoSeleccion = `<p class="text-green-400 bg-green-900/10 p-1 rounded"><strong>Respondiste correctamente</strong></p>`;
+                    if (item.opcion_seleccionada) {
+                        infoSeleccion = `<p class="text-green-400 bg-green-900/10 p-1 rounded"><strong>Tu respuesta (${item.opcion_seleccionada.toUpperCase()}):</strong> ${textoCorrecto}</p>`;
+                    }
+
                     htmlAccordion += `
                         <details class="mb-1 bg-green-900/10 border border-green-900/30 rounded p-1.5 group cursor-pointer">
                             <summary class="text-[9px] text-gray-400 group-hover:text-white truncate list-none flex justify-between">
@@ -816,7 +806,7 @@ async function desplegarMaterias(token, email, nombreHijo, fechaFin, cantidadPre
                             </summary>
                             <div class="mt-2 text-[10px] text-gray-300 space-y-2 border-t border-green-900/30 pt-2 cursor-default">
                                 <p class="text-white bg-black/30 p-1 rounded"><strong>Pregunta:</strong> ${pregunta.pregunta}</p>
-                                <p class="text-green-400 bg-green-900/10 p-1 rounded"><strong>Tu respuesta (Correcta):</strong> ${textoCorrecto}</p>
+                                ${infoSeleccion}
                                 <button onclick="enviarPreguntaRápidaAlChat('${preguntaLimpia}', true, '${correctaLimpia}')"
                                         class="w-full bg-cyan-800 hover:bg-cyan-700 text-white py-1.5 rounded border border-cyan-600 transition uppercase tracking-widest text-[9px] font-bold mt-1">
                                     🤖 Repasar concepto

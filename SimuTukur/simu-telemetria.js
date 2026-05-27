@@ -1,15 +1,10 @@
 // simu-telemetria.js - Mapeo Milimétrico a Supabase
 
 async function registrarPasoPorReactivo(reactivoId, esCorrecto, nivel) {
-    const { error } = await _supabase.from('bitacora_reactivos_vistos').insert({
-        email: localStorage.getItem('session_email'),
-        nombre_alumno: localStorage.getItem('nombre_alumno'),
-        reactivo_id: reactivoId,
-        nivel: parseInt(nivel),
-        es_correcto: esCorrecto, 
-        created_at: new Date().toISOString()
-    });
-    if (error) console.error("Error en bitacora_reactivos_vistos:", error.message);
+    // 🛑 APAGADO ESTRATÉGICO: 
+    // Ya no guardamos pregunta por pregunta desde el navegador. 
+    // Ahora la API validar-respuesta hará el guardado masivo al finalizar el examen.
+    return; 
 }
 
 async function registrarEventoVigilancia(evento) {

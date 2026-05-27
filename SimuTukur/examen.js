@@ -15,6 +15,8 @@ let index = 0;
 let aciertos = 0;
 let rachaAciertos = 0;      
 let seleccionActual = null;
+let respuestasAlumno = []; // Nueva memoria temporal
+let preguntasMarcadas = [];
 let tiempoSeg = mins * 60;
 let incidenciasVigilancia = [];
 let ultimoAvisoRuido = 0;
@@ -123,6 +125,13 @@ async function init() {
             console.log(`🎯 Examen recibido: ${reactivos.length} reactivos listos.`);
 
             if (reactivos.length > 0) {
+                const loader = document.getElementById('pantalla-carga');
+                document.getElementById('lbl-institucion').innerText = institucionRegla;
+                document.getElementById('lbl-aspirante').innerText = nombreHijo;
+                if (loader) loader.classList.add('hidden'); // Apaga la carga
+                const appContainer = document.getElementById('app-container');
+                if (appContainer) appContainer.classList.remove('hidden'); // Muestra el examen
+                
                 // Solo si no es PRO, descontamos intento (si tienes esa función activa)
                 if (!esPro && typeof ejecutarDescuentoIntento === 'function') ejecutarDescuentoIntento(); 
                 
@@ -156,7 +165,7 @@ function setupAudioMonitor(stream) {
     function update() {
         analyser.getByteFrequencyData(dataArray);
         const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
-        document.getElementById('audio-fill').style.width = Math.min(volume * 4, 100) + "%";
+        document.getElementById('audio-meter').style.width = Math.min(volume * 4, 100) + "%";
         
         if (volume > 40 && (Date.now() - ultimoAvisoRuido > 5000)) {
             ultimoAvisoRuido = Date.now();
@@ -178,137 +187,195 @@ async function confirmarAborto() {
 }
 
 function render() {
+    renderGrid(); // Pintamos los cuadritos
+    
     const r = reactivos[index];
-    const panelLectura = document.getElementById('panel-lectura');
+    const colLectura = document.getElementById('col-lectura');
+    const colPregunta = document.getElementById('col-pregunta');
 
+    // 1. Mostrar/Ocultar Texto de Lectura
     if (r.texto_lectura && r.texto_lectura.trim() !== "") {
-        if(panelLectura) panelLectura.classList.remove('hidden');
-        document.getElementById('texto-lectura-content').innerText = r.texto_lectura;
+        if(colLectura) {
+            colLectura.classList.remove('hidden');
+            colLectura.classList.add('lg:flex', 'lg:w-[55%]');
+        }
+        if(colPregunta) colPregunta.className = 'w-full lg:w-[45%] h-full overflow-y-auto custom-scrollbar transition-all duration-300 pr-2 pb-4';
+        document.getElementById('txt-lectura').innerHTML = r.texto_lectura;
     } else {
-        if(panelLectura) panelLectura.classList.add('hidden');
+        if(colLectura) {
+            colLectura.classList.add('hidden');
+            colLectura.classList.remove('lg:flex', 'lg:w-[55%]');
+        }
+        if(colPregunta) colPregunta.className = 'w-full h-full overflow-y-auto custom-scrollbar transition-all duration-300 pr-2 pb-4';
     }
 
+    // 2. Textos
     document.getElementById('label-materia').innerText = `${localStorage.getItem('plan_nombre_completo')} | ${r.materia}`;
-    document.getElementById('txt-pregunta').innerText = r.pregunta;
-    document.getElementById('progreso-txt').innerText = `REACTIVO ${index + 1} DE ${reactivos.length}`;
+    document.getElementById('txt-pregunta').innerHTML = `<span class="font-black text-cyan-400 mr-2">${index + 1})</span> ${r.pregunta}`;
     
+    // 3. Pintar Opciones (Diseño Demo)
     const g = document.getElementById('opciones-grid'); 
     g.innerHTML = '';
     
+    // No las revolvemos si no quieres, o las podemos dejar directas. Así respeta A,B,C,D:
     const contenido = [
         { id: 'a', t: r.opcion_a }, { id: 'b', t: r.opcion_b },
         { id: 'c', t: r.opcion_c }, { id: 'd', t: r.opcion_d }
-    ].sort(() => Math.random() - 0.5);
+    ];
 
     const letras = ['A', 'B', 'C', 'D'];
+    const miRespuestaGuardada = respuestasAlumno[index] ? respuestasAlumno[index].seleccion : null;
+
     contenido.forEach((op, i) => {
+        if (!op.t) return; // Si la opción está vacía, no la pinta
         const b = document.createElement('button');
-        b.className = "w-full text-left p-3 md:p-4 rounded-xl border border-slate-800 bg-black/20 flex items-center gap-4 transition-all text-sm md:text-base italic hover:border-cyan-500 hover:bg-slate-800/80 shadow-inner group";
-        b.innerHTML = `<span class="min-w-[2rem] w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-xs font-black text-cyan-400 shrink-0 group-hover:scale-110 transition-transform">${letras[i]}</span> <span class="text-slate-200 leading-relaxed">${op.t}</span>`;
+        const esSeleccionada = miRespuestaGuardada === op.id;
+        
+        b.className = 'w-full text-left bg-black/40 border p-3 rounded-xl transition-all text-sm flex items-start gap-3 focus:outline-none op-btn group ' + 
+                       (esSeleccionada ? 'border-cyan-400 bg-cyan-900/30' : 'border-slate-800 hover:border-cyan-500');
+        
+        const divLetraClass = 'w-6 h-6 text-xs rounded-md flex items-center justify-center font-bold shrink-0 mt-0.5 border transition-transform ' +
+                             (esSeleccionada ? 'bg-cyan-500 text-black border-cyan-400 scale-110' : 'bg-slate-800 border-slate-700 group-hover:scale-110 text-cyan-400');
+
+        b.innerHTML = `<div class="${divLetraClass}">${letras[i]}</div><div class="flex-1 latex-container text-slate-200">${op.t}</div>`;
         
         b.onclick = () => {
             seleccionActual = op.id;
-            document.querySelectorAll('#opciones-grid button').forEach(x => {
-                x.classList.remove('border-cyan-400', 'bg-cyan-900/30');
-                x.classList.add('border-slate-800', 'bg-black/20');
-            });
-            b.classList.remove('border-slate-800', 'bg-black/20');
-            b.classList.add('border-cyan-400', 'bg-cyan-900/30');
-            document.getElementById('btn-confirm').disabled = false;
+            respuestasAlumno[index] = { id_pregunta: r.id, seleccion: seleccionActual };
+            render(); // Redibuja al instante
         };
         g.appendChild(b);
     });
-    document.getElementById('btn-confirm').disabled = true;
-    const panelQ = document.getElementById('panel-preguntas');
-    if(panelQ) panelQ.scrollTop = 0;
+
+    // 4. Lógica de Botones (Anterior, Finalizar, Siguiente)
+    const btnAnt = document.getElementById('btn-anterior');
+    const btnSig = document.getElementById('btn-siguiente');
+
+    if (index === 0) {
+        if(btnAnt) btnAnt.classList.add('invisible');
+    } else { 
+        if(btnAnt) btnAnt.classList.remove('invisible'); 
+    }
+
+    if (index === reactivos.length - 1) {
+        if(btnSig) {
+            btnSig.innerHTML = '<i class="fa-solid fa-flag-checkered mr-2"></i> Finalizar';
+            btnSig.className = "px-3 md:px-5 py-2.5 rounded-lg bg-green-600 hover:bg-green-500 text-white shadow-[0_0_10px_rgba(34,197,94,0.3)] transition-all flex items-center justify-center font-bold text-[10px] md:text-xs uppercase tracking-wider";
+            btnSig.onclick = () => finalizar(); // ENVÍO MASIVO
+        }
+    } else {
+        if(btnSig) {
+            btnSig.innerHTML = 'Siguiente <i class="fa-solid fa-chevron-right ml-2"></i>';
+            btnSig.className = "px-3 md:px-5 py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_10px_rgba(6,182,212,0.3)] transition-all flex items-center justify-center font-bold text-[10px] md:text-xs uppercase tracking-wider";
+            btnSig.onclick = () => siguientePregunta();
+        }
+    }
+
+    if(typeof MathJax !== 'undefined') MathJax.typesetPromise();
+    //if(colPregunta) colPregunta.scrollTop = 0;
+}
+
+// Seleccionar opción (Solo la guarda en memoria y pinta el botón)
+function seleccionarOpcion(letra) {
+    seleccionActual = letra.toLowerCase();
+    
+    // Guardamos la selección en la posición exacta del examen
+    respuestasAlumno[index] = {
+        id_pregunta: reactivos[index].id,
+        seleccion: seleccionActual
+    };
+    
+    render(); // Redibuja para que se ilumine de azul la opción
+}
+
+// Botón Siguiente
+function siguientePregunta() {
+    if (index < reactivos.length - 1) {
+        const lecturaAnterior = reactivos[index].texto_lectura; // Memoria de la lectura actual
+        index++;
+        const lecturaNueva = reactivos[index].texto_lectura; // Memoria de la lectura siguiente
+        
+        seleccionActual = respuestasAlumno[index] ? respuestasAlumno[index].seleccion : null;
+        render();
+        
+        // La columna de las preguntas y opciones SIEMPRE sube
+        const colPregunta = document.getElementById('col-pregunta');
+        if (colPregunta) colPregunta.scrollTop = 0;
+        
+        // 👇 SOLUCIÓN: La lectura SOLO sube si el texto cambió
+        if (lecturaAnterior !== lecturaNueva) {
+            const txtLectura = document.getElementById('txt-lectura');
+            if (txtLectura && txtLectura.parentElement) txtLectura.parentElement.scrollTop = 0;
+        }
+    }
+}
+
+// Botón Anterior
+function preguntaAnterior() {
+    if (index > 0) {
+        const lecturaAnterior = reactivos[index].texto_lectura;
+        index--;
+        const lecturaNueva = reactivos[index].texto_lectura;
+        
+        seleccionActual = respuestasAlumno[index] ? respuestasAlumno[index].seleccion : null;
+        render();
+        
+        const colPregunta = document.getElementById('col-pregunta');
+        if (colPregunta) colPregunta.scrollTop = 0;
+        
+        // 👇 SOLUCIÓN: La lectura SOLO sube si el texto cambió al retroceder
+        if (lecturaAnterior !== lecturaNueva) {
+            const txtLectura = document.getElementById('txt-lectura');
+            if (txtLectura && txtLectura.parentElement) txtLectura.parentElement.scrollTop = 0;
+        }
+    }
+}
+
+// Botón Marcar (Pin amarillo)
+function toggleMarcarPregunta() {
+    const pId = reactivos[index].id;
+    const pos = preguntasMarcadas.indexOf(pId);
+    if (pos > -1) {
+        preguntasMarcadas.splice(pos, 1); // La desmarcamos
+    } else {
+        preguntasMarcadas.push(pId); // La marcamos
+    }
+    render(); // Redibuja el mapa de cuadritos
 }
 
 async function procesarRespuesta() {
     const r = reactivos[index];
     const seleccionUser = String(seleccionActual).trim().toLowerCase();
-    const btnConfirm = document.getElementById('btn-confirm');
     
-    // Bloqueamos el botón para que no le dé doble clic mientras la red trabaja
-    btnConfirm.disabled = true;
-    const textoOriginalBtn = btnConfirm.innerText;
-    btnConfirm.innerText = "VALIDANDO...";
-
-    try {
-        // 🛡️ ENVIAMOS LA RESPUESTA A LA BÓVEDA
-        const response = await fetch('https://pcuopqvmucmhtcdeswxh.supabase.co/functions/v1/validar-respuesta', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json', 
-                'Authorization': `Bearer ${supabaseKey}` 
-            },
-            body: JSON.stringify({
-                email: localStorage.getItem('session_email'),
-                token_hex: localStorage.getItem('token_hex_hijo'),
-                nombre_alumno: localStorage.getItem('nombre_alumno'),
-                id_pregunta: r.id,
-                respuesta_alumno: seleccionUser
-            })
-        });
-
-        const dataAPI = await response.json();
-
-        if (!dataAPI.success) {
-            throw new Error(dataAPI.error || "Falla de comunicación con el servidor");
-        }
-
-        const esCorrecto = dataAPI.es_correcto;
-        const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
-        
-        // Guardamos en la bitácora silenciosa de BD
-        if (typeof registrarPasoPorReactivo === 'function') await registrarPasoPorReactivo(r.id, esCorrecto, nivelID);
-
-        // Lógica de calificación local
-        if (esCorrecto) {
-            aciertos++;
-            rachaAciertos++;
-            
-            if (rachaAciertos >= 3 && colchonReactivos.length > 0) {
-                const idxReemplazo = reactivos.findIndex((re, i) => {
-                    if (i <= index) return false;
-                    if (re.materia !== r.materia) return false;
-                    if (re.texto_lectura && re.texto_lectura.trim() !== "") return false; 
-                    return true;
-                });
-
-                if (idxReemplazo !== -1) {
-                    const preguntaDura = colchonReactivos.shift(); 
-                    reactivos[idxReemplazo] = preguntaDura;
-                }
-                rachaAciertos = 0; 
-            }
-        } else {
-            rachaAciertos = 0; 
-            reactivosFallados.push({
-                materia: r.materia,
-                tema: r.tema_guia || "General",
-                pregunta_id: r.id,
-                pregunta: r.pregunta,          
-                correcta: dataAPI.respuesta_real // 🔒 La respuesta secreta nos la da la API solo si falló
-            });
-        }
-        
-        // Pasamos a la siguiente pregunta
-        index++; 
-        if (index < reactivos.length) {
-            render(); 
-        } else {
-            finalizar();
-        }
-
-    } catch (error) {
-        console.error("Error al calificar:", error);
-        alert("Hubo un ligero corte de internet al validar tu respuesta. Por favor intenta de nuevo.");
-        btnConfirm.disabled = false;
-        btnConfirm.innerText = textoOriginalBtn;
+    // 1. Guardamos la letra en la memoria temporal
+    respuestasAlumno.push({
+        id_pregunta: r.id,
+        seleccion: seleccionUser
+    });
+    
+    // 2. Pasamos a la siguiente pregunta al instante (Cero lag)
+    index++; 
+    if (index < reactivos.length) {
+        seleccionActual = null; // Limpiamos la selección
+        render(); 
+    } else {
+        finalizar();
     }
 }
 
 function startTimer() {
+    // 👇 NUEVO: Calcular hora actual y hora de fin
+    const ahora = new Date();
+    const fin = new Date(ahora.getTime() + tiempoSeg * 1000);
+    
+    const lblInicio = document.getElementById('lbl-hora-inicio');
+    const lblFin = document.getElementById('lbl-hora-fin');
+    
+    // Pintamos las horas en la pantalla (Ej. 12:44 P.M.)
+    if (lblInicio) lblInicio.innerText = `INICIO: ${ahora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+    if (lblFin) lblFin.innerText = `FIN: ${fin.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+    // 👆 FIN DE LO NUEVO
+
     const timerInterval = setInterval(() => {
         const h = Math.floor(tiempoSeg / 3600);
         const m = Math.floor((tiempoSeg % 3600) / 60);
@@ -321,6 +388,7 @@ function startTimer() {
             finalizar();
         }
     }, 1000);
+    
     // Guardamos la referencia en el objeto window para poder limpiarlo al finalizar manual
     window.timerIntervalRef = timerInterval;
 }
@@ -328,48 +396,77 @@ function startTimer() {
 async function finalizar() {
     if (window.timerIntervalRef) clearInterval(window.timerIntervalRef);
     
-    const p = (aciertos / reactivos.length) * 100;
-    const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
-    
-    let riesgo = "Bajo";
-    let veredicto = "El comportamiento fue adecuado. No se detectaron anomalías significativas.";
-
-    if (incidenciasVigilancia.length > 5) {
-        riesgo = "Alto";
-        veredicto = `Alerta: Se detectaron ${incidenciasVigilancia.length} eventos anómalos (ausencias o ruidos) durante la prueba.`;
-    } else if (incidenciasVigilancia.length > 0) {
-        riesgo = "Medio";
-        veredicto = `Precaución: Se registraron ${incidenciasVigilancia.length} incidencias leves.`;
+    // Cambiamos el texto de la pantalla para que el alumno sepa que estamos calificando
+    const panelPreguntas = document.getElementById('panel-preguntas');
+    if (panelPreguntas) {
+        panelPreguntas.innerHTML = `<div class="text-center p-10"><h2 class="text-2xl font-black text-cyan-400 animate-pulse">CALIFICANDO EXAMEN...</h2><p class="text-gray-400 mt-2">No cierres esta ventana, estamos procesando tus respuestas.</p></div>`;
     }
 
-    const detallesJSON = {
-        aciertos_totales: aciertos,
-        preguntas_totales: reactivos.length,
-        log_vigilancia: incidenciasVigilancia,
-        fallas_academicas: reactivosFallados
-    };
+    const nivelID = (nivelLabel === "Principiante") ? 1 : (nivelLabel === "Medio") ? 2 : 3;
+    const emailPadre = localStorage.getItem('session_email');
+    const token = localStorage.getItem('token_hex_hijo');
+    const nombreHijo = localStorage.getItem('nombre_alumno');
 
-    // Calculamos el nombre correcto del examen sacándolo directo de la memoria
-    const nombrePlan = localStorage.getItem('plan_nombre_completo') || 'EXAMEN GENERAL';
-    const nombreFinalPrueba = (tipoPruebaEnMemoria === 'Repaso') ? 'Reto de Repaso' : nombrePlan;
+        // ⚠️ ATENCIÓN: URL TEMPORAL PARA PRUEBAS LOCALES EN Docker
+        //const response = await fetch('http://127.0.0.1:54321/functions/v1/validar-respuesta', {
 
-    // 🛡️ CORRECCIÓN: Envolvemos en try/catch para obligar al sistema a esperar
     try {
-        console.log("Iniciando guardado de resultados...");
-        await guardarResultadoFinal(p, nivelID, detallesJSON, nombreFinalPrueba);
+        console.log("🚀 Enviando paquete masivo a la Bóveda...");
         
+        // --- ⚙️ CONTROL DE ENTORNOS ---
+        // PRODUCCIÓN (Oficial):
+         const nombreAPI = 'validar-respuesta';
+        
+        // DESARROLLO (Pruebas seguras):
+        //const nombreAPI = 'validar-respuesta-des';
+
+        // 🛡️ SOLUCIÓN AL 401: Cliente oficial de Supabase
+        const { data: dataAPI, error } = await _supabase.functions.invoke(nombreAPI, {
+            body: {
+                email: emailPadre,
+                token_hex: token,
+                nombre_alumno: nombreHijo,
+                nivel_label: nivelLabel, 
+                respuestas_alumno: respuestasAlumno 
+            }
+        });
+
+        if (error) throw new Error(error.message);
+        if (!dataAPI || !dataAPI.success) throw new Error(dataAPI?.error || "Falla al calificar masivamente.");
+
+        // Seteamos los resultados oficiales
+        aciertos = dataAPI.aciertos;
+        reactivosFallados = dataAPI.fallas_academicas;
+        const p = (aciertos / reactivos.length) * 100;
+        
+        // Estructuración de reportes secundarios
+        let riesgo = "Bajo";
+        let veredicto = "El comportamiento fue adecuado.";
+        if (incidenciasVigilancia.length > 5) { riesgo = "Alto"; veredicto = `Alerta: ${incidenciasVigilancia.length} anomalías.`; }
+        else if (incidenciasVigilancia.length > 0) { riesgo = "Medio"; veredicto = `Precaución: ${incidenciasVigilancia.length} incidencias.`; }
+
+        const detallesJSON = {
+            aciertos_totales: aciertos,
+            preguntas_totales: reactivos.length,
+            log_vigilancia: incidenciasVigilancia,
+            fallas_academicas: reactivosFallados
+        };
+
+        const nombrePlan = localStorage.getItem('plan_nombre_completo') || 'EXAMEN GENERAL';
+        const nombreFinalPrueba = (tipoPruebaEnMemoria === 'Repaso') ? 'Reto de Repaso' : nombrePlan;
+
+        // Guardado coordinado
+        await guardarResultadoFinal(p, nivelID, detallesJSON, nombreFinalPrueba);
         if (typeof guardarAnalisisVigilancia === 'function') await guardarAnalisisVigilancia({ veredicto: veredicto, riesgo: riesgo });
         if (typeof guardarProgresoIA === 'function') await guardarProgresoIA(p);
         
-        // Le damos 500ms (medio segundo) a Supabase para cerrar la conexión antes de saltar de página
         setTimeout(() => {
             window.location.href = `dashboard.html?res=${Math.round(p)}`;
-        }, 500);
+        }, 1500);
 
-    } catch (errorGuardado) {
-        console.error("Error crítico guardando el examen:", errorGuardado);
-        alert("Hubo un error guardando tus resultados. Por favor contacta a soporte.");
-        window.location.href = `dashboard.html?res=${Math.round(p)}`;
+    } catch (error) {
+        console.error("❌ Error Crítico en Cierre Masivo:", error);
+        alert("Ocurrió un inconveniente al sincronizar tus respuestas. Verifica tu conexión e inténtalo de nuevo.");
     }
 }
 
@@ -437,6 +534,53 @@ async function registrarPasoPorReactivo(idReactivo, fueCorrecto, nivelActual) {
     } catch (err) {
         console.error("Error silencioso guardando en la bitácora:", err);
         // Si la bitácora falla, el examen sigue fluyendo sin molestar al alumno
+    }
+}
+
+function renderGrid() {
+    const grid = document.getElementById('grid-navegacion');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    let respondidas = 0; // 👈 Iniciamos el contador
+    
+    for (let i = 0; i < reactivos.length; i++) {
+        const btn = document.createElement('button');
+        const estaRespondida = respuestasAlumno[i] && respuestasAlumno[i].seleccion;
+        const estaMarcada = preguntasMarcadas.includes(reactivos[i].id);
+        
+        if (estaRespondida) respondidas++; // 👈 Sumamos si ya eligió una letra
+        
+        let clases = 'w-6 h-6 rounded text-[10px] font-bold transition-all flex items-center justify-center border ';
+        
+        if (i === index) {
+            clases += 'bg-cyan-600 border-cyan-400 text-white shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-110 z-10';
+        } else if (estaMarcada) {
+            clases += 'bg-yellow-400 border-yellow-300 text-black shadow-[0_0_10px_rgba(250,204,21,0.6)] hover:bg-yellow-300';
+        } else if (estaRespondida) {
+            clases += 'bg-red-900/60 border-red-500 text-red-400 hover:bg-red-800';
+        } else {
+            clases += 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600';
+        }
+
+        btn.className = clases;
+        
+        if (estaMarcada) {
+            btn.innerHTML = '<i class="fa-solid fa-xmark text-xs"></i>';
+        } else if (estaRespondida) {
+            btn.innerHTML = '<i class="fa-solid fa-check text-[10px]"></i>';
+        } else {
+            btn.innerHTML = (i + 1);
+        }
+        
+        btn.onclick = () => { index = i; render(); }; 
+        grid.appendChild(btn);
+    }
+
+    // 👇 Actualizamos el texto "RESPONDIDAS: X / 35"
+    const progresoTxt = document.getElementById('progreso-txt');
+    if (progresoTxt) {
+        progresoTxt.innerText = `RESPONDIDAS: ${respondidas} / ${reactivos.length}`;
     }
 }
 
