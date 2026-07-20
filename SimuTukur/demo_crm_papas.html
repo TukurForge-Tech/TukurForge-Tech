@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal para Padres | Academia Tukur</title>
+    <style>
+        :root { --bg: #f0fdfa; --text: #334155; --primary: #0f766e; --accent: #06B6D4; --border: #ccfbf1; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { background: white; padding: 20px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .card { background: white; padding: 25px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .progress-bar { width: 100%; background: #e2e8f0; border-radius: 10px; height: 20px; overflow: hidden; margin-top: 10px; }
+        .progress-fill { height: 100%; background: var(--accent); width: 75%; transition: 1s; }
+        .probabilidad-alta { color: #10B981; font-weight: bold; font-size: 24px; }
+        .badge { padding: 5px 10px; background: #fee2e2; color: #ef4444; border-radius: 15px; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1 style="margin: 0; color: var(--primary);">Reporte de Progreso Académico</h1>
+                <p style="margin: 5px 0 0 0;">Alumno: <strong>Luis García</strong> | 3ro de Preparatoria</p>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 12px; color: #64748b;">Colegio Patria</div>
+                <img src="https://ui-avatars.com/api/?name=Colegio+Patria&background=0f766e&color=fff" alt="Logo" style="border-radius: 5px; width: 40px; margin-top: 5px;">
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- Progreso de Inglés -->
+            <div class="card">
+                <h3 style="margin-top: 0; color: var(--primary);">🗣️ Políglota Tukur (Inglés)</h3>
+                <p>Nivel Actual: <strong>B2 (Intermedio-Alto)</strong></p>
+                <div style="margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                        <span>Speaking (Pronunciación IA)</span>
+                        <strong>85%</strong>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill" style="width: 85%; background: #10B981;"></div></div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                        <span>Listening (Comprensión)</span>
+                        <strong>70%</strong>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill" style="width: 70%; background: #F59E0B;"></div></div>
+                </div>
+            </div>
+
+            <!-- Simulador y Admisión (Solo 3ros) -->
+            <div class="card" style="border-left: 5px solid var(--accent);">
+                <h3 style="margin-top: 0; color: var(--primary);">🎓 SimuTukur (Ingreso a Universidad)</h3>
+                <p style="font-size: 14px;">Examen Objetivo: <strong>UNAM - Área 1</strong></p>
+                
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                    <div style="font-size: 12px; color: #64748b; text-transform: uppercase;">Probabilidad de Admisión Actual</div>
+                    <div class="probabilidad-alta">78% (Favorable)</div>
+                </div>
+
+                <div style="font-size: 14px;">
+                    <strong>Áreas de Oportunidad (Detectadas por IA):</strong>
+                    <ul style="padding-left: 20px; margin-top: 5px;">
+                        <li>Física III <span class="badge">Atención Urgente</span></li>
+                        <li>Cálculo Diferencial</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

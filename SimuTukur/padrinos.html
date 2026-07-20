@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alianza Corporativa | SimuTukur</title>
+    <link rel="icon" type="image/jpeg" href="https://pcuopqvmucmhtcdeswxh.supabase.co/storage/v1/object/public/reactivos-assets/SimuTukur/SimuTukur2.jpeg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#050a14] text-white antialiased selection:bg-cyan-500 selection:text-white font-sans overflow-hidden" id="body-container">
+
+    <!-- 🔒 PANTALLA DE BLOQUEO (MURO DE EXCLUSIVIDAD) -->
+    <div id="lock-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#050a14]/90 backdrop-blur-xl transition-opacity duration-500">
+        <div class="text-center max-w-md px-6">
+            <img src="https://pcuopqvmucmhtcdeswxh.supabase.co/storage/v1/object/public/reactivos-assets/SimuTukur/SimuTukur2.jpeg" alt="SimuTukur Logo" class="w-20 h-20 mx-auto rounded-2xl border border-cyan-500/50 shadow-[0_0_30px_rgba(6,182,212,0.3)] mb-6">
+            <h2 class="text-2xl font-black uppercase tracking-widest text-white mb-2">Dossier Confidencial</h2>
+            <p class="text-gray-400 text-sm mb-8">Ingrese su Código de Alianza Corporativa para acceder a la propuesta.</p>
+            
+            <div class="relative">
+                <input type="password" id="access-code" placeholder="CÓDIGO DE ACCESO" class="w-full bg-black/50 border border-gray-700 text-center text-cyan-400 font-black tracking-widest uppercase p-4 rounded-xl focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition">
+                <p id="error-msg" class="text-red-500 text-xs font-bold mt-2 opacity-0 transition-opacity">Código incorrecto. Verifique sus credenciales.</p>
+            </div>
+            
+            <button id="unlock-btn" class="mt-6 w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 rounded-xl uppercase tracking-widest shadow-[0_0_20px_rgba(6,182,212,0.4)] transition">
+                <i class="fa-solid fa-lock-open mr-2"></i> Acceder al Dossier
+            </button>
+        </div>
+    </div>
+
+    <!-- 🌐 CONTENIDO PRINCIPAL (Oculto inicialmente) -->
+    <div id="main-content" class="opacity-0 pointer-events-none transition-opacity duration-700 h-screen overflow-y-auto pb-24">
+        
+        <!-- Navbar -->
+        <nav class="fixed w-full z-50 nav-glass border-b border-gray-800">
+            <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <img src="https://pcuopqvmucmhtcdeswxh.supabase.co/storage/v1/object/public/reactivos-assets/SimuTukur/SimuTukur2.jpeg" alt="Simu Búho" class="w-10 h-10 rounded-lg object-cover border border-cyan-500/30">
+                    <h1 class="text-2xl font-black italic text-cyan-400 tracking-tighter">SIMUTUKUR <span class="text-xs text-gray-500 not-italic font-bold uppercase tracking-widest ml-2 hidden md:inline">| Alianzas Corporativas</span></h1>
+                </div>
+            </div>
+        </nav>
+
+        <!-- BLOQUE 1: EL PROBLEMA -->
+        <section class="pt-32 pb-12 px-6 max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+                <div class="inline-block bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] font-black uppercase tracking-widest py-1.5 px-4 rounded-full mb-6">
+                    <i class="fa-solid fa-microchip mr-1"></i> La Nueva Realidad Educativa
+                </div>
+                <h2 class="text-4xl md:text-5xl font-black italic tracking-tighter leading-tight mb-6 text-white">
+                    El examen de admisión cambió para siempre.
+                </h2>
+                <p class="text-gray-400 text-lg leading-relaxed">
+                    Las universidades implementaron una nueva barrera invisible. Hoy, los exámenes en línea ya no son evaluados solo por maestros, están controlados por <strong class="text-cyan-400">Inteligencia Artificial y telemetría avanzada</strong> que audita micrófonos y cámaras web en tiempo real.
+                </p>
+            </div>
+            
+            <!-- Video Botón Facebook -->
+            <div class="flex justify-center">
+                <a href="https://www.facebook.com/share/v/1DvyFbJZ3G/" target="_blank" class="relative w-full max-w-md aspect-video rounded-2xl overflow-hidden border border-gray-800 shadow-neon group block bg-gradient-to-br from-gray-900 to-[#050a14] cursor-pointer">
+                    <div class="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center z-10">
+                        <div class="w-16 h-16 bg-cyan-600/90 rounded-full flex items-center justify-center text-white text-2xl group-hover:bg-cyan-400 group-hover:scale-110 transition-all shadow-[0_0_30px_rgba(6,182,212,0.8)] backdrop-blur-md">
+                            <i class="fa-solid fa-play ml-1"></i>
+                        </div>
+                        <div class="mt-4 text-center">
+                            <span class="bg-black/60 px-3 py-1 rounded-full border border-gray-700 text-gray-300 text-[9px] uppercase tracking-widest mb-2 flex items-center justify-center gap-2">
+                                <i class="fa-brands fa-facebook text-blue-500"></i> Reportaje Especial
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- BLOQUE 2: LA AGITACIÓN (El Dolor) -->
+        <section class="py-12 bg-black/40 border-y border-gray-800">
+            <div class="max-w-4xl mx-auto px-6 text-center">
+                <h3 class="text-3xl font-black italic tracking-tighter text-white uppercase mb-6">El esfuerzo de un año, destruido en un segundo.</h3>
+                <p class="text-gray-400 text-lg mb-8 leading-relaxed">
+                    Imagina a un joven que estudió durante meses. Llega el día del examen. De pronto, hay ruido en la calle, su mirada se desvía un segundo para recordar una fórmula, o simplemente bosteza por los nervios...
+                </p>
+                <div class="bg-red-950/40 border-2 border-red-500/50 rounded-xl p-6 max-w-md mx-auto animate-pulse shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+                    <i class="fa-solid fa-triangle-exclamation text-red-500 text-4xl mb-2"></i>
+                    <h4 class="text-red-500 font-black tracking-widest uppercase">Examen Anulado</h4>
+                    <p class="text-red-400/80 text-xs font-bold mt-1 uppercase">Motivo: Actividad Sospechosa Detectada</p>
+                </div>
+                <p class="text-gray-400 text-lg mt-8 leading-relaxed">
+                    No hay un humano a quien reclamarle. Un año de vida truncado, no por falta de conocimientos, sino porque <strong class="text-white">nadie los entrenó para lidiar con la frialdad de un algoritmo de vigilancia.</strong>
+                </p>
+            </div>
+        </section>
+
+        <!-- BLOQUE 3: LA SOLUCIÓN (Show, Don't Tell) -->
+        <section class="py-16 px-6 max-w-6xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-black italic tracking-tighter text-white uppercase mb-4">
+                    En SimuTukur creamos el antídoto
+                </h2>
+                <p class="text-gray-400 text-lg">No somos cuestionarios genéricos; somos un entorno de entrenamiento de alto rendimiento.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- UI Telemetría -->
+                <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6 relative overflow-hidden">
+                    <h4 class="text-cyan-400 text-[10px] font-black uppercase tracking-widest mb-4">Auditoría Conductual (Semáforo de Riesgo)</h4>
+                    <div class="space-y-4">
+                        <div class="bg-black/50 p-4 rounded-xl border border-gray-800 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-microphone text-green-500"></i>
+                                <div>
+                                    <p class="text-white text-sm font-bold">Monitoreo de Audio</p>
+                                    <p class="text-gray-500 text-xs">Ruido ambiente bajo</p>
+                                </div>
+                            </div>
+                            <span class="bg-green-500/20 text-green-400 text-[10px] font-black px-2 py-1 rounded uppercase">Óptimo</span>
+                        </div>
+                        <div class="bg-red-950/20 p-4 rounded-xl border border-red-500/30 flex items-center justify-between relative overflow-hidden">
+                            <div class="absolute inset-0 bg-red-500/5 animate-pulse"></div>
+                            <div class="flex items-center gap-3 relative z-10">
+                                <i class="fa-solid fa-eye text-red-500"></i>
+                                <div>
+                                    <p class="text-white text-sm font-bold">Biometría Visual</p>
+                                    <p class="text-red-400/80 text-xs">Desvío de mirada detectado</p>
+                                </div>
+                            </div>
+                            <span class="bg-red-500/20 text-red-400 text-[10px] font-black px-2 py-1 rounded uppercase relative z-10">Crítico</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UI Tutor IA -->
+                <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6 relative overflow-hidden">
+                    <h4 class="text-cyan-400 text-[10px] font-black uppercase tracking-widest mb-4">Acompañamiento 24/7 (Tutor IA)</h4>
+                    <div class="flex flex-col gap-3">
+                        <div class="bg-black border border-gray-800 p-3 rounded-lg rounded-tl-none w-[85%]">
+                            <p class="text-gray-400 text-xs mb-1">Pregunta del alumno (Incorrecta):</p>
+                            <p class="text-red-400 text-sm line-through">La derivada de 3x² es 3x.</p>
+                        </div>
+                        <div class="bg-cyan-900/20 border border-cyan-500/30 p-3 rounded-lg rounded-tr-none w-[90%] self-end">
+                            <p class="text-cyan-400 text-xs font-bold mb-1"><i class="fa-solid fa-robot mr-1"></i> Tutor Simu:</p>
+                            <p class="text-gray-300 text-sm leading-relaxed">No te preocupes. Recuerda que el exponente multiplica al coeficiente y luego se le resta 1. Así: 2 * 3x^(2-1) = <strong class="text-white">6x</strong>. ¡Inténtalo de nuevo, tú puedes!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BLOQUE 4: DEMO -->
+        <section class="py-16 px-6 bg-black/40 border-y border-gray-800">
+            <div class="max-w-3xl mx-auto text-center">
+                <h3 class="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter mb-4">Pon a prueba nuestra rigurosidad</h3>
+                <p class="text-gray-400 text-sm md:text-base mb-8">
+                    Habilita tu cámara y micrófono. Vive en carne propia la presión de un diagnóstico vigilado de 15 minutos.
+                </p>
+                <div class="flex flex-col md:flex-row justify-center items-stretch gap-4 w-full relative z-10">
+                    <div class="relative w-full md:w-1/2">
+                        <select id="exam-dropdown" class="select-tukur h-[60px]">
+                            <option value="" disabled selected>Cargando áreas de prueba...</option>
+                        </select>
+                    </div>
+                    <button id="start-demo-btn" class="w-full md:w-1/2 bg-cyan-600 hover:bg-cyan-500 text-white font-black text-sm rounded-xl transition shadow-[0_0_20px_rgba(6,182,212,0.4)] h-[60px] uppercase tracking-widest flex items-center justify-center">
+                        <i class="fa-solid fa-play mr-2"></i> Iniciar Demo (Solo PC)
+                    </button>
+                </div>
+                <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-4">⚠️ Bloqueo móvil activado para simular entorno real.</p>
+            </div>
+        </section>
+
+        <!-- BLOQUE 5: EL PACTO 50/50 -->
+        <section class="py-16 px-6 max-w-5xl mx-auto text-center">
+            <h2 class="text-3xl md:text-4xl font-black italic tracking-tighter text-white uppercase mb-6">
+                El presupuesto es para <span class="text-cyan-400">los jóvenes</span>, no para la publicidad.
+            </h2>
+            <p class="text-gray-400 text-lg leading-relaxed mb-4">
+                Cancelamos nuestro presupuesto en pautas de redes sociales extranjeras. Preferimos sumar esfuerzos con líderes reales que tienen alcance e influencia genuina.
+            </p>
+            <p class="text-white text-lg font-bold">
+                Tú pones el liderazgo, nosotros la tecnología. Por cada beca que aportes, nosotros donamos otra a tu nombre.
+            </p>
+        </section>
+
+        <!-- BLOQUE 6: LOS PAQUETES DE IMPACTO -->
+        <section class="pb-20 px-6 max-w-7xl mx-auto">
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Ruta 1: Impulso 100 -->
+                <div class="bg-glass rounded-3xl p-8 border border-gray-800 flex flex-col h-full relative">
+                    <h3 class="text-cyan-400 text-sm font-black uppercase tracking-widest mb-2">Opción 1</h3>
+                    <h4 class="text-3xl font-black text-white italic uppercase tracking-tighter mb-6">Ruta "Impulso 100"</h4>
+                    <ul class="space-y-4 text-gray-300 text-sm flex-grow">
+                        <li class="flex items-start gap-3"><i class="fa-solid fa-check text-cyan-500 mt-1"></i><div><strong class="text-white">Entrenamiento Élite (100% Beca):</strong> 10 Jóvenes totalmente blindados con IA (5 becados por ti, 5 por nosotros).</div></li>
+                        <li class="flex items-start gap-3"><i class="fa-solid fa-check text-cyan-500 mt-1"></i><div><strong class="text-white">Impulso Comunitario (60% Beca):</strong> 50 becas de rescate masivo (Tú absorbes el 40%, SimuTukur aporta el 20% extra).</div></li>
+                        <li class="flex items-start gap-3"><i class="fa-solid fa-shirt text-cyan-500 mt-1"></i><div><strong class="text-white">Símbolo Físico:</strong> 10 Playeras premium (Tallas M y L) con tu logotipo para tu evento de entrega.</div></li>
+                    </ul>
+                    <div class="mt-8 pt-6 border-t border-gray-800 text-center">
+                        <p class="text-xs text-gray-500 uppercase font-bold tracking-widest mb-1">Valor real entregado a la comunidad: <span class="text-green-400 font-black">$24,270.00 MXN</span></p>
+                        <div class="bg-black/50 border border-cyan-500/30 p-4 rounded-xl mt-4">
+                            <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-1">Aportación Única del Padrino</p>
+                            <p class="text-3xl font-black text-cyan-400 italic tracking-tighter">$5,000 <span class="text-sm font-normal text-gray-500 not-italic">MXN + IVA</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ruta 2: Transformación 200 -->
+                <div class="bg-gradient-to-b from-gray-900 to-[#02050a] rounded-3xl p-8 border-2 border-cyan-500/40 shadow-neon flex flex-col h-full relative">
+                    <div class="absolute top-4 right-4 bg-cyan-500 text-black text-[10px] font-black uppercase tracking-widest py-1 px-3 rounded-full">Mayor Impacto</div>
+                    <h3 class="text-cyan-400 text-sm font-black uppercase tracking-widest mb-2">Opción 2</h3>
+                    <h4 class="text-3xl font-black text-white italic uppercase tracking-tighter mb-6">Ruta "Transformación 200"</h4>
+                    <ul class="space-y-4 text-gray-300 text-sm flex-grow">
+                        <li class="flex items-start gap-3"><i class="fa-solid fa-check text-cyan-500 mt-1"></i><div><strong class="text-white">Entrenamiento Élite (100% Beca):</strong> 20 Jóvenes totalmente blindados con IA (10 becados por ti, 10 por nosotros).</div></li>
+                        <li class="flex items-start gap-3"><i class="fa-solid fa-check text-cyan-500 mt-1"></i><div><strong class="text-white">Impulso Comunitario (60% Beca):</strong> 100 becas de rescate masivo.</div></li>
+                        <li class="flex items-start gap-3"><i class="fa-solid fa-shirt text-cyan-500 mt-1"></i><div><strong class="text-white">Símbolo Físico:</strong> 20 Playeras premium (Tallas M y L) con tu logotipo para la foto oficial.</div></li>
+                    </ul>
+                    <div class="mt-8 pt-6 border-t border-gray-700 text-center">
+                        <p class="text-xs text-gray-500 uppercase font-bold tracking-widest mb-1">Valor real entregado a la comunidad: <span class="text-green-400 font-black">$48,540.00 MXN</span></p>
+                        <div class="bg-black/50 border border-cyan-500/50 p-4 rounded-xl mt-4">
+                            <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-1">Aportación Única del Padrino</p>
+                            <p class="text-3xl font-black text-cyan-400 italic tracking-tighter">$10,000 <span class="text-sm font-normal text-gray-500 not-italic">MXN + IVA</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BLOQUE 7: CIERRE (BIFURCACIÓN UX) -->
+        <section class="py-20 bg-[#02050a] border-t border-gray-800 text-center px-6">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="text-2xl md:text-4xl font-black italic tracking-tighter text-white uppercase mb-4">
+                    El liderazgo se mide en las puertas que abres.
+                </h2>
+                <p class="text-gray-400 mb-10">Transparencia absoluta: Recibe reportes en tiempo real cada que un joven utilice tu código, protegiendo siempre los datos del menor.</p>
+                
+                <!-- Botones Iniciales -->
+                <div id="decision-buttons" class="flex flex-col md:flex-row justify-center items-center gap-4 transition-all">
+                    <button id="btn-ready" class="w-full md:w-auto bg-green-600 hover:bg-green-500 text-white font-black py-4 px-8 rounded-xl uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(22,163,74,0.3)] transition transform hover:-translate-y-1">
+                        <i class="fa-solid fa-handshake mr-2"></i> Estoy listo. Quiero ser Padrino.
+                    </button>
+                    <button id="btn-doubt" class="w-full md:w-auto bg-transparent border border-gray-600 hover:border-cyan-400 text-gray-300 hover:text-cyan-400 font-black py-4 px-8 rounded-xl uppercase tracking-widest text-sm transition">
+                        <i class="fa-regular fa-calendar mr-2"></i> Tengo dudas operativas
+                    </button>
+                </div>
+
+                <!-- Área Dinámica: Formulario Corporativo (Oculto) -->
+                <div id="onboarding-form" class="hidden mt-10 bg-gray-900 border border-gray-800 p-8 rounded-3xl text-left max-w-2xl mx-auto">
+                    <h3 class="text-xl font-black text-white italic uppercase tracking-tighter mb-6 border-b border-gray-700 pb-2">Generar Convenio de Alianza</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Nombre de Institución, Empresa o Líder</label>
+                            <input type="text" class="w-full bg-black border border-gray-700 text-white p-3 rounded-xl focus:border-cyan-500 outline-none mt-1">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Ruta de Impacto Elegida</label>
+                            <select class="w-full bg-black border border-gray-700 text-white p-3 rounded-xl focus:border-cyan-500 outline-none mt-1">
+                                <option>Ruta "Impulso 100" ($5,000 + IVA)</option>
+                                <option>Ruta "Transformación 200" ($10,000 + IVA)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Correo para Reportes</label>
+                            <input type="email" class="w-full bg-black border border-gray-700 text-white p-3 rounded-xl focus:border-cyan-500 outline-none mt-1">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 pt-2">
+                            <div class="bg-black/50 border border-gray-700 p-4 rounded-xl text-center cursor-pointer hover:border-cyan-500 transition">
+                                <i class="fa-solid fa-cloud-arrow-up text-cyan-500 text-2xl mb-2"></i>
+                                <p class="text-xs text-gray-400 font-bold">Subir Logotipo (PNG)</p>
+                            </div>
+                            <div class="bg-black/50 border border-gray-700 p-4 rounded-xl text-center cursor-pointer hover:border-cyan-500 transition">
+                                <i class="fa-solid fa-file-pdf text-red-400 text-2xl mb-2"></i>
+                                <p class="text-xs text-gray-400 font-bold">Constancia Fiscal (PDF)</p>
+                            </div>
+                        </div>
+                        <button id="btn-submit-form" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 rounded-xl uppercase tracking-widest mt-4 transition">
+                            Procesar Alta y Ver Datos de Pago
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Área Dinámica: Datos Bancarios (Oculto) -->
+                <div id="bank-details" class="hidden mt-10 bg-gradient-to-br from-cyan-900/40 to-black border border-cyan-500/50 p-8 rounded-3xl max-w-2xl mx-auto shadow-neon">
+                    <i class="fa-solid fa-circle-check text-green-500 text-4xl mb-4"></i>
+                    <h3 class="text-xl font-black text-white uppercase tracking-widest mb-6">Expediente Recibido</h3>
+                    <p class="text-sm text-gray-300 mb-6">Realiza la transferencia interbancaria para activar los códigos de tu comunidad.</p>
+                    <div class="bg-black/60 p-6 rounded-xl border border-gray-700 text-left space-y-3">
+                        <p class="text-xs text-gray-500 uppercase font-bold tracking-widest">Razón Social: <span class="text-white text-sm">H Levare Group SAS</span></p>
+                        <p class="text-xs text-gray-500 uppercase font-bold tracking-widest">Banco: <span class="text-white text-sm">BBVA / STP (Ajustar a tu banco)</span></p>
+                        <p class="text-xs text-gray-500 uppercase font-bold tracking-widest">Cuenta CLABE: <span class="text-cyan-400 text-lg font-black tracking-widest">012 345 67890 123456 7</span></p>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-4 uppercase">Favor de enviar comprobante a facturacion@hlevare.com</p>
+                </div>
+
+                <!-- Área Dinámica: Calendario (Oculto) -->
+                <div id="calendar-section" class="hidden mt-10 bg-gray-900 border border-gray-800 p-8 rounded-3xl max-w-2xl mx-auto">
+                    <h3 class="text-xl font-black text-white italic uppercase tracking-tighter mb-4">Sesión Estratégica B2B</h3>
+                    <p class="text-gray-400 text-sm mb-6">Nuestros directivos atienden alianzas corporativas exclusivamente de <strong class="text-white">Martes a Jueves (18:00 a 20:00 hrs)</strong>. Seleccione un espacio disponible de 15 minutos.</p>
+                    <div class="bg-black/50 border border-gray-800 h-64 rounded-xl flex items-center justify-center text-gray-600 border-dashed">
+                        <p><i class="fa-solid fa-code"></i> Aquí se incrusta el widget de Calendly o Zoho Bookings</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+    <script src="padrinos.js"></script>
+</body>
+</html>

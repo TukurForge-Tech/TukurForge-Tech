@@ -52,12 +52,11 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 // ==========================================
 // 2. VALIDACIÓN DE ARCHIVOS
 // ==========================================
-// Activar el botón solo cuando todo el formulario esté lleno
 document.getElementById('onboardingForm').addEventListener('input', function() {
     const btn = document.getElementById('btnSubmit');
-    // checkValidity() verifica automáticamente que los campos 'required' tengan información
     btn.disabled = !this.checkValidity();
 });
+
 function validarArchivo(archivo) {
     if (!archivo) return false;
     const TAMANO_MAXIMO = 5 * 1024 * 1024; // 5 MB
@@ -74,17 +73,21 @@ function validarArchivo(archivo) {
 // ==========================================
 document.getElementById('onboardingForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const btn = document.getElementById('btnSubmit');
     const loadingStatus = document.getElementById('loadingStatus');
     
     btn.style.display = 'none';
     loadingStatus.style.display = 'block';
 
-    trabajadorGlobalNombre = document.getElementById('fullName').value;
+    const valNombre = document.getElementById('nombre').value;
+    const valSegundosNombres = document.getElementById('segundos_nombres').value;
+    const valPrimerApellido = document.getElementById('primer_apellido').value;
+    const valSegundoApellido = document.getElementById('segundo_apellido').value;
+
+    trabajadorGlobalNombre = `${valNombre} ${valPrimerApellido}`;
 
     try {
-        // Obtenemos los archivos físicos del HTML
         const fileId = document.getElementById('fileId').files[0];
         const fileTax = document.getElementById('fileTax').files[0];
         const fileAddress = document.getElementById('fileAddress').files[0];
@@ -93,7 +96,6 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
         const fileRecLaboral = document.getElementById('fileRecLaboral').files[0];
         const fileRecPersonal = document.getElementById('fileRecPersonal').files[0];
 
-        // Ejecutamos validación local de seguridad
         validarArchivo(fileId);
         validarArchivo(fileTax);
         validarArchivo(fileAddress);
@@ -102,12 +104,8 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
         validarArchivo(fileRecLaboral);
         validarArchivo(fileRecPersonal);
 
-        // Función auxiliar para subir a Supabase Storage y obtener el link
-        // Aquí aplicamos tu nomenclatura corporativa
         const subirArchivo = async (archivo, nombreEstandar) => {
-            // Extraemos la extensión original (.pdf, .jpg)
             const extension = archivo.name.split('.').pop();
-            // Creamos la ruta corporativa: expedientes/[UUID]/[NombreEstandar].[ext]
             const rutaFinal = `${trabajadorGlobalId}/${nombreEstandar}.${extension}`;
 
             const { data, error } = await _supabase.storage
@@ -116,15 +114,13 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
 
             if (error) throw new Error(`Error al subir ${nombreEstandar}: ` + error.message);
             
-            // Si subió bien, regresamos la URL pública (o ruta interna)
             const { data: urlData } = _supabase.storage.from('expedientes').getPublicUrl(rutaFinal);
             return urlData.publicUrl;
         };
 
-        // Subimos los 4 documentos en paralelo (más rápido para el usuario)
         loadingStatus.innerHTML = "<p>Subiendo documentos seguros...</p>";
         const [link_id, link_csf, link_dom, link_ban, link_est, link_rec_lab, link_rec_per] = await Promise.all([
-            subirArchivo(fileId, 'identificacion_oficial'), // Aquí cubrimos INE o Pasaporte
+            subirArchivo(fileId, 'identificacion_oficial'),
             subirArchivo(fileTax, 'csf'),
             subirArchivo(fileAddress, 'domicilio'),
             subirArchivo(fileBank, 'caratula_bancaria'),
@@ -133,9 +129,6 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
             subirArchivo(fileRecPersonal, 'recomendacion_personal')
         ]);
 
-        // ==========================================
-        // LLAMADA A LA API 3: GUARDAR TEXTOS EN BD
-        // ==========================================
         loadingStatus.innerHTML = "<p>Registrando expediente en el sistema...</p>";
 
         const bancoSeleccionado = document.getElementById('banco_nombre').value.trim().toUpperCase();
@@ -148,7 +141,10 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
                 'Authorization': `Bearer ${supabaseKey}` },
             body: JSON.stringify({
                 trabajador_id: trabajadorGlobalId,
-                nombre_completo: trabajadorGlobalNombre,
+                nombre: valNombre,                          
+                segundos_nombres: valSegundosNombres,       
+                primer_apellido: valPrimerApellido,         
+                segundo_apellido: valSegundoApellido,
                 direccion: document.getElementById('address').value,
                 rfc: document.getElementById('rfc').value,
                 clabe: document.getElementById('clabe').value,
@@ -169,9 +165,6 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
 
         if (!resGuardar.ok) throw new Error("Ocurrió un error al guardar los datos en el servidor.");
 
-        // ==========================================
-        // LLAMADA A LA API DE NOTIFICACIONES (RESEND)
-        // ==========================================
         loadingStatus.innerHTML = "<p>Enviando correos de confirmación...</p>";
 
         await fetch(`${supabaseUrl}/functions/v1/notificar-onboarding`, {
@@ -186,7 +179,6 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
             })
         });
 
-        // ¡PROCESO TERMINADO CON ÉXITO!
         document.getElementById('onboardingForm').style.display = 'none';
         loadingStatus.style.display = 'none';
         document.getElementById('successStatus').style.display = 'block';

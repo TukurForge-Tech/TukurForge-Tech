@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP Central - TukurForge</title>
+    <link rel="stylesheet" href="centro_mando.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+    <!-- 🛑 EL MURO DE SEGURIDAD (LOGIN) -->
+    <div id="muro-seguridad" style="height: 100vh; display: flex; justify-content: center; align-items: center; background-color: var(--bg-color);">
+        <div class="detalle-card" style="width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+            <h2 style="color: var(--primary-color); font-style: italic; margin-bottom: 5px;">H Levare Group</h2>
+            <p style="color: var(--text-muted); margin-bottom: 25px;">Centro de Mando ERP</p>
+            
+            <input type="email" id="loginCorreo" class="erp-input" placeholder="Correo Corporativo" style="margin-bottom: 15px;">
+            <input type="password" id="loginPassword" class="erp-input" placeholder="Contraseña de Acceso" style="margin-bottom: 25px;">
+            
+            <button id="btnIngresar" class="btn-primary" style="width: 100%; padding: 12px; font-size: 1.1em;">Ingresar al Sistema</button>
+        </div>
+    </div>
+
+    <!-- 🟢 EL ERP (OCULTO HASTA QUE INICIES SESIÓN) -->
+    <div id="erp-app" style="display: none; flex-direction: column; height: 100vh;">
+        
+        <div class="navbar">
+            <div class="brand">
+                <h2>ERP TukurForge</h2>
+            </div>
+            <!-- Aquí se inyectarán tus datos mágicamente -->
+            <div class="admin-profile">
+                <span id="perfilNombre">Cargando...</span> | <span id="perfilRol" style="color: var(--primary-color); font-weight: bold;">...</span>
+                <button id="btnCerrarSesion" class="btn-danger" style="padding: 5px 15px; margin-left: 20px; font-size: 0.8em;">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="dashboard-container">
+            <!-- MENÚ DE NAVEGACIÓN -->
+            <div class="erp-menu">
+                <button class="menu-btn active" onclick="cambiarModulo('modulo-invitaciones', this)">✉️ 1. Onboarding</button>
+                <button class="menu-btn" onclick="cambiarModulo('modulo-validacion', this)">📁 2. Mesa de Control</button>
+                <button class="menu-btn" onclick="cambiarModulo('modulo-activaciones', this); cargarActivaciones();">🚀 3. Activaciones</button>
+                <button class="menu-btn" disabled>🏫 4. Escuelas (Próximamente)</button>
+                <button class="menu-btn" disabled>💰 5. Facturación (Próximamente)</button>
+            </div>
+
+            <!-- MÓDULO 1: INVITACIONES -->
+            <div id="modulo-invitaciones" class="modulo-contenido active">
+                <div class="detalle-card">
+                    <h2>Invitar Nuevo Trabajador</h2>
+                    <div class="invite-form">
+                        <input type="email" id="nuevoCorreo" placeholder="correo.personal@gmail.com" class="erp-input">
+                        <button id="btnEnviarInvitacion" class="btn-primary">Enviar Accesos (2 Correos)</button>
+                    </div>
+                    <hr>
+                    <h3>Histórico de Invitaciones</h3>
+                    <table class="erp-table">
+                        <thead>
+                            <tr>
+                                <th>Correo Personal</th>
+                                <th>Contraseña Generada</th>
+                                <th>Estatus</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaInvitaciones">
+                            <!-- Se llena con JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MÓDULO 2 Y 3: MESA DE CONTROL (FUSIONADO) -->
+            <div id="modulo-validacion" class="modulo-contenido" style="display: none; padding: 0;">
+                <div style="display: flex; height: 100vh; width: 100%;">
+                    
+                    <!-- COLUMNA 1: Expedientes Recibidos (20%) -->
+                    <div class="sidebar" style="width: 20%; min-width: 200px; border-right: 1px solid var(--border-color); padding: 15px; display: flex; flex-direction: column;">
+                        <h3 style="margin-top: 0;">Expedientes Recibidos</h3>
+                        <!-- Contenedor con altura máxima para obligar el scroll aquí -->
+                        <div style="overflow-y: auto; flex: 1; max-height: 250px;">
+                            <ul id="listaPendientes" class="user-list"></ul>
+                        </div>
+                    </div>
+
+                    <!-- ESTADO VACÍO (Al inicio) -->
+                    <div id="vistaVacia" class="empty-state" style="flex: 1; margin-top: 10%;">Selecciona un trabajador para validar.</div>
+                    
+                    <!-- COLUMNA 2 Y 3 (Ocultas hasta seleccionar expediente) -->
+                    <!-- ÁREA DE DETALLE (Oculta hasta seleccionar expediente) -->
+                    <div id="detalleExpediente" style="display: none; flex: 1; flex-direction: column; width: 80%; padding: 20px; overflow-y: auto; background-color: var(--bg-color);">
+                        
+                        <!-- FILA SUPERIOR: Ficha de Identificación (Ancho completo a 4 columnas) -->
+                        <div class="detalle-card" style="padding: 15px; margin-bottom: 20px; width: 100%; box-sizing: border-box;">
+                            <h3 style="margin-top: 0; margin-bottom: 15px; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                                Ficha de Identificación
+                            </h3>
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                                <div class="info-box"><label>Nombre Oficial:</label><input type="text" id="detNombre" class="erp-input uppercase" style="margin-bottom: 0; padding: 5px;"></div>
+                                <div class="info-box"><label>RFC:</label><input type="text" id="detRFC" class="erp-input uppercase" style="margin-bottom: 0; padding: 5px;"></div>
+                                <div class="info-box"><label>Banco:</label><input type="text" id="detBanco" class="erp-input uppercase" style="margin-bottom: 0; padding: 5px;"></div>
+                                <div class="info-box"><label>Cuenta CLABE:</label><input type="text" id="detClabe" class="erp-input" style="margin-bottom: 0; padding: 5px;"></div>
+                                
+                                <div class="info-box" style="grid-column: span 3;"><label>Dirección:</label><input type="text" id="detDireccion" class="erp-input uppercase" style="margin-bottom: 0; padding: 5px;"></div>
+                                <div class="info-box"><label>Régimen:</label><input type="text" id="detRegimen" class="erp-input" readonly style="margin-bottom: 0; padding: 5px;"></div>
+                            </div>
+                        </div>
+
+                        <!-- FILA INFERIOR: Auditoría (Izquierda) + Visor (Derecha) -->
+                        <div style="display: flex; flex: 1; gap: 20px; min-height: 500px;">
+                            
+                            <!-- Controles de Auditoría -->
+                            <div class="detalle-card" style="width: 35%; padding: 15px; display: flex; flex-direction: column;">
+                                <h3 style="margin-top: 0; margin-bottom: 15px;">Auditoría de Documentos</h3>
+                                <div id="listaDocumentosUI" style="display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1;">
+                                    <!-- Se inyectan con JS -->
+                                </div>
+                                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+                                    <button id="btnDictaminar" class="btn-success" style="width: 100%; padding: 10px; font-size: 1em;">Dictaminar Expediente</button>
+                                </div>
+                            </div>
+
+                            <!-- Visor de Documentos -->
+                            <div style="flex: 1; display: flex; flex-direction: column; background: #1a1e29; border-radius: 8px; border: 2px dashed var(--border-color);">
+                                <div style="padding: 10px; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border-color); text-align: center; font-weight: bold; color: var(--text-muted); border-radius: 8px 8px 0 0;">
+                                    🔍 Visor de Documentos
+                                </div>
+                                <div id="visorContenedor" style="flex: 1; overflow-y: auto; background-color: #ffffff; border-radius: 0 0 8px 8px; padding: 15px; min-height: 0;">
+                                    <p style="color: #666; text-align: center; margin-top: 50px;">Selecciona un documento para visualizar</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- MÓDULO 3: ACTIVACIONES (Generación de Código) -->
+            <!-- ========================================== -->
+            <div id="modulo-activaciones" class="modulo-contenido" style="display: none;">
+                <div class="erp-layout">
+                    <!-- Bandeja Izquierda -->
+                    <div class="erp-sidebar">
+                        <h3 style="color: var(--text-main); margin-bottom: 15px; font-size: 1.1em;">Firmas por Activar</h3>
+                        <ul class="user-list" id="listaPorActivar">
+                            <!-- Se llena con JS -->
+                        </ul>
+                    </div>
+                    
+                    <!-- Área de Trabajo Derecha -->
+                    <div class="erp-main">
+                        <div id="vistaVaciaAct" style="display: flex; height: 100%; align-items: center; justify-content: center; color: #666;">
+                            <p>Selecciona un trabajador firmado para activar su cuenta.</p>
+                        </div>
+                        
+                        <div id="detalleActivacion" style="display: none; padding: 20px; max-width: 600px; margin: 0 auto;">
+                            <h2 style="color: var(--text-main); margin-bottom: 20px;">Auditoría Final y Activación</h2>
+                            
+                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 25px;">
+                                <p style="margin-bottom: 10px; color: #ccc;"><strong>Candidato:</strong> <span id="actNombre" style="color: #fff; font-size: 1.1em;"></span></p>
+                                <p style="margin-bottom: 10px; color: #ccc;"><strong>Correo Personal:</strong> <span id="actCorreo" style="color: #fff;"></span></p>
+                                <p style="margin-bottom: 0; color: #ccc;"><strong>Rol Asignado:</strong> <span id="actRol" style="color: var(--primary-color); font-weight: bold;"></span></p>
+                            </div>
+
+                            <div style="margin-bottom: 25px;">
+                                <label style="display: block; margin-bottom: 8px; color: #ccc; font-weight: bold;">Asignación de Correo Corporativo:</label>
+                                <input type="text" id="actCorreoCorp" class="erp-input" style="width: 100%; font-size: 1.1em;" placeholder="ejemplo@tukurforge.com">
+                                <small style="color: #666; margin-top: 5px; display: block;">Este correo se guardará en la base de datos junto con su nueva matrícula.</small>
+                            </div>
+
+                            <button id="btnActivarTrabajador" class="btn-primary" style="width: 100%; padding: 15px; font-size: 1.1em; background-color: #ef4444; border-color: #ef4444;">
+                                ⚙️ Generar Matrícula TFMX y Activar Trabajador
+                            </button>
+                            <!-- PANTALLA DE ÉXITO (Oculta por defecto) -->
+                            <div id="pantallaExitoActivacion" style="display: none; padding: 20px; max-width: 600px; margin: 0 auto; text-align: center;">
+                                <h2 style="color: #10b981; margin-bottom: 20px;">🎉 ¡Activación Exitosa!</h2>
+                                
+                                <div style="background: rgba(16, 185, 129, 0.1); padding: 25px; border-radius: 8px; border: 1px solid #10b981; text-align: left;">
+                                    <p style="margin-bottom: 10px; color: #ccc;"><strong>Trabajador:</strong> <span id="exitoNombre" style="color: #fff; font-size: 1.1em;"></span></p>
+                                    <p style="margin-bottom: 10px; color: #ccc;"><strong>Matrícula Oficial:</strong> <span id="exitoMatricula" style="color: #10b981; font-weight: bold; font-size: 1.3em;"></span></p>
+                                    <p style="margin-bottom: 0; color: #ccc;"><strong>Correo Corporativo:</strong> <span id="exitoCorreo" style="color: #fff; font-size: 1.1em;"></span></p>
+                                </div>
+                                
+                                <p style="color: #666; margin-top: 15px; font-size: 0.9em;">* La contraseña encriptada y los accesos fueron enviados por correo al candidato.</p>
+                                
+                                <button class="btn-primary" style="margin-top: 25px; width: 100%; padding: 12px; background-color: #10b981; border-color: #10b981;" onclick="cerrarPantallaExito()">
+                                    Finalizar y Volver a la Bandeja
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="supabase-client.js"></script>
+    <script src="centro_mando.js"></script>
+</body>
+</html>

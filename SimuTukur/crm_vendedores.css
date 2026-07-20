@@ -1,0 +1,65 @@
+:root {
+    --color-primario: #0f172a;
+    --color-secundario: #3b82f6;
+    --color-acento: #10b981;
+    --color-fondo: #f8fafc;
+    --color-texto: #334155;
+    --color-borde: #e2e8f0;
+}
+body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--color-fondo); color: var(--color-texto); overflow: hidden; }
+.hidden { display: none !important; }
+
+/* MUROS DE SEGURIDAD */
+.login-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: var(--color-primario); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+.login-card { background: white; padding: 40px; border-radius: 10px; width: 320px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.login-card h2 { margin-top: 0; color: var(--color-primario); }
+.login-card p { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+.login-card input { margin-bottom: 15px; width: 100%; }
+
+/* ESTRUCTURA PRINCIPAL DE LA APP */
+#app-container { display: flex; height: 100vh; }
+
+/* BARRA LATERAL Y LOGO */
+.sidebar { width: 280px; background: white; border-right: 1px solid var(--color-borde); display: flex; flex-direction: column; overflow-y: auto; }
+.brand-header { padding: 20px; text-align: center; border-bottom: 1px solid var(--color-borde); background: var(--color-primario); color: white; }
+.brand-logo { max-width: 180px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+
+.seller-profile { padding: 20px; border-bottom: 1px solid var(--color-borde); background: #f1f5f9; }
+.seller-profile h4 { margin: 0 0 5px 0; color: var(--color-primario); font-size: 16px; text-transform: capitalize; }
+.seller-profile p { margin: 0; font-size: 13px; color: #64748b; }
+.badge { display: inline-block; background: #dbeafe; color: #1e40af; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-top: 5px; }
+
+/* MENÚS Y SUBMENÚS */
+.menu-header { padding: 15px 20px 5px; font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase; background: white; }
+.menu-item { padding: 10px 20px; cursor: pointer; font-size: 14px; font-weight: 500; color: #475569; border-left: 4px solid transparent; transition: 0.2s; display: flex; justify-content: space-between; text-decoration: none; align-items: center; }
+.menu-item:hover { background: #f8fafc; color: var(--color-secundario); }
+.menu-item.active { background: #eff6ff; color: var(--color-secundario); border-left-color: var(--color-secundario); font-weight: bold; }
+.submenu { background: #f8fafc; border-left: 3px solid var(--color-borde); }
+.submenu .menu-item { padding-left: 40px; font-size: 13px; }
+
+/* CONTENIDO CENTRAL Y FORMULARIOS */
+.main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 30px 40px; }
+.page-title { margin-top: 0; color: var(--color-primario); font-size: 24px; margin-bottom: 25px; padding-bottom: 10px; border-bottom: 2px solid var(--color-borde); }
+.card { background: white; border: 1px solid var(--color-borde); border-radius: 10px; padding: 25px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold; color: #475569; }
+input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+.btn { padding: 10px 20px; background: var(--color-secundario); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+.btn:hover { background: #2563eb; }
+.btn-success { background: var(--color-acento); }
+.btn-outline { background: transparent; border: 1px solid var(--color-secundario); color: var(--color-secundario); }
+
+/* TABLAS Y ESTADOS */
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--color-borde); font-size: 14px; }
+th { background: #f8fafc; color: #64748b; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+.status-badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+.status-demo { background: #dbeafe; color: #1d4ed8; }
+.status-pagado { background: #d1fae5; color: #059669; }
+
+/* CHECKLIST EXPEDIENTE */
+.doc-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--color-borde); }
+.doc-status { font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+.doc-ok { background: #d1fae5; color: #059669; }
+.doc-falta { background: #fee2e2; color: #ef4444; }

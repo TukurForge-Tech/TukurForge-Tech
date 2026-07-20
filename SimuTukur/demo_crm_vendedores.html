@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Comercial | TukurForge Tech</title>
+    <style>
+        :root {
+            --color-primario: #0f172a;
+            --color-secundario: #3b82f6;
+            --color-acento: #10b981;
+            --color-fondo: #f8fafc;
+            --color-texto: #334155;
+            --color-borde: #e2e8f0;
+        }
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--color-fondo); color: var(--color-texto); overflow: hidden; }
+        .hidden { display: none !important; }
+        #app-container { display: flex; height: 100vh; }
+        
+        /* BARRA LATERAL */
+        .sidebar { width: 280px; background: white; border-right: 1px solid var(--color-borde); display: flex; flex-direction: column; overflow-y: auto; }
+        .brand-header { padding: 25px 20px; text-align: center; border-bottom: 1px solid var(--color-borde); background: var(--color-primario); color: white; }
+        .brand-header h2 { margin: 0; font-size: 20px; letter-spacing: 1px; }
+        
+        .seller-profile { padding: 20px; border-bottom: 1px solid var(--color-borde); background: #f1f5f9; }
+        .seller-profile h4 { margin: 0 0 5px 0; color: var(--color-primario); font-size: 16px; }
+        .seller-profile p { margin: 0; font-size: 13px; color: #64748b; }
+        .badge { display: inline-block; background: #dbeafe; color: #1e40af; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-top: 5px; }
+
+        .menu-header { padding: 15px 20px 5px; font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase; background: white; }
+        .menu-item { padding: 12px 20px; cursor: pointer; font-weight: 500; color: #475569; border-left: 4px solid transparent; transition: 0.2s; display: block; text-decoration: none; }
+        .menu-item:hover { background: #f8fafc; color: var(--color-secundario); }
+        .menu-item.active { background: #eff6ff; color: var(--color-secundario); border-left-color: var(--color-secundario); font-weight: bold; }
+
+        /* CONTENIDO CENTRAL */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 30px 40px; }
+        .page-title { margin-top: 0; color: var(--color-primario); font-size: 24px; margin-bottom: 25px; padding-bottom: 10px; border-bottom: 2px solid var(--color-borde); }
+        .card { background: white; border: 1px solid var(--color-borde); border-radius: 10px; padding: 25px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold; color: #475569; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+        .btn { padding: 10px 20px; background: var(--color-secundario); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-success { background: var(--color-acento); }
+        .btn-outline { background: transparent; border: 1px solid var(--color-secundario); color: var(--color-secundario); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--color-borde); font-size: 14px; }
+        th { background: #f8fafc; color: #64748b; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .status-pagado { background: #d1fae5; color: #059669; }
+        .status-validado { background: #e0e7ff; color: #4338ca; }
+        .file-upload { border: 2px dashed #cbd5e1; padding: 20px; text-align: center; border-radius: 8px; background: #f8fafc; cursor: pointer; margin-bottom: 15px; }
+        .file-upload:hover { border-color: var(--color-secundario); background: #eff6ff; }
+        .file-upload p { margin: 0; font-size: 13px; color: #64748b; }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        
+        <!-- BARRA LATERAL -->
+        <div class="sidebar">
+            <div class="brand-header">
+                <h2>TukurForge Tech</h2>
+                <div style="font-size: 11px; font-weight: normal; margin-top: 5px; color: #94a3b8;">CRM Comercial</div>
+            </div>
+            
+            <div class="seller-profile">
+                <h4>Ejecutivo Comercial</h4>
+                <p>ID: VEN-2026-001</p>
+                <div class="badge">Esquema: Honorarios</div>
+            </div>
+
+            <!-- GESTIÓN ADMINISTRATIVA -->
+            <div class="menu-header">📋 Gestión de Cuentas</div>
+            <div class="menu-item active" onclick="mostrarVista('pipeline', this)">📊 Mis Escuelas (Pipeline)</div>
+            <div class="menu-item" onclick="mostrarVista('alta', this)">🏫 Alta de Cliente Nuevo</div>
+            <div class="menu-item" onclick="mostrarVista('comisiones', this)">💰 Mis Comisiones / Pagos</div>
+            <div class="menu-item" onclick="mostrarVista('expediente', this)">📁 Mi Expediente (RH)</div>
+
+            <!-- HERRAMIENTAS DE VENTA (NUEVO BLOQUE) -->
+            <div class="menu-header" style="margin-top: 10px;">🛠️ Herramientas de Venta</div>
+            <a href="pitch_escuelas.html" target="_blank" class="menu-item">▶️ Pitch Deck (Presentación)</a>
+            <a href="demo_academia.html" target="_blank" class="menu-item">🎓 Demo: Academia Tukur</a>
+            <a href="demo_crm_escuela.html" target="_blank" class="menu-item">🏛️ Demo: Panel Directivo</a>
+            <a href="demo_crm_papas.html" target="_blank" class="menu-item">👨‍👩‍👦 Demo: Panel Papás</a>
+            
+        </div>
+
+        <!-- CONTENIDO CENTRAL -->
+        <div class="main-content">
+            
+            <!-- VISTA 1: PIPELINE -->
+            <div id="vista-pipeline">
+                <h2 class="page-title">Mis Escuelas (Pipeline)</h2>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Escuela</th>
+                                <th>Nivel</th>
+                                <th>Matrícula Est.</th>
+                                <th>Estatus de Venta</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Colegio Patria</strong></td>
+                                <td>Preparatoria</td>
+                                <td>450 alumnos</td>
+                                <td><span class="status-badge" style="background:#dbeafe; color:#1d4ed8;">Demo Activa</span></td>
+                                <td><button class="btn btn-outline" style="padding: 5px 10px; font-size: 12px;">Ver Detalles</button></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Instituto Cervantes</strong></td>
+                                <td>Secundaria</td>
+                                <td>300 alumnos</td>
+                                <td><span class="status-badge status-pagado">Contrato Firmado</span></td>
+                                <td><button class="btn btn-success" style="padding: 5px 10px; font-size: 12px;" onclick="mostrarVista('comisiones', document.querySelectorAll('.menu-item')[2])">Cobrar Comisión</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VISTA 2: ALTA DE CLIENTE -->
+            <div id="vista-alta" class="hidden">
+                <h2 class="page-title">Alta de Cliente Nuevo</h2>
+                <div class="card">
+                    <h3 style="margin-top:0; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px;">Datos Institucionales</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nombre de la Escuela</label>
+                            <input type="text" placeholder="Ej. Instituto Bilingüe...">
+                        </div>
+                        <div class="form-group">
+                            <label>Página Web</label>
+                            <input type="text" placeholder="www.escuela.edu.mx">
+                        </div>
+                        <div class="form-group">
+                            <label>Matrícula Estimada (Total de alumnos)</label>
+                            <input type="number" placeholder="Ej. 500">
+                        </div>
+                        <div class="form-group">
+                            <label>Nivel Educativo Principal</label>
+                            <select>
+                                <option>Secundaria (Simulador ECOEMS)</option>
+                                <option>Preparatoria (Simulador Licenciatura)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" style="margin-top: 15px;" onclick="alert('Datos guardados. El cliente pasa a estatus: Demo Activa.')">Registrar Cliente</button>
+                </div>
+            </div>
+
+            <!-- VISTA 3: MIS COMISIONES Y FACTURACIÓN -->
+            <div id="vista-comisiones" class="hidden">
+                <h2 class="page-title">Mis Comisiones y Cobranza</h2>
+                <div class="card">
+                    <h3 style="margin-top:0; color: var(--color-secundario);">1. Reportar Pago del Cliente</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Seleccionar Escuela Cerrada</label>
+                            <select><option>Instituto Cervantes - Contrato Firmado</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Monto Depositado por la Escuela</label>
+                            <input type="text" placeholder="$0.00 MXN">
+                        </div>
+                    </div>
+                    <div class="file-upload"><p>📄 Clic aquí para subir Comprobante de Pago (PDF/JPG)</p></div>
+                    <button class="btn">Enviar a Validación</button>
+                </div>
+
+                <div class="card" style="border-left: 4px solid var(--color-acento);">
+                    <h3 style="margin-top:0; color: var(--color-acento);">2. Liberación de Mi Comisión</h3>
+                    <p style="font-size: 13px; color: #64748b;">Estatus de pago: <span class="status-badge status-validado">Validado</span></p>
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                        <div class="form-group">
+                            <label>Régimen de Pago</label>
+                            <select id="regimen-pago" onchange="toggleFactura()">
+                                <option value="asimilados">Asimilados a Salarios</option>
+                                <option value="honorarios" selected>Honorarios Profesionales (Requiere Factura)</option>
+                            </select>
+                        </div>
+                        <div id="modulo-factura">
+                            <div class="form-grid">
+                                <div class="file-upload" style="padding: 10px;"><p>Subir XML</p></div>
+                                <div class="file-upload" style="padding: 10px;"><p>Subir PDF</p></div>
+                            </div>
+                            <button class="btn btn-success" style="width: 100%;" onclick="alert('Factura cargada. Comisión en proceso.')">Solicitar Pago</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VISTA 4: EXPEDIENTE RH -->
+            <div id="vista-expediente" class="hidden">
+                <h2 class="page-title">Mi Expediente (Recursos Humanos)</h2>
+                <div class="card">
+                    <div class="form-group"><label>1. Identificación Oficial (INE / Pasaporte)</label><input type="file"></div>
+                    <div class="form-group"><label>2. Comprobante de Domicilio</label><input type="file"></div>
+                    <div class="form-group"><label>3. Comprobante de Estudios</label><input type="file"></div>
+                    <div class="form-group" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
+                        <label style="color: var(--color-secundario);">4. Contrato de Prestación de Servicios Firmado</label>
+                        <input type="file">
+                    </div>
+                    <button class="btn" style="margin-top: 15px;">Guardar Documentos</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function mostrarVista(vistaId, elementoMenu) {
+            document.getElementById('vista-pipeline').classList.add('hidden');
+            document.getElementById('vista-alta').classList.add('hidden');
+            document.getElementById('vista-comisiones').classList.add('hidden');
+            document.getElementById('vista-expediente').classList.add('hidden');
+
+            const items = document.querySelectorAll('.menu-item');
+            items.forEach(item => item.classList.remove('active'));
+
+            document.getElementById('vista-' + vistaId).classList.remove('hidden');
+            elementoMenu.classList.add('active');
+        }
+
+        function toggleFactura() {
+            const regimen = document.getElementById('regimen-pago').value;
+            const moduloFactura = document.getElementById('modulo-factura');
+            if (regimen === 'honorarios') { moduloFactura.classList.remove('hidden'); } 
+            else { moduloFactura.classList.add('hidden'); }
+        }
+    </script>
+</body>
+</html>

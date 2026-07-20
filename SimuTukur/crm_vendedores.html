@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Comercial | TukurForge Tech</title>
+    <link rel="stylesheet" href="crm_vendedores.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- MURO DE LOGIN -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-card">
+            <h2>TukurForge CRM</h2>
+            <p>Ingresa con tu Código de Empleado</p>
+            <input type="text" id="codigoEmpleado" placeholder="Ej. TFMXV26001" style="text-transform: uppercase;">
+            <input type="password" id="userPass" placeholder="Contraseña">
+            <button class="btn" onclick="iniciarSesion()">Entrar</button>
+        </div>
+    </div>
+
+    <!-- CAMBIO DE CONTRASEÑA -->
+    <div id="change-password-overlay" class="login-overlay hidden">
+        <div class="login-card">
+            <h2>Crear Contraseña</h2>
+            <p>Por seguridad, cambia tu contraseña temporal.</p>
+            <input type="password" id="newPass1" placeholder="Nueva contraseña secreta">
+            <input type="password" id="newPass2" placeholder="Repite tu nueva contraseña">
+            <button class="btn btn-success" onclick="guardarNuevaPassword()">Actualizar y Entrar</button>
+        </div>
+    </div>
+
+    <!-- APP PRINCIPAL -->
+    <div id="app-container" class="hidden">
+        
+        <!-- BARRA LATERAL -->
+        <div class="sidebar">
+            <div class="brand-header">
+                <img src="https://pcuopqvmucmhtcdeswxh.supabase.co/storage/v1/object/public/reactivos-assets/TukurForge/TukurForge_Tech_Negro.jpeg" alt="TukurForge Logo" class="brand-logo">
+                <div style="font-size: 11px; font-weight: normal; color: #94a3b8;">Estación de Trabajo</div>
+            </div>
+            
+            <div class="seller-profile">
+                <h4 id="perfil-nombre">Cargando...</h4>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px;">
+                    <p id="perfil-correo" style="font-size: 11px; margin:0; word-break: break-all;">correo@tukurforge.com</p>
+                    <button onclick="copiarCorreo()" style="background:none; border:none; color:var(--color-secundario); cursor:pointer; font-size:14px;" title="Copiar Correo"><i class="fa-regular fa-copy"></i></button>
+                </div>
+                <div class="badge">Estatus: Activo</div>
+            </div>
+
+            <!-- GESTIÓN ADMINISTRATIVA -->
+            <div class="menu-header">📋 Gestión de Cuentas</div>
+            <div class="menu-item active" onclick="mostrarVista('pipeline', this)">📊 Mis Escuelas (Pipeline)</div>
+            <div class="menu-item" onclick="mostrarVista('alta', this)">🏫 Alta de Prospecto</div>
+            <div class="menu-item" onclick="mostrarVista('comisiones', this)">💰 Mis Comisiones</div>
+            <div class="menu-item" onclick="mostrarVista('expediente', this)">📁 Mi Expediente (RH)</div>
+
+            <!-- HERRAMIENTAS DE VENTA -->
+            <div class="menu-header">🛠️ Herramientas de Venta</div>
+            <a href="pitch_escuelas.html" target="_blank" class="menu-item">▶️ Pitch Deck (Presentación)</a>
+            
+            <!-- ACORDEÓN ACADEMIA TUKUR -->
+            <div class="menu-item" onclick="toggleSubmenu('submenu-academia')">
+                <span>🦉 Academia Tukur</span>
+                <span style="font-size: 10px;">▼</span>
+            </div>
+            <div id="submenu-academia" class="submenu hidden">
+                <a href="demo_academia.html" target="_blank" class="menu-item">🏛️ Demo Academia</a>
+                <div class="menu-item" style="color:#94a3b8; cursor:not-allowed;">🥋 SenseiTukur (Por vincular)</div>
+                <div class="menu-item" style="color:#94a3b8; cursor:not-allowed;">🗣️ PoligloTukur (Por vincular)</div>
+                <div class="menu-item" onclick="mostrarVista('simutukur', this); cargarExamenesPro();">📝 SimuTukur (Demo)</div>
+            </div>
+
+            <!-- CORPORATIVO -->
+            <div class="menu-header">✉️ Corporativo</div>
+            <a href="https://www.larksuite.com/mail" target="_blank" class="menu-item">📧 Mi Correo (Lark)</a>
+        </div>
+
+        <!-- CONTENIDO CENTRAL -->
+        <div class="main-content">
+            
+            <!-- VISTA 1: PIPELINE REAL -->
+            <div id="vista-pipeline">
+                <h2 class="page-title">Tablero de Seguimiento (Embudo de Ventas)</h2>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Escuela</th>
+                                <th>Nivel Educativo</th>
+                                <th>Próximo Contacto</th>
+                                <th>Acción (Estatus)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-prospectos">
+                            <tr><td colspan="4" style="text-align: center;">Cargando prospectos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VISTA 2: ALTA DE PROSPECTO (Ajustado a BD) -->
+            <div id="vista-alta" class="hidden">
+                <h2 class="page-title">Registrar Nuevo Prospecto</h2>
+                <div class="card">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nombre de la Escuela</label>
+                            <input type="text" id="nombreEscuela" placeholder="Ej. Instituto Bilingüe...">
+                        </div>
+                        <div class="form-group">
+                            <label>Nivel Educativo</label>
+                            <select id="nivelEducativo">
+                                <option value="" disabled selected>Selecciona una opción...</option>
+                                <option value="Secundaria">Secundaria</option>
+                                <option value="Preparatoria">Preparatoria</option>
+                                <option value="Ambas">Ambas</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Próximo Contacto</label>
+                            <input type="date" id="fechaContacto">
+                        </div>
+                    </div>
+                    <button class="btn btn-success" style="margin-top: 15px; width: 200px;" onclick="guardarProspecto()">Registrar en Pipeline</button>
+                </div>
+            </div>
+
+            <!-- VISTA 4: DEMO SIMUTUKUR CONECTADO A API -->
+            <div id="vista-simutukur" class="hidden">
+                <h2 class="page-title">Simulador de Entorno Estudiantil</h2>
+                <div style="background: #050a14; color: white; padding: 40px; border-radius: 15px; text-align: center; border: 1px solid #06b6d4;">
+                    <div style="display: inline-block; border: 1px solid #06b6d4; color: #06b6d4; font-size: 11px; font-weight: bold; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; margin-bottom: 15px;">Prueba 100% Gratis</div>
+                    <h3 style="font-size: 28px; font-style: italic; margin-top: 0; margin-bottom: 15px; text-transform: uppercase;">Reto Diagnóstico de <span style="color: #06b6d4;">15 Minutos</span></h3>
+                    <div style="display: flex; gap: 15px; justify-content: center; max-width: 600px; margin: 0 auto;">
+                        <!-- Select llenado por JS -->
+                        <select id="exam-dropdown" style="background: black; color: white; border: 2px solid #374151; padding: 15px; border-radius: 10px; flex: 1; outline: none;">
+                            <option value="">Cargando opciones...</option>
+                        </select>
+                        <button id="start-demo-btn" style="background: #0891b2; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase;">▶ Iniciar Demo</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VISTAS EN CONSTRUCCIÓN -->
+            <div id="vista-comisiones" class="hidden"><h2 class="page-title">Mis Comisiones</h2><div class="card"><p>Módulo en construcción...</p></div></div>
+            <div id="vista-expediente" class="hidden"><h2 class="page-title">Mi Expediente</h2><div class="card"><p>Módulo en construcción...</p></div></div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+    <script src="crm_vendedores.js"></script>
+</body>
+</html>
