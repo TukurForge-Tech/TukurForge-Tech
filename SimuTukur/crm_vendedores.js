@@ -18,6 +18,9 @@ function copiarCorreo() {
     alert("¡Correo copiado al portapapeles! Ya puedes pegarlo en Lark.");
 }
 
+// ==========================================
+// LOGIN Y SEGURIDAD
+// ==========================================
 async function iniciarSesion() {
     const codigo_empleado = document.getElementById('codigoEmpleado').value.toUpperCase();
     const password = document.getElementById('userPass').value;
@@ -51,6 +54,7 @@ async function iniciarSesion() {
         }
     } catch (error) {
         console.error("Error:", error);
+        alert("Hubo un error al conectar con el servidor.");
     }
 }
 
@@ -82,14 +86,15 @@ async function cargarProspectos() {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Cargando...</td></tr>';
 
     try {
-        const { data, error } = await _supabase
-            .from('crm_prospectos')
-            .select('*')
-            .eq('vendedor_id', vendedorId)
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
+        const respuesta = await fetch(`${supabaseUrl}/functions/v1/control_prospectos_escuelas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ accion: 'listar_prospectos', vendedor_id: vendedorId })
+        });
+        const resData = await respuesta.json();
+        if (!resData.success) throw new Error(resData.error);
         
+        const data = resData.data;
         tbody.innerHTML = '';
         if (data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Aún no tienes prospectos registrados.</td></tr>';
@@ -111,47 +116,70 @@ async function cargarProspectos() {
             `;
             tbody.appendChild(tr);
         });
-    } catch (err) {
-        console.error(err);
-        tbody.innerHTML = '<tr><td colspan="4" style="color:red;">Error cargando pipeline</td></tr>';
-    }
+    } catch (err) { console.error(err); tbody.innerHTML = '<tr><td colspan="4" style="color:red;">Error cargando pipeline</td></tr>'; }
 }
 
-// REGLA DE NO RETROCESO Y PAUSA
 function generarOpcionesEstatus(estatusActual) {
     let opciones = '';
     const indexActual = FLUJO_VENTAS.indexOf(estatusActual);
 
-    // Si ya está en estatus administrativo oculto, solo mostramos ese para no romperlo
     if (!FLUJO_VENTAS.includes(estatusActual) && estatusActual !== 'En Pausa') {
         return `<option value="${estatusActual}" selected>${estatusActual}</option>`;
     }
 
     FLUJO_VENTAS.forEach((estatus, idx) => {
         let disabled = "";
-        // Si el actual es "En Pausa", bloqueamos todos menos "Firmado" (indice 5)
         if (estatusActual === 'En Pausa' && estatus !== 'Firmado') disabled = "disabled";
-        // Si está en el flujo normal, bloqueamos los pasos anteriores
         if (estatusActual !== 'En Pausa' && idx < indexActual) disabled = "disabled";
-        
         opciones += `<option value="${estatus}" ${estatus === estatusActual ? 'selected' : ''} ${disabled}>${estatus}</option>`;
     });
 
-    // Agregar la opción de "En Pausa" al final
     opciones += `<option value="En Pausa" ${estatusActual === 'En Pausa' ? 'selected' : ''}>En Pausa</option>`;
-    
     return opciones;
 }
 
 async function actualizarEstatus(idProspecto, nuevoEstatus) {
     try {
-        const { error } = await _supabase.from('crm_prospectos').update({ estatus: nuevoEstatus }).eq('id', idProspecto);
-        if (error) throw error;
-        // Recargar tabla para aplicar los nuevos bloqueos de select
+        const respuesta = await fetch(`${supabaseUrl}/functions/v1/control_prospectos_escuelas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ accion: 'actualizar_estatus', payload: { id_prospecto: idProspecto, nuevo_estatus: nuevoEstatus } })
+        });
+        const data = await respuesta.json();
+        if (!data.success) throw new Error(data.error);
         cargarProspectos(); 
-    } catch (err) {
-        alert("Error al actualizar estatus");
-        console.error(err);
+    } catch (err) { alert("Error al actualizar estatus"); console.error(err); }
+}
+
+// ==========================================
+// FUSIÓN: LÓGICA DE ALTA Y MATRÍCULA DINÁMICA
+// ==========================================
+function manejarNivelEducativo() {
+    const nivel = document.getElementById('nivelEducativo').value;
+    const contenedor = document.getElementById('contenedor-matricula');
+    contenedor.innerHTML = '';
+    contenedor.classList.remove('hidden');
+
+    if (nivel === 'Secundaria' || nivel === 'Preparatoria') {
+        contenedor.innerHTML = `
+            <label>Matrícula Estimada de Alumnos</label>
+            <input type="number" id="matUnica" placeholder="Ej. 300">
+        `;
+    } else if (nivel === 'Ambas') {
+        contenedor.innerHTML = `
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label>Alumnos Secundaria</label>
+                    <input type="number" id="matSecundaria" placeholder="Ej. 150">
+                </div>
+                <div style="flex: 1;">
+                    <label>Alumnos Prepa</label>
+                    <input type="number" id="matPrepa" placeholder="Ej. 200">
+                </div>
+            </div>
+        `;
+    } else {
+        contenedor.classList.add('hidden');
     }
 }
 
@@ -159,27 +187,156 @@ async function guardarProspecto() {
     const nombre = document.getElementById('nombreEscuela').value;
     const nivel = document.getElementById('nivelEducativo').value;
     const fecha = document.getElementById('fechaContacto').value;
+    
+    if (!nombre || !nivel || !fecha) return alert("Completa los datos básicos.");
 
-    if (!nombre || !nivel || !fecha) return alert("Completa todos los datos.");
+    let matSec = 0, matPrep = 0;
+    if (nivel === 'Secundaria') matSec = parseInt(document.getElementById('matUnica').value) || 0;
+    if (nivel === 'Preparatoria') matPrep = parseInt(document.getElementById('matUnica').value) || 0;
+    if (nivel === 'Ambas') {
+        matSec = parseInt(document.getElementById('matSecundaria').value) || 0;
+        matPrep = parseInt(document.getElementById('matPrepa').value) || 0;
+    }
 
     const payload = {
         vendedor_id: localStorage.getItem('sesion_crm_token'),
         nombre_escuela: nombre,
         nivel_educativo: nivel,
         fecha_proximo_contacto: fecha,
+        matricula_secundaria: matSec,
+        matricula_preparatoria: matPrep,
         estatus: 'Registrado'
     };
 
     try {
-        const { error } = await _supabase.from('crm_prospectos').insert([payload]);
-        if (error) throw error;
+        const respuesta = await fetch(`${supabaseUrl}/functions/v1/control_prospectos_escuelas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ accion: 'guardar_prospecto', payload: payload })
+        });
+        const data = await respuesta.json();
+        if (!data.success) throw new Error(data.error);
         
-        alert("Prospecto registrado exitosamente.");
+        alert("Prospecto registrado en tu Pipeline.");
+        document.getElementById('modal-alta').classList.add('hidden');
         document.getElementById('nombreEscuela').value = '';
         document.getElementById('fechaContacto').value = '';
-        mostrarVista('pipeline', document.querySelectorAll('.menu-item')[0]);
-        cargarProspectos();
-    } catch(err) { alert("Error guardando prospecto"); console.error(err); }
+        document.getElementById('contenedor-matricula').classList.add('hidden');
+        cargarProspectos(); 
+    } catch(err) { alert("Error al guardar."); console.error(err); }
+}
+
+// ==========================================
+// MÓDULO: EXPEDIENTE DE RECURSOS HUMANOS
+// ==========================================
+const documentosRH = [
+    { id: 'ine', nombre: 'INE (Frente y Vuelta)', colUrl: 'ine_url', colEstatus: 'estatus_ine', colMotivo: 'motivo_ine' },
+    { id: 'csf', nombre: 'Constancia Situación Fiscal', colUrl: 'csf_url', colEstatus: 'estatus_csf', colMotivo: 'motivo_csf' },
+    { id: 'domicilio', nombre: 'Comprobante de Domicilio', colUrl: 'domicilio_url', colEstatus: 'estatus_domicilio', colMotivo: 'motivo_domicilio' },
+    { id: 'banco', nombre: 'Estado de Cuenta (CLABE)', colUrl: 'banco_url', colEstatus: 'estatus_banco', colMotivo: 'motivo_banco' },
+    { id: 'estudios', nombre: 'Comprobante de Estudios', colUrl: 'estudios_url', colEstatus: 'estatus_estudios', colMotivo: 'motivo_estudios' },
+    { id: 'rec_laboral', nombre: 'Recomendación Laboral', colUrl: 'recomendacion_laboral_url', colEstatus: 'estatus_recomendacion_laboral', colMotivo: 'motivo_recomendacion_laboral' },
+    { id: 'rec_personal', nombre: 'Recomendación Personal', colUrl: 'recomendacion_personal_url', colEstatus: 'estatus_recomendacion_personal', colMotivo: 'motivo_recomendacion_personal' }
+];
+
+// ==========================================
+// MÓDULO: EXPEDIENTE DE RECURSOS HUMANOS (Actualizado a API)
+// ==========================================
+async function cargarExpediente() {
+    const trabajadorId = localStorage.getItem('sesion_crm_token');
+    const contenedor = document.getElementById('contenedor-documentos');
+    contenedor.innerHTML = '<p>Analizando archivo maestro...</p>';
+
+    try {
+        const respuesta = await fetch(`${supabaseUrl}/functions/v1/control_prospectos_escuelas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ accion: 'cargar_expediente', vendedor_id: trabajadorId })
+        });
+        
+        const resData = await respuesta.json();
+        if (!resData.success) throw new Error(resData.error);
+        
+        const data = resData.data;
+        contenedor.innerHTML = '';
+        
+        documentosRH.forEach(doc => {
+            const estatus = data[doc.colEstatus] || 'Faltante';
+            const motivo = data[doc.colMotivo] ? `<p class="motivo-rechazo">⚠️ ${data[doc.colMotivo]}</p>` : '';
+            const url = data[doc.colUrl];
+            
+            let badgeClass = 'badge-faltante';
+            if(estatus === 'Aprobado') badgeClass = 'badge-aprobado';
+            if(estatus === 'Rechazado') badgeClass = 'badge-rechazado';
+            if(estatus === 'En Revisión') badgeClass = 'badge-revision';
+
+            let controles = '';
+            if (estatus === 'Aprobado' || estatus === 'En Revisión') {
+                controles = `<button class="btn" style="background:#0891b2; width:100%; font-size:12px; padding:6px;" onclick="window.open('https://pcuopqvmucmhtcdeswxh.supabase.co/storage/v1/object/public/expedientes/${url}', '_blank')">👀 Ver Archivo Entregado</button>`;
+            } else {
+                controles = `
+                    <input type="file" id="file_${doc.id}" accept=".pdf, .jpg, .png" style="font-size: 11px; color: white; width: 100%; margin-bottom: 8px;">
+                    <button class="btn btn-success" style="font-size: 12px; width: 100%; padding: 6px;" onclick="subirDocumento(this, '${doc.id}', '${doc.colUrl}', '${doc.colEstatus}')">⬆️ Subir Documento</button>
+                `;
+            }
+
+            const tarjeta = document.createElement('div');
+            tarjeta.className = 'doc-card';
+            tarjeta.innerHTML = `
+                <div style="display:flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <strong style="font-size: 13px; max-width: 65%;">${doc.nombre}</strong>
+                    <span class="${badgeClass}">${estatus}</span>
+                </div>
+                ${motivo}
+                <div style="margin-top: 15px;">${controles}</div>
+            `;
+            contenedor.appendChild(tarjeta);
+        });
+
+    } catch (err) { console.error(err); contenedor.innerHTML = '<p style="color:red;">Error de conexión con RH.</p>'; }
+}
+
+async function subirDocumento(btnElement, docId, colUrl, colEstatus) {
+    const inputElement = document.getElementById(`file_${docId}`);
+    const file = inputElement.files[0];
+    if (!file) return alert("Selecciona un archivo primero.");
+
+    const trabajadorId = localStorage.getItem('sesion_crm_token');
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${trabajadorId}/${docId}_${Date.now()}.${fileExt}`;
+
+    btnElement.innerText = "Subiendo...";
+    btnElement.disabled = true;
+
+    try {
+        // 1. Inyectar directo a tu bucket 'expedientes' (Esto usa el cliente normal de storage que sí está permitido)
+        const { data: uploadData, error: uploadError } = await _supabase.storage.from('expedientes').upload(fileName, file);
+        if (uploadError) throw uploadError;
+
+        // 2. Registrar en base de datos mediante la API segura
+        const payloadDoc = {
+            col_url: colUrl,
+            url_path: uploadData.path,
+            col_estatus: colEstatus
+        };
+
+        const respuesta = await fetch(`${supabaseUrl}/functions/v1/control_prospectos_escuelas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ accion: 'actualizar_documento_rh', vendedor_id: trabajadorId, payload: payloadDoc })
+        });
+        
+        const data = await respuesta.json();
+        if (!data.success) throw new Error(data.error);
+
+        alert("¡Documento enviado exitosamente a Recursos Humanos!");
+        cargarExpediente(); 
+    } catch (err) {
+        console.error(err);
+        alert("Error al subir el archivo.");
+        btnElement.innerText = "⬆️ Subir Documento";
+        btnElement.disabled = false;
+    }
 }
 
 // ==========================================

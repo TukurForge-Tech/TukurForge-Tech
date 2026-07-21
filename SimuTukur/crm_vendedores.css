@@ -9,12 +9,12 @@
 body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--color-fondo); color: var(--color-texto); overflow: hidden; }
 .hidden { display: none !important; }
 
-/* MUROS DE SEGURIDAD */
-.login-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: var(--color-primario); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-.login-card { background: white; padding: 40px; border-radius: 10px; width: 320px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-.login-card h2 { margin-top: 0; color: var(--color-primario); }
+/* MUROS DE SEGURIDAD Y MODALES */
+.login-overlay { position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
+.login-card { background: white; padding: 40px; border-radius: 10px; width: 320px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+.login-card h2, .login-card h3 { margin-top: 0; color: var(--color-primario); }
 .login-card p { font-size: 13px; color: #64748b; margin-bottom: 20px; }
-.login-card input { margin-bottom: 15px; width: 100%; }
+.login-card input, .login-card select { margin-bottom: 15px; width: 100%; }
 
 /* ESTRUCTURA PRINCIPAL DE LA APP */
 #app-container { display: flex; height: 100vh; }
@@ -45,21 +45,24 @@ body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background-color:
 .form-group { margin-bottom: 15px; }
 .form-group label { display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold; color: #475569; }
 input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
-.btn { padding: 10px 20px; background: var(--color-secundario); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+.btn { padding: 10px 20px; background: var(--color-secundario); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
 .btn:hover { background: #2563eb; }
 .btn-success { background: var(--color-acento); }
+.btn-success:hover { background: #059669; }
 .btn-outline { background: transparent; border: 1px solid var(--color-secundario); color: var(--color-secundario); }
 
 /* TABLAS Y ESTADOS */
 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--color-borde); font-size: 14px; }
 th { background: #f8fafc; color: #64748b; font-weight: bold; text-transform: uppercase; font-size: 12px; }
-.status-badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-.status-demo { background: #dbeafe; color: #1d4ed8; }
-.status-pagado { background: #d1fae5; color: #059669; }
 
-/* CHECKLIST EXPEDIENTE */
-.doc-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--color-borde); }
-.doc-status { font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 4px; }
-.doc-ok { background: #d1fae5; color: #059669; }
-.doc-falta { background: #fee2e2; color: #ef4444; }
+/* =========================================
+   NUEVOS ESTILOS PARA EXPEDIENTE RH 
+   ========================================= */
+.grid-expediente { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 20px; }
+.doc-card { background: #111827; border: 1px solid #374151; padding: 15px; border-radius: 8px; color: white; }
+.badge-aprobado { background: #064e3b; color: #34d399; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+.badge-rechazado { background: #7f1d1d; color: #f87171; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+.badge-revision { background: #78350f; color: #fbbf24; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+.badge-faltante { background: #374151; color: #9ca3af; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+.motivo-rechazo { color: #f87171; font-size: 12px; margin-top: 8px; font-style: italic; }
