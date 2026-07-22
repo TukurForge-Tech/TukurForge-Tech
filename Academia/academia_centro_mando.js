@@ -91,7 +91,7 @@ document.getElementById('btnEnviarInvitacion').addEventListener('click', async (
 
     const passwordTemp = Math.random().toString(36).slice(-8);
     const urlActual = window.location.href; 
-    const linkDinamico = urlActual.replace('centro_mando.html', 'onboarding_trabajadores.html');
+    const linkDinamico = urlActual.replace('academia_centro_mando.html', 'onboarding_trabajadores.html');
 
     try {
         // ¡ELIMINAMOS TODO EL BLOQUE QUE HACÍA .insert() AQUÍ!
