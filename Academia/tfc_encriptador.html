@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Máquina Enigma | TukurForge Tech</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #050a14; color: #06b6d4; padding: 40px; text-align: center; }
+        .card { background: #0f172a; padding: 30px; border-radius: 10px; max-width: 500px; margin: 0 auto; border: 1px solid #06b6d4; }
+        input { width: 80%; padding: 12px; margin-bottom: 20px; border-radius: 5px; border: none; font-size: 16px; outline: none; background: #1e293b; color: white; }
+        button { background: #10b981; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        pre { background: black; padding: 15px; border-radius: 5px; text-align: left; overflow-x: auto; color: #f59e0b; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Generador de Rutas Blindadas</h2>
+        <p style="color: white;">Archivo destino (Ej: <span style="color:#10b981;">academia_centro_mando.html</span>)</p>
+        <input type="text" id="rutaReal" placeholder="nombre_del_archivo.html">
+        <button onclick="encriptar()">Generar Link Seguro</button>
+        
+        <div id="resultado" style="display: none; margin-top: 20px;">
+            <p style="color: white;">Envía esta ruta exacta a tu usuario:</p>
+            <pre id="codigoFinal"></pre>
+        </div>
+    </div>
+
+    <script>
+        const SECRET_KEY = "TukurForge_Tech_Core_SecretKey_1";
+
+        function encriptar() {
+            const texto = document.getElementById('rutaReal').value.trim();
+            if(!texto || !texto.endsWith('.html')) return alert("Debes ingresar el nombre de un archivo .html");
+            
+            // Lógica de Encriptación
+            let encryptedString = "";
+            for (let i = 0; i < texto.length; i++) {
+                encryptedString += String.fromCharCode(texto.charCodeAt(i) ^ SECRET_KEY.charCodeAt(i % SECRET_KEY.length));
+            }
+            
+            // Codificamos a Base64 para que la URL sea válida en internet
+            const base64Url = btoa(encryptedString).replace(/=/g, "");
+            
+            // Armamos la ruta completa con el prefijo "auth-"
+            const enlaceSeguro = `/auth-${base64Url}`;
+            
+            document.getElementById('codigoFinal').innerText = enlaceSeguro;
+            document.getElementById('resultado').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

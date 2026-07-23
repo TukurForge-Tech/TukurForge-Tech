@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Acceso | H Levare Group</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #050a14; 
+            color: #06b6d4; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .portal-card { 
+            background: #0f172a; 
+            padding: 40px; 
+            border-radius: 12px; 
+            width: 100%;
+            max-width: 450px; 
+            text-align: center;
+            border: 1px solid #06b6d4;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.2);
+        }
+        h1 {
+            color: #06b6d4;
+            margin-bottom: 5px;
+            font-size: 28px;
+        }
+        p.subtitle {
+            color: #94a3b8;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .btn { 
+            display: block;
+            width: 100%;
+            background: #10b981; 
+            color: white; 
+            text-decoration: none;
+            padding: 15px 0; 
+            margin-bottom: 15px; 
+            font-size: 16px; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+        .btn:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+        .btn-disabled {
+            background: #334155;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .btn-disabled:hover {
+            background: #334155;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="portal-card">
+        <h1>TukurForge Tech</h1>
+        <h1>Academia Tukur</h1>
+        <p class="subtitle">Directorio de Módulos Corporativos</p>
+
+        <!-- Botón Vinculado con el alias limpio -->
+        <a href="/abrir/academia_centro_mando" class="btn">
+            Control de Mando
+        </a>
+
+        <!-- Botón Desactivado temporalmente -->
+        <a href="#" class="btn btn-disabled" onclick="return false;">
+            CMR Trabajador (Próximamente)
+        </a>
+    </div>
+
+</body>
+</html>
