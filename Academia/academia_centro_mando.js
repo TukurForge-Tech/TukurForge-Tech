@@ -47,14 +47,17 @@ async function desbloquearERP(emailUsuario) {
     document.getElementById('muro-seguridad').style.display = 'none';
     document.getElementById('erp-app').style.display = 'flex';
     
-    // Buscar los datos de la persona que se acaba de loguear
-    const { data: perfil, error } = await _supabase
-        .from('credenciales_trabajadores')
-        .select('nombre, primer_apellido, rol')
-        .eq('correo', emailUsuario)
-        .single();
+    // Llamada segura a la nueva API
+    const response = await fetch(`${supabaseUrl}/functions/v1/academia-operaciones-erp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+        body: JSON.stringify({ accion: 'obtener_perfil', payload: { correo: emailUsuario } })
+    });
+    
+    const result = await response.json();
 
-    if (perfil) {
+    if (result.success && result.data) {
+        const perfil = result.data;
         document.getElementById('perfilNombre').innerText = `${perfil.nombre} ${perfil.primer_apellido}`;
         document.getElementById('perfilRol').innerText = perfil.rol;
     } else {
@@ -62,7 +65,6 @@ async function desbloquearERP(emailUsuario) {
         document.getElementById('perfilRol').innerText = "Autorizado";
     }
     
-    // Cargar la información de los módulos
     cargarInvitaciones();
     cargarExpedientes();
 }
@@ -96,7 +98,7 @@ document.getElementById('btnEnviarInvitacion').addEventListener('click', async (
         // ¡ELIMINAMOS TODO EL BLOQUE QUE HACÍA .insert() AQUÍ!
         
         // 2. Solo disparamos la Edge Function
-        const response = await fetch(`${supabaseUrl}/functions/v1/invitar-candidato`, {
+        const response = await fetch(`${supabaseUrl}/functions/v1/academia-invitar-candidato`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
             body: JSON.stringify({ 
@@ -123,26 +125,39 @@ document.getElementById('btnEnviarInvitacion').addEventListener('click', async (
 
 async function cargarInvitaciones() {
     const tbody = document.getElementById('tablaInvitaciones');
-    // Busca los que están como 'Invitado' (Los nuevos que generes aparecerán aquí)
-    const { data } = await _supabase.from('credenciales_trabajadores').select('*').eq('estatus', 'Invitado');
     
-    tbody.innerHTML = '';
-    data.forEach(inv => {
-        tbody.innerHTML += `
-            <tr>
-                <!-- CORRECCIÓN: Usamos inv.correo -->
-                <td>${inv.correo}</td>
-                <td>${inv.password_hash}</td>
-                <td><span class="badge">Pendiente de subir Docs</span></td>
-                <td><button class="btn-danger" onclick="borrarInvitacion('${inv.id}')">Eliminar</button></td>
-            </tr>
-        `;
+    const response = await fetch(`${supabaseUrl}/functions/v1/academia-operaciones-erp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+        body: JSON.stringify({ accion: 'listar_invitaciones' })
     });
+    
+    const result = await response.json();
+    tbody.innerHTML = '';
+    
+    if (result.success && result.data) {
+        result.data.forEach(inv => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${inv.correo}</td>
+                    <td>${inv.password_hash}</td>
+                    <td><span class="badge">Pendiente de subir Docs</span></td>
+                    <td><button class="btn-danger" onclick="borrarInvitacion('${inv.id}')">Eliminar</button></td>
+                </tr>
+            `;
+        });
+    }
 }
 
 async function borrarInvitacion(id) {
     if(!confirm("¿Deseas cancelar esta invitación?")) return;
-    await _supabase.from('credenciales_trabajadores').delete().eq('id', id);
+    
+    await fetch(`${supabaseUrl}/functions/v1/academia-operaciones-erp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+        body: JSON.stringify({ accion: 'borrar_invitacion', payload: { id: id } })
+    });
+    
     cargarInvitaciones();
 }
 
@@ -153,19 +168,22 @@ let empleadoSeleccionado = null;
 
 async function cargarExpedientes() {
     const lista = document.getElementById('listaPendientes');
-    // Ahora buscamos en la tabla maestra los que el candidato acaba de subir ('Por Validar')
-    const { data } = await _supabase
-        .from('credenciales_trabajadores')
-        .select('*, onboarding_trabajadores(*)') 
-        .eq('estatus', 'Por Validar'); // <--- ¡Ajuste maestro aplicado!
     
+    const response = await fetch(`${supabaseUrl}/functions/v1/academia-operaciones-erp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+        body: JSON.stringify({ accion: 'listar_expedientes' })
+    });
+    
+    const result = await response.json();
     lista.innerHTML = '';
-    if (!data || data.length === 0) {
+    
+    if (!result.success || !result.data || result.data.length === 0) {
         lista.innerHTML = '<li class="user-item">No hay expedientes pendientes por validar.</li>';
         return;
     }
 
-    data.forEach(exp => {
+    result.data.forEach(exp => {
         const li = document.createElement('li');
         li.className = 'user-item';
         li.innerHTML = `<h4>${exp.nombre} ${exp.primer_apellido}</h4>`;
@@ -344,7 +362,7 @@ document.getElementById('btnDictaminar').addEventListener('click', async () => {
     btn.disabled = true;
 
     try {
-        const response = await fetch(`${supabaseUrl}/functions/v1/auditar-expediente`, {
+        const response = await fetch(`${supabaseUrl}/functions/v1/academia-auditar-expediente`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json', 
@@ -574,21 +592,23 @@ let empleadoAActivar = null;
 
 async function cargarActivaciones() {
     const lista = document.getElementById('listaPorActivar');
-    if(!lista) return; // Por si aún no creas el HTML
+    if(!lista) return; 
 
-    // Buscamos a los que tú ya aprobaste y tienen su contrato firmado ("Por Firmar")
-    const { data } = await _supabase
-        .from('credenciales_trabajadores')
-        .select('*')
-        .eq('estatus', 'Por Firmar');
+    const response = await fetch(`${supabaseUrl}/functions/v1/academia-operaciones-erp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+        body: JSON.stringify({ accion: 'listar_activaciones' })
+    });
     
+    const result = await response.json();
     lista.innerHTML = '';
-    if (!data || data.length === 0) {
+    
+    if (!result.success || !result.data || result.data.length === 0) {
         lista.innerHTML = '<li class="user-item">No hay firmas esperando activación.</li>';
         return;
     }
 
-    data.forEach(exp => {
+    result.data.forEach(exp => {
         const li = document.createElement('li');
         li.className = 'user-item';
         li.innerHTML = `<h4>${exp.nombre} ${exp.primer_apellido}</h4><span class="badge">Por Activar</span>`;
@@ -631,7 +651,7 @@ document.getElementById('btnActivarTrabajador')?.addEventListener('click', async
     btn.disabled = true;
 
         try {
-        const response = await fetch(`${supabaseUrl}/functions/v1/activar-trabajador`, {
+        const response = await fetch(`${supabaseUrl}/functions/v1/academia-activar-trabajador`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
             body: JSON.stringify({ 

@@ -1,46 +1,99 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-// Setup type definitions for built-in Supabase Runtime APIs
-import "@supabase/functions-js/edge-runtime.d.ts";
-import { withSupabase } from "@supabase/server";
+// Configuramos las puertas para que tu página web pueda hablar con la API (CORS)
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
-console.log("Hello from Functions!");
+serve(async (req) => {
+  // 1. Manejo del pre-vuelo (Regla de seguridad de los navegadores)
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
 
-// This endpoint uses 'publishable' | 'secret' access, apiKey is required.
-// Use publishable for Client-facing, key-validated endpoints
-// Use secret for Server-to-server, internal calls
-export default {
-  fetch: withSupabase({ auth: ["publishable", "secret"] }, async (req, ctx) => {
-    // Called by another service with a secret key
-    // ctx.supabaseAdmin bypasses RLS — use for privileged operations
-    /*
-    if (ctx.authMode === "secret") {
-      const { user_id } = await req.json();
-      const { data } = await ctx.supabaseAdmin.auth.admin.getUserById(user_id);
+  try {
+    // 2. Recibimos lo que el alumno escribió en la pantalla de login
+    const { email, password } = await req.json()
 
-      return Response.json({
-        email: data?.user?.email,
-      });
+    // Validamos que no nos manden datos vacíos
+    if (!email || !password) {
+        return new Response(JSON.stringify({ error: 'Correo y contraseña son obligatorios' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400, // Bad Request
+        })
     }
-    */
 
-    const { name } = await req.json();
+    // 3. LA MAGIA: Nos conectamos a la base de datos usando la LLAVE MAESTRA.
+    // Esto permite que la API vea la tabla aunque la bloqueemos al público.
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
-    return Response.json({
-      message: `Hello ${name}!`,
-    });
-  }),
-};
+    // Buscamos si el correo existe en la tabla de membresías
+    const { data: usuarios, error } = await supabaseAdmin
+      .from('usuarios_membresias')
+      .select('token_hex, password_hijo, password_padre, nombre_alumno')
+      .eq('email', email.trim().toLowerCase()) // Limpiamos espacios y mayúsculas por si acaso
 
-/* To invoke locally:
+    if (error) throw error
 
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
+    // Si la base de datos regresa vacío, el correo no existe
+    if (!usuarios || usuarios.length === 0) {
+      return new Response(JSON.stringify({ error: 'Usuario no encontrado' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 404,
+      })
+    }
 
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/login-seguro' \
-    --header 'apiKey: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH' \
-    --data '{"name":"Functions"}'
+    // 4. LÓGICA DE NEGOCIO: ¿Es el Papá o es el Hijo?
+    let role = null;
+    let tokens_permitidos: string[] = [];
 
-*/
+    for (const user of usuarios) {
+      // ¿La contraseña coincide con la del padre?
+      if (user.password_padre && password === user.password_padre) {
+        role = 'padre';
+        break; // Si es el papá, detenemos la búsqueda, tiene acceso a todo.
+      } 
+      // ¿La contraseña coincide con la del hijo?
+      else if (user.password_hijo && password === user.password_hijo) {
+        role = 'hijo';
+        tokens_permitidos.push(user.token_hex); // Le damos solo la llave de este curso específico
+      }
+    }
+
+    // Si detectamos que es el papá, le pasamos TODOS los tokens que compró
+    if (role === 'padre') {
+        tokens_permitidos = usuarios.map(u => u.token_hex);
+    }
+
+    // Si después de buscar no hubo coincidencias, la contraseña está mal
+    if (tokens_permitidos.length === 0) {
+      return new Response(JSON.stringify({ error: 'Contraseña incorrecta' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401, // Unauthorized
+      })
+    }
+
+    // 5. ¡ACCESO CONCEDIDO! Le devolvemos el perfil al navegador
+    return new Response(JSON.stringify({
+      success: true,
+      role: role,
+      tokens: tokens_permitidos,
+      nombre_alumno: usuarios[0].nombre_alumno
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
+    })
+
+  } catch (error: any) {
+    // Si algo falla, atrapamos el error para que la API no explote
+    return new Response(JSON.stringify({ error: 'Error interno del servidor', detalles: error.message }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    })
+  }
+})
