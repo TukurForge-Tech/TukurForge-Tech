@@ -4,7 +4,7 @@ const SECRET_KEY = "TukurForge_Tech_Core_SecretKey_1";
 const diccionarioRecursos = {
     '/seguridad/ACM001': '/academia_centro_mando.js',
     '/seguridad/SCM002': '/supabase-client.js',
-    // '/seguridad/GLB001': '/global.css'  <-- Aquí agregarás tu CSS global después
+    '/seguridad/GLB001': '/global.css' 
 };
 
 export const config = {

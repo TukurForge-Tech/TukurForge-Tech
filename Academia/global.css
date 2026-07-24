@@ -1,3 +1,6 @@
+/* =========================================
+   VARIABLES Y ESTILOS BASE (GLOBAL)
+   ========================================= */
 :root {
     --primary-color: #06b6d4;
     --bg-color: #050a14;
@@ -10,15 +13,89 @@
 }
 
 body {
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-main);
     margin: 0;
     height: 100vh;
+}
+
+/* =========================================
+   CONTROL DE PANTALLAS (LAYOUTS)
+   ========================================= */
+.layout-centrado {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.layout-erp {
     display: flex;
     flex-direction: column;
 }
 
+/* =========================================
+   ESTILOS DEL PORTAL (INDEX)
+   ========================================= */
+.portal-card { 
+    background: var(--card-bg); 
+    padding: 40px; 
+    border-radius: 12px; 
+    width: 100%;
+    max-width: 450px; 
+    text-align: center;
+    border: 1px solid var(--primary-color);
+    box-shadow: 0 4px 20px rgba(6, 182, 212, 0.2);
+}
+
+h1 {
+    color: var(--primary-color);
+    margin-bottom: 5px;
+    font-size: 28px;
+}
+
+p.subtitle {
+    color: var(--text-muted);
+    margin-bottom: 30px;
+    font-size: 14px;
+}
+
+.btn { 
+    display: block;
+    width: 100%;
+    background: var(--success-color); 
+    color: white; 
+    text-decoration: none;
+    padding: 15px 0; 
+    margin-bottom: 15px; 
+    font-size: 16px; 
+    border-radius: 8px; 
+    font-weight: bold; 
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.btn:hover {
+    background: #059669;
+    transform: translateY(-2px);
+}
+
+.btn-disabled {
+    background: #334155;
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.btn-disabled:hover {
+    background: #334155;
+    transform: none;
+}
+
+/* =========================================
+   ESTILOS DEL ERP (CENTRO DE MANDO)
+   ========================================= */
 .navbar {
     background-color: var(--card-bg);
     padding: 15px 30px;
@@ -51,7 +128,6 @@ body {
     overflow: hidden;
 }
 
-/* Panel Izquierdo */
 .sidebar {
     width: 300px;
     background-color: var(--card-bg);
@@ -84,7 +160,6 @@ body {
 .user-item h4 { margin: 0 0 5px 0; }
 .user-item p { margin: 0; font-size: 0.85em; color: var(--text-muted); }
 
-/* Panel Derecho */
 .main-content {
     flex: 1;
     padding: 30px;
@@ -183,11 +258,7 @@ button {
 
 .btn-success { background-color: var(--success-color); color: white; }
 .btn-danger { background-color: var(--danger-color); color: white; }
-/* =========================================
-   NUEVAS CLASES PARA EL CENTRO DE MANDO (ERP)
-   ========================================= */
 
-/* Menú de Navegación Lateral */
 .erp-menu {
     width: 250px;
     background-color: var(--card-bg);
@@ -227,14 +298,12 @@ button {
     cursor: not-allowed;
 }
 
-/* Contenedores de los Módulos */
 .modulo-contenido {
     flex: 1;
     padding: 30px;
     overflow-y: auto;
 }
 
-/* Inputs para edición directa */
 .erp-input {
     width: 100%;
     padding: 10px;
@@ -261,7 +330,6 @@ button {
     text-transform: uppercase;
 }
 
-/* Formulario de Invitaciones */
 .invite-form {
     display: flex;
     gap: 15px;
@@ -278,7 +346,6 @@ button {
     cursor: pointer;
 }
 
-/* Tablas Históricas */
 .erp-table {
     width: 100%;
     border-collapse: collapse;
