@@ -28,7 +28,7 @@ serve(async (req) => {
     switch (accion) {
       case 'obtener_perfil':
         ({ data, error } = await supabaseAdmin
-          .from('credenciales_trabajadores')
+          .from('academia_credenciales_trabajadores')
           .select('nombre, primer_apellido, rol')
           .eq('correo', payload.correo)
           .single())
@@ -36,28 +36,28 @@ serve(async (req) => {
 
       case 'listar_invitaciones':
         ({ data, error } = await supabaseAdmin
-          .from('credenciales_trabajadores')
+          .from('academia_credenciales_trabajadores')
           .select('*')
           .eq('estatus', 'Invitado'))
         break;
 
       case 'borrar_invitacion':
         ({ error } = await supabaseAdmin
-          .from('credenciales_trabajadores')
+          .from('academia_credenciales_trabajadores')
           .delete()
           .eq('id', payload.id))
         break;
 
       case 'listar_expedientes':
         ({ data, error } = await supabaseAdmin
-          .from('credenciales_trabajadores')
-          .select('*, onboarding_trabajadores(*)')
+          .from('academia_credenciales_trabajadores')
+          .select('*, academia_onboarding_trabajadores(*)')
           .eq('estatus', 'Por Validar'))
         break;
 
       case 'listar_activaciones':
         ({ data, error } = await supabaseAdmin
-          .from('credenciales_trabajadores')
+          .from('academia_credenciales_trabajadores')
           .select('*')
           .eq('estatus', 'Por Firmar'))
         break;

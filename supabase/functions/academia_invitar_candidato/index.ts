@@ -31,7 +31,7 @@ serve(async (req) => {
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
     const { error: dbError } = await supabaseAdmin
-      .from('credenciales_trabajadores')
+      .from('academia_credenciales_trabajadores')
       .insert([{ 
         correo: correo_personal, 
         password_hash: hashed, // Guardamos el HASH, nunca el texto plano

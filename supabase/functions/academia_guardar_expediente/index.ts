@@ -32,9 +32,9 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 2. ACTUALIZAMOS la tabla credenciales_trabajadores con los nombres separados Y el nuevo estatus
+    // 2. ACTUALIZAMOS la tabla academia_credenciales_trabajadores con los nombres separados Y el nuevo estatus
     const { error: updateError } = await supabaseAdmin
-        .from('credenciales_trabajadores')
+        .from('academia_credenciales_trabajadores')
         .update({
             nombre: nombre,
             segundos_nombres: segundos_nombres,
@@ -46,12 +46,12 @@ Deno.serve(async (req) => {
 
     if (updateError) throw updateError;
 
-    // 3. Armamos el nombre completo limpio por si la tabla onboarding_trabajadores aún lo requiere
+    // 3. Armamos el nombre completo limpio por si la tabla onboarding aún lo requiere
     const nombreUnido = `${nombre} ${segundos_nombres ? segundos_nombres + ' ' : ''}${primer_apellido} ${segundo_apellido}`.trim().replace(/\s+/g, ' ');
 
-    // 4. Insertar en la Tabla 2 (onboarding_trabajadores)
+    // 4. Insertar en la Tabla 2 (academia_onboarding_trabajadores)
     const { error: insertError } = await supabaseAdmin
-        .from('onboarding_trabajadores')
+        .from('academia_onboarding_trabajadores')
         .insert([{
             trabajador_id,
             nombre_completo: nombreUnido,

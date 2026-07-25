@@ -53,7 +53,7 @@ serve(async (req) => {
         html: `
           <h2>Nuevo expediente recibido</h2>
           <p>El trabajador <strong>${trabajador_nombre}</strong> (${trabajador_email}) acaba de subir sus documentos al portal.</p>
-          <p>Por favor, ingresa al panel de Supabase (tabla <em>onboarding_trabajadores</em>) para auditar los archivos.</p>
+          <p>Por favor, ingresa al panel de Supabase (tabla <em>academia_onboarding_trabajadores</em>) para auditar los archivos.</p>
         `,
       }),
     });

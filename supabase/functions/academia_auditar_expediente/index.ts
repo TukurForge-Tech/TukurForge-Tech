@@ -25,9 +25,9 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 3. Guardamos la auditoría granular (14 campos) y el dictamen de revisión
+    // 3. Guardamos la auditoría granular (14 campos) y el dictamen de revisión en la NUEVA tabla
     const { error: updateOnboardingError } = await supabaseAdmin
-        .from('onboarding_trabajadores')
+        .from('academia_onboarding_trabajadores')
         .update({
             estatus_ine: estatus_docs.estatus_ine,
             motivo_ine: estatus_docs.motivo_ine,
@@ -56,14 +56,14 @@ Deno.serve(async (req) => {
 
     if (updateOnboardingError) throw updateOnboardingError;
 
-    // 4. Actualizamos el Estatus Maestro del trabajador
+    // 4. Actualizamos el Estatus Maestro del trabajador en la NUEVA tabla
     let estatusMaestro = 'Por Firmar';
     if (decision_general === 'Rechazado_Definitivo') {
         estatusMaestro = 'Rechazado';
     }
 
     const { error: updateCredencialesError } = await supabaseAdmin
-        .from('credenciales_trabajadores')
+        .from('academia_credenciales_trabajadores')
         .update({ estatus: estatusMaestro })
         .eq('id', trabajador_id);
 

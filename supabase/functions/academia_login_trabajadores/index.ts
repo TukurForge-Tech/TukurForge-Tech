@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
 
     // 1. Buscamos al trabajador en la bóveda
     const { data: usuario, error } = await supabaseAdmin
-      .from('credenciales_trabajadores')
+      .from('academia_credenciales_trabajadores')
       .select('*')
       .eq('correo', correo)
       .single();
