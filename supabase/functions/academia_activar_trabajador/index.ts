@@ -22,7 +22,7 @@ serve(async (req) => {
 
         // 0. TRAER EL CORREO PERSONAL DEL TRABAJADOR
         const { data: empleado, error: errEmpleado } = await supabaseAdmin
-            .from('credenciales_trabajadores')
+            .from('academia_credenciales_trabajadores')
             .select('correo, nombre')
             .eq('id', trabajador_id)
             .single();
@@ -37,7 +37,7 @@ serve(async (req) => {
         const [basePrefijo, dominio] = correo_corporativo.split('@');
         
         const { data: emailsExistentes } = await supabaseAdmin
-            .from('credenciales_trabajadores')
+            .from('academia_credenciales_trabajadores')
             .select('correo_corporativo')
             .ilike('correo_corporativo', `${basePrefijo}%@${dominio}`);
 
@@ -87,7 +87,7 @@ serve(async (req) => {
 
         const prefijoBusqueda = `TFMX${letraRol}26%`;
         const { data: usuariosRegistrados } = await supabaseAdmin
-            .from('credenciales_trabajadores')
+            .from('academia_credenciales_trabajadores')
             .select('codigo_empleado')
             .not('codigo_empleado', 'is', null)
             .like('codigo_empleado', prefijoBusqueda);
@@ -112,7 +112,7 @@ serve(async (req) => {
 
         // A. Actualizamos la tabla maestra de credenciales
         const { error: updateError } = await supabaseAdmin
-            .from('credenciales_trabajadores')
+            .from('academia_credenciales_trabajadores')
             .update({ 
                 estatus: 'Activo',
                 codigo_empleado: matriculaOficial,
@@ -125,7 +125,7 @@ serve(async (req) => {
 
         // B. Actualizamos el rastreador físico del contrato (NUEVO)
         const { error: errorContrato } = await supabaseAdmin
-            .from('onboarding_trabajadores')
+            .from('academia_onboarding_trabajadores')
             .update({ 
                 estatus_contrato: 'Firmado'
             })
@@ -143,7 +143,7 @@ serve(async (req) => {
 
         const htmlBienvenida = `
             <div style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
-                <h2 style="color: #06b6d4;">¡Bienvenido a H Levare Group!</h2>
+                <h2 style="color: #06b6d4;">¡Bienvenido a TukurForge Tech!</h2>
                 <p>Hola ${nombrePila},</p>
                 <p>Es un honor informarte que tu expediente ha sido validado y tu contrato ha sido activado exitosamente.</p>
                 <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
@@ -161,9 +161,9 @@ serve(async (req) => {
             method: 'POST',
             headers: headersResend,
             body: JSON.stringify({
-                from: 'H Levare Group <no-reply@tukurforge.com>', 
+                from: 'TukurForge Tech <no-reply@tukurforge.com>', 
                 to: correoPersonal,
-                subject: 'Tu código de empleado y accesos - H Levare Group',
+                subject: 'Tu código de empleado y accesos - TukurForge Tech',
                 html: htmlBienvenida
             })
         });
