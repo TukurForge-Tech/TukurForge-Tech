@@ -1,6 +1,6 @@
 const SECRET_KEY = "SimuTukur_Tech_SecretKey_1";
 
-// 1. TU DICCIONARIO DE ACTIVOS ENMASCARADOS (Por si luego quieres ocultar JS/CSS aquí también)
+// 1. TU DICCIONARIO DE ACTIVOS ENMASCARADOS
 const diccionarioRecursos = {};
 
 export const config = {
@@ -48,8 +48,8 @@ export default function middleware(request) {
               decryptedTarget += String.fromCharCode(decodedString.charCodeAt(i) ^ SECRET_KEY.charCodeAt(i % SECRET_KEY.length));
           }
           
-          const cleanTarget = decryptedTarget.replace('.html', '');
-          const newUrl = new URL(`/${cleanTarget}${url.search}`, request.url);
+          // FIX CRÍTICO: No le quitamos el .html. Obligamos a Vercel a leer el archivo exacto.
+          const newUrl = new URL(`/${decryptedTarget}${url.search}`, request.url);
 
           return new Response(null, { headers: { 'x-middleware-rewrite': newUrl.toString() } });
       } catch (error) {
