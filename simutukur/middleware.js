@@ -48,8 +48,9 @@ export default function middleware(request) {
               decryptedTarget += String.fromCharCode(decodedString.charCodeAt(i) ^ SECRET_KEY.charCodeAt(i % SECRET_KEY.length));
           }
           
-          // FIX CRÍTICO: No le quitamos el .html. Obligamos a Vercel a leer el archivo exacto.
-          const newUrl = new URL(`/${decryptedTarget}${url.search}`, request.url);
+          // FIX: Vercel usa Clean URLs, así que SÍ debemos quitarle el .html
+          const cleanTarget = decryptedTarget.replace('.html', '');
+          const newUrl = new URL(`/${cleanTarget}${url.search}`, request.url);
 
           return new Response(null, { headers: { 'x-middleware-rewrite': newUrl.toString() } });
       } catch (error) {
