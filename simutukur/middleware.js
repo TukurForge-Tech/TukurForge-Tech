@@ -20,6 +20,19 @@ export default function middleware(request) {
       });
   }
 
+  // ----------------------------------------------------
+  // NUEVO: REDIRECCIÓN INTELIGENTE AL CRM (ACADEMIA)
+  // ----------------------------------------------------
+  if (path === '/crm_vendedores' || path === '/crm_vendedores.html') {
+      const isLocal = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+      const destino = isLocal 
+          ? 'http://localhost:3000/academia_crm_vendedores' 
+          : 'https://academia.tukurforge.com/academia_crm_vendedores';
+          
+      return Response.redirect(destino, 301);
+  }
+  // ----------------------------------------------------
+
   // 3. REGLAS DE PASO LIBRE
   if (path.endsWith('.png') || path.endsWith('.css') || path.endsWith('.js') || path.endsWith('.ico') || path === '/' || path === '/index' || path === '/index.html') {
       return new Response(null, { headers: { 'x-middleware-next': '1' } });
