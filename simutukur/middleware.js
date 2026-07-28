@@ -20,10 +20,8 @@ export default function middleware(request) {
       });
   }
 
-  // ----------------------------------------------------
-  // NUEVO: REDIRECCIÓN INTELIGENTE AL CRM (ACADEMIA)
-  // ----------------------------------------------------
-  if (path === '/crm_vendedores' || path === '/crm_vendedores.html') {
+  // REDIRECCIÓN INTELIGENTE AL CRM (ACADEMIA)
+  if (path === '/crm_vendedores' || path === '/crm_vendedores.html' || path === '/academia_crm_vendedores' || path === '/academia_crm_vendedores.html') {
       const isLocal = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
       const destino = isLocal 
           ? 'http://localhost:3000/academia_crm_vendedores.html' 
