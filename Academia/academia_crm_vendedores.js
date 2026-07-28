@@ -379,7 +379,19 @@ async function cargarExamenesPro() {
 document.getElementById('start-demo-btn').addEventListener('click', () => {
     const token = document.getElementById('exam-dropdown').value;
     if (!token) return alert('Selecciona un examen.');
-    window.open(`/abrir/simutukur/instrucciones-demo?v=${token}`, '_blank');
+    
+    let urlDestino = "";
+    
+    // Auto-detección del entorno
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        // ENTORNO DE PRUEBAS (Local)
+        urlDestino = `/abrir/simutukur/instrucciones-demo?v=${token}`;
+    } else {
+        // ENTORNO DE PRODUCCIÓN (Nube)
+        urlDestino = `https://simutukur.tukurforge.com/abrir/instrucciones-demo?v=${token}`;
+    }
+    
+    window.open(urlDestino, '_blank');
 });
 
 // INTERFAZ
