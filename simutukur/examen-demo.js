@@ -426,6 +426,9 @@ function registrarIncidencia(tipo, mensaje) {
 // ==========================================
 // 6. FINALIZACIÓN RÁPIDA (Salto al Embudo)
 // ==========================================
+// ==========================================
+// 6. FINALIZACIÓN RÁPIDA (Salto al Embudo)
+// ==========================================
 function finalizarDemo() {
     clearInterval(timerIntervalLocal);
     sessionStorage.removeItem('demo_mina_activa');
@@ -436,8 +439,10 @@ function finalizarDemo() {
     const videoEl = document.getElementById('webcam');
     if(videoEl && videoEl.srcObject) videoEl.srcObject.getTracks().forEach(t => t.stop());
 
-    // SALTO DIRECTO AL DASHBOARD DEMO (Para la venta final)
-    window.location.href = 'dash-demo.html'; 
+    // 👇 NUEVO: SALTO AL DASHBOARD POR EL TÚNEL ENCRIPTADO Y CON TOKEN 👇
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('v');
+    window.location.href = `/abrir/dash-demo.html?v=${urlToken}`; 
 }
 
 window.onload = init;
