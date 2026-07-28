@@ -28,8 +28,8 @@ export default function middleware(request) {
       });
   }
 
-  // 3. REGLAS DE PASO LIBRE (Imágenes, estilos, scripts y favicon)
-  if (path.endsWith('.png') || path.endsWith('.css') || path.endsWith('.js') || path.endsWith('.ico') || path === '/' || path === '/index' || path === '/index.html') {
+  // 3. REGLAS DE PASO LIBRE
+  if (path.endsWith('.png') || path.endsWith('.css') || path.endsWith('.js') || path.endsWith('.ico') || path.endsWith('.html') || path === '/' || path === '/index') {
       return new Response(null, { headers: { 'x-middleware-next': '1' } });
   }
 
