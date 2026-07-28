@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     // ==========================================
     if (accion === 'login') {
       const { data: usuario, error } = await supabase
-        .from('credenciales_trabajadores')
+        .from('academia_credenciales_trabajadores')
         .select('*')
         .eq('codigo_empleado', codigo_empleado)
         .single()
@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
       console.log(`[AUDITORÍA] Cambio de contraseña solicitado para correo: ${correo}`);
       const salt = await bcrypt.genSalt(10)
       const nuevoHash = await bcrypt.hash(nuevaPassword, salt)
-      const { error } = await supabase.from('credenciales_trabajadores').update({ password_hash: nuevoHash }).eq('correo_corporativo', correo)
+      const { error } = await supabase.from('academia_credenciales_trabajadores').update({ password_hash: nuevoHash }).eq('correo_corporativo', correo)
       if (error) throw error
       console.log(`[ÉXITO] Contraseña actualizada para correo: ${correo}`);
       return new Response(JSON.stringify({ success: true, mensaje: 'Contraseña actualizada.' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })

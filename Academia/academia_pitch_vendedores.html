@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pitch Deck Comercial | TukurForge Tech</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        :root { --bg: #050a14; --text: #F8FAFC; --cyan: #06B6D4; --dark: #164E63; --accent: #10B981; --warning: #F59E0B; }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
+        
+        .progress-line-container { position: fixed; top: 0; left: 40px; width: 2px; height: 100vh; background: rgba(255,255,255,0.1); z-index: 0; }
+        .progress-line { width: 100%; height: 0%; background: var(--accent); box-shadow: 0 0 15px var(--accent); }
+        
+        .section { min-height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; padding: 50px 0 50px 80px; box-sizing: border-box; }
+        .content-block { max-width: 900px; width: 100%; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--dark); border-radius: 15px; padding: 50px; backdrop-filter: blur(10px); opacity: 0; transform: translateY(50px); margin: 0 auto; }
+        
+        h1 { font-size: 3.5rem; color: var(--accent); margin-top: 0; text-transform: uppercase; text-align: center; line-height: 1.1; }
+        h2 { font-size: 2.2rem; color: var(--accent); margin-top: 0; border-bottom: 2px solid var(--dark); padding-bottom: 10px; }
+        h3 { font-size: 1.5rem; color: #38BDF8; margin-top: 20px; margin-bottom: 10px; }
+        
+        ul { font-size: 1.2rem; line-height: 1.8; list-style: none; padding: 0; }
+        li { margin-bottom: 15px; padding-left: 20px; border-left: 4px solid var(--accent); }
+        strong { color: var(--cyan); }
+        
+        .alert-box { background: rgba(6, 182, 212, 0.1); border-left: 4px solid var(--cyan); padding: 20px; border-radius: 4px; margin-bottom: 20px; }
+        .money-box { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent); padding: 25px; border-radius: 8px; text-align: center; margin-top: 20px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .card { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        
+        .scroll-indicator { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: #94A3B8; font-size: 14px; letter-spacing: 2px; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); } 40% { transform: translateY(-10px) translateX(-50%); } 60% { transform: translateY(-5px) translateX(-50%); } }
+    </style>
+</head>
+<body>
+
+    <div class="progress-line-container"><div class="progress-line" id="progressBar"></div></div>
+
+    <!-- DIAPOSITIVA 1: Inicio -->
+    <section class="section">
+        <div class="content-block" style="text-align: center;">
+            <h1 style="color: var(--cyan);">Fuerza de Ventas<br><span style="color: var(--text);">TukurForge Tech</span></h1>
+            <p style="font-size: 1.5rem; color: #94A3B8;">Bienvenido al modelo comercial más agresivo y rentable del sector EdTech.</p>
+            <div class="money-box" style="margin-top: 40px;">
+                <h3 style="margin:0; color: var(--accent);">Tu objetivo es simple:</h3>
+                <p style="font-size: 1.2rem; margin-top: 10px;">Vender certidumbre a los directores y herramientas de éxito a los estudiantes, cobrando comisiones residuales mes a mes.</p>
+            </div>
+        </div>
+        <div class="scroll-indicator">Haz Scroll ▼</div>
+    </section>
+
+    <!-- DIAPOSITIVA 2: Nuestro Arsenal -->
+    <section class="section">
+        <div class="content-block">
+            <h2>Tecnología que Cierra Contratos Sola</h2>
+            <p style="font-size: 1.2rem;">No vendemos software, vendemos el prestigio del colegio. Nuestras herramientas aniquilan el rezago educativo:</p>
+            <ul>
+                <li><strong>Sensei Tukur (IA):</strong> Un tutor de matemáticas y ciencias que resuelve dudas paso a paso, 24/7.</li>
+                <li><strong>Políglota Tukur:</strong> Laboratorio de idiomas con IA que evalúa la pronunciación del alumno, quitándoles el pánico a hablar inglés.</li>
+                <li><strong>SimuTukur:</strong> El simulador definitivo para exámenes de admisión (UNAM, IPN, EXANI I y II). Blindado con tecnología anti-trampas (Proctoring).</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- DIAPOSITIVA 3: La Oferta Irresistible -->
+    <section class="section">
+        <div class="content-block">
+            <h2>El Cierre Maestro: El Precio</h2>
+            <div class="alert-box">
+                <p style="margin: 0; font-size: 1.1rem;"><strong>El Argumento de Venta:</strong> Los padres de familia gastan más de $3,500 pesos mensuales en tutores privados, cursos de ingreso y apps de inglés. Nosotros le damos todo el ecosistema al colegio por una fracción de ese costo.</p>
+            </div>
+            <div class="card" style="text-align: center; border-color: var(--cyan);">
+                <h3 style="color: var(--cyan); margin-top: 0;">Suscripción Academia Tukur (Marca Blanca)</h3>
+                <p style="font-size: 1.2rem;">Sensei Tukur + Políglota Tukur + SimuTukur (Para 3er año)</p>
+                <p style="font-size: 2.5rem; font-weight: bold; margin: 10px 0; color: var(--text);">$299.00 <span style="font-size: 1rem; color: #94A3B8;">MXN mensuales por alumno</span></p>
+                <p style="font-size: 1rem; color: var(--warning);">Contrato a 10 meses. Mínimo 50 alumnos por escuela.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- DIAPOSITIVA 4: Tu Dinero (Plan de Compensación) -->
+    <section class="section">
+        <div class="content-block">
+            <h2>Cómo Ganas Dinero (Comisiones)</h2>
+            <p style="font-size: 1.2rem;">Aquí no hay topes. Tus ingresos dependen estrictamente del volumen que cierres.</p>
+            <div class="grid-2">
+                <div class="card">
+                    <h3 style="color: var(--accent); margin-top: 0;">1. Setup Inicial (50%)</h3>
+                    <p>Cobramos a la escuela la infraestructura (10k a 15k). <strong>Tú te llevas el 50% directo</strong> en cuanto el colegio pague.</p>
+                </div>
+                <div class="card">
+                    <h3 style="color: var(--accent); margin-top: 0;">2. Residual Mensual (10%)</h3>
+                    <p>Ganas el <strong>10% sobre la facturación de cada mes</strong>. Ejemplo: Una escuela de 300 alumnos te deja ~$9,000 MXN mensuales fijos.</p>
+                </div>
+            </div>
+            <div class="money-box">
+                <h3 style="margin:0;">3. Bono Fast Start</h3>
+                <p style="font-size: 1.1rem; margin-top: 10px;">Cierra tus primeras 5 escuelas en menos de 60 días y llévate un bono en efectivo de <strong>$5,000.00 MXN extra</strong>.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- DIAPOSITIVA 5: El Siguiente Nivel -->
+    <section class="section">
+        <div class="content-block" style="text-align: center;">
+            <h2>El Modelo Agencia (Tu Propio Negocio)</h2>
+            <p style="font-size: 1.3rem;">La meta no es ser vendedor toda la vida. La meta es <strong>construir tu red</strong>.</p>
+            <ul style="text-align: left; display: inline-block;">
+                <li>Llega a <strong>25 escuelas cerradas</strong> (mínimo 2,500 licencias activas).</li>
+                <li>Desbloquea tu <strong>Zona Comercial Exclusiva</strong>.</li>
+                <li>Recluta a tus propios sub-vendedores.</li>
+                <li>Gana <strong>regalías de hasta 4 generaciones</strong> (2% directos, 1% de tu red) sobre todo lo que ellos cierren.</li>
+            </ul>
+            <h1 style="color: var(--cyan); margin-top: 30px; font-size: 2.5rem;">El mercado es virgen. Ve por él.</h1>
+        </div>
+    </section>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        gsap.to("#progressBar", { height: "100%", ease: "none", scrollTrigger: { trigger: "body", start: "top top", end: "bottom bottom", scrub: 0.3 } });
+
+        gsap.utils.toArray('.content-block').forEach((block, i) => {
+            const startX = i % 2 === 0 ? -50 : 50;
+            gsap.fromTo(block, 
+                { y: 50, x: startX, opacity: 0 }, 
+                { y: 0, x: 0, opacity: 1, duration: 1, ease: "power2.out", 
+                  scrollTrigger: { trigger: block, start: "top 85%", toggleActions: "play none none reverse" } 
+                }
+            );
+        });
+    </script>
+</body>
+</html>

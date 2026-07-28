@@ -49,9 +49,10 @@ serve(async (req) => {
         break;
 
       case 'listar_expedientes':
+        // EL TRUCO MÁGICO ESTÁ AQUÍ (Alias: onboarding_trabajadores)
         ({ data, error } = await supabaseAdmin
           .from('academia_credenciales_trabajadores')
-          .select('*, academia_onboarding_trabajadores(*)')
+          .select('*, onboarding_trabajadores:academia_onboarding_trabajadores(*)')
           .eq('estatus', 'Por Validar'))
         break;
 
@@ -73,7 +74,7 @@ serve(async (req) => {
       status: 200 
     })
 
-  } catch (error) {
+  } catch (error: any) {
     return new Response(JSON.stringify({ success: false, error: error.message }), { 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
       status: 400 

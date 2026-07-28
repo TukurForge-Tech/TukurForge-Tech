@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Directivo | Academia Tukur</title>
+    <style>
+        :root { --bg: #f8fafc; --text: #334155; --primary: #0A2540; --accent: #06B6D4; --border: #e2e8f0; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; }
+        .sidebar { width: 250px; background: white; border-right: 1px solid var(--border); padding: 20px; }
+        .main { flex: 1; padding: 30px; overflow-y: auto; }
+        h1 { color: var(--primary); margin-top: 0; }
+        .card { background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .grid-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+        .stat { font-size: 24px; font-weight: bold; color: var(--primary); }
+        .stat-title { font-size: 12px; color: #64748b; text-transform: uppercase; }
+        .search-bar { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 16px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { font-size: 12px; color: #64748b; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2 style="color: var(--primary); margin-top: 0;">Colegio Patria</h2>
+        <p style="font-size: 13px; color: #64748b;">Panel Directivo / Control Escolar</p>
+        <hr style="border:0; border-top: 1px solid var(--border); margin: 20px 0;">
+        <div style="font-weight: bold; color: var(--accent); margin-bottom: 15px;">📊 Estadísticas Globales</div>
+        <div style="color: #64748b; margin-bottom: 15px;">🔍 Buscador de Alumnos</div>
+    </div>
+    <div class="main">
+        <h1>Monitoreo de Plataforma</h1>
+        
+        <div class="grid-stats">
+            <div class="card">
+                <div class="stat-title">Uso de Sensei Tukur (IA)</div>
+                <div class="stat">85%</div>
+                <div style="font-size: 12px; color: #10B981;">Matrícula activa esta semana</div>
+            </div>
+            <div class="card">
+                <div class="stat-title">Uso de Políglota Tukur</div>
+                <div class="stat">72%</div>
+                <div style="font-size: 12px; color: #10B981;">Prácticas de Speaking completadas</div>
+            </div>
+            <div class="card">
+                <div class="stat-title">SimuTukur (Simulacros)</div>
+                <div class="stat">1,240</div>
+                <div style="font-size: 12px; color: #10B981;">Exámenes generados este mes</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-top: 0; color: var(--primary);">Auditoría Individual de Alumnos</h3>
+            <input type="text" class="search-bar" placeholder="Buscar alumno por nombre o matrícula...">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Matrícula</th>
+                        <th>Nombre</th>
+                        <th>Grado</th>
+                        <th>Actividad IA</th>
+                        <th>Último Simulacro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2026001</td>
+                        <td>García, Luis</td>
+                        <td>3ro Secundaria</td>
+                        <td>Alta (4h/sem)</td>
+                        <td>88/128 pts</td>
+                    </tr>
+                    <tr>
+                        <td>2026002</td>
+                        <td>López, Ana</td>
+                        <td>3ro Prepa</td>
+                        <td>Media (2h/sem)</td>
+                        <td>Pendiente</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

@@ -48,7 +48,7 @@ async function desbloquearERP(emailUsuario) {
     document.getElementById('erp-app').style.display = 'flex';
     
     // Llamada segura a la nueva API
-    const response = await fetch(`${supabaseUrl}/functions/v1/academia-operaciones-erp`, {
+    const response = await fetch(`${supabaseUrl}/functions/v1/academia_operaciones_erp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
         body: JSON.stringify({ accion: 'obtener_perfil', payload: { correo: emailUsuario } })
@@ -98,7 +98,7 @@ document.getElementById('btnEnviarInvitacion').addEventListener('click', async (
         // ¡ELIMINAMOS TODO EL BLOQUE QUE HACÍA .insert() AQUÍ!
         
         // 2. Solo disparamos la Edge Function
-        const response = await fetch(`${supabaseUrl}/functions/v1/academia-invitar-candidato`, {
+        const response = await fetch(`${supabaseUrl}/functions/v1/academia_invitar_candidato`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
             body: JSON.stringify({ 
@@ -126,7 +126,7 @@ document.getElementById('btnEnviarInvitacion').addEventListener('click', async (
 async function cargarInvitaciones() {
     const tbody = document.getElementById('tablaInvitaciones');
     
-    const response = await fetch(`${supabaseUrl}/functions/v1/academia-operaciones-erp`, {
+    const response = await fetch(`${supabaseUrl}/functions/v1/academia_operaciones_erp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
         body: JSON.stringify({ accion: 'listar_invitaciones' })
@@ -152,7 +152,7 @@ async function cargarInvitaciones() {
 async function borrarInvitacion(id) {
     if(!confirm("¿Deseas cancelar esta invitación?")) return;
     
-    await fetch(`${supabaseUrl}/functions/v1/academia-operaciones-erp`, {
+    await fetch(`${supabaseUrl}/functions/v1/academia_operaciones_erp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
         body: JSON.stringify({ accion: 'borrar_invitacion', payload: { id: id } })
@@ -169,7 +169,7 @@ let empleadoSeleccionado = null;
 async function cargarExpedientes() {
     const lista = document.getElementById('listaPendientes');
     
-    const response = await fetch(`${supabaseUrl}/functions/v1/academia-operaciones-erp`, {
+    const response = await fetch(`${supabaseUrl}/functions/v1/academia_operaciones_erp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
         body: JSON.stringify({ accion: 'listar_expedientes' })
@@ -362,7 +362,7 @@ document.getElementById('btnDictaminar').addEventListener('click', async () => {
     btn.disabled = true;
 
     try {
-        const response = await fetch(`${supabaseUrl}/functions/v1/academia-auditar-expediente`, {
+        const response = await fetch(`${supabaseUrl}/functions/v1/academia_auditar_expediente`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json', 
@@ -594,7 +594,7 @@ async function cargarActivaciones() {
     const lista = document.getElementById('listaPorActivar');
     if(!lista) return; 
 
-    const response = await fetch(`${supabaseUrl}/functions/v1/academia-operaciones-erp`, {
+    const response = await fetch(`${supabaseUrl}/functions/v1/academia_operaciones_erp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
         body: JSON.stringify({ accion: 'listar_activaciones' })
@@ -651,7 +651,7 @@ document.getElementById('btnActivarTrabajador')?.addEventListener('click', async
     btn.disabled = true;
 
         try {
-        const response = await fetch(`${supabaseUrl}/functions/v1/academia-activar-trabajador`, {
+        const response = await fetch(`${supabaseUrl}/functions/v1/academia_activar_trabajador`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
             body: JSON.stringify({ 

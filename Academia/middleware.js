@@ -6,7 +6,8 @@ const diccionarioRecursos = {
     '/seguridad/ASC002': '/academia_supabase-client.js',
     '/seguridad/ACM003': '/academia_centro_mando.js',
     '/seguridad/AOT004': '/academia_onboarding_trabajadores',
-    '/seguridad/AOT005': '/academia_onboarding_trabajadores.js'
+    '/seguridad/AOT005': '/academia_onboarding_trabajadores.js',
+    '/seguridad/ACV006': '/academia_crm_vendedores.js'
      
 };
 
@@ -42,7 +43,8 @@ export default function middleware(request) {
       }
       const base64Url = btoa(encryptedString).replace(/=/g, "");
       
-      return Response.redirect(new URL(`/auth-${base64Url}`, request.url), 307);
+      //return Response.redirect(new URL(`/auth-${base64Url}`, request.url), 307);
+      return Response.redirect(new URL(`/auth-${base64Url}${url.search}`, request.url), 307);
   }
 
   // 5. FASE DE DESENCRIPTACIÓN INVISIBLE (Para las vistas protegidas)
@@ -56,8 +58,9 @@ export default function middleware(request) {
           }
           
           const cleanTarget = decryptedTarget.replace('.html', '');
-          const newUrl = new URL(`/${cleanTarget}`, request.url);
-          
+          //const newUrl = new URL(`/${cleanTarget}`, request.url);
+          const newUrl = new URL(`/${cleanTarget}${url.search}`, request.url);
+
           return new Response(null, { headers: { 'x-middleware-rewrite': newUrl.toString() } });
       } catch (error) {
           return new Response('Enlace Inválido o Caducado', { status: 404 });

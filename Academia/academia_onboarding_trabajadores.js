@@ -22,7 +22,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     errorDiv.textContent = "";
 
     try {
-        const respuesta = await fetch(`${supabaseUrl}/functions/v1/login-trabajadores`, {
+        const respuesta = await fetch(`${supabaseUrl}/functions/v1/academia_login_trabajadores`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -134,7 +134,7 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
         const bancoSeleccionado = document.getElementById('banco_nombre').value.trim().toUpperCase();
         const regimenSeleccionado = document.getElementById('regimen_contratacion').value;
         
-        const resGuardar = await fetch(`${supabaseUrl}/functions/v1/guardar-expediente`, {
+        const resGuardar = await fetch(`${supabaseUrl}/functions/v1/academia_guardar_expediente`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -167,7 +167,7 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
 
         loadingStatus.innerHTML = "<p>Enviando correos de confirmación...</p>";
 
-        await fetch(`${supabaseUrl}/functions/v1/notificar-onboarding`, {
+        await fetch(`${supabaseUrl}/functions/v1/academia_notificar_onboarding`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
