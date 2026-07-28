@@ -26,8 +26,8 @@ export default function middleware(request) {
   if (path === '/crm_vendedores' || path === '/crm_vendedores.html') {
       const isLocal = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
       const destino = isLocal 
-          ? 'http://localhost:3000/academia_crm_vendedores' 
-          : 'https://academia.tukurforge.com/academia_crm_vendedores';
+          ? 'http://localhost:3000/academia_crm_vendedores.html' 
+          : 'https://academia.tukurforge.com/academia_crm_vendedores.html';
           
       return Response.redirect(destino, 301);
   }
