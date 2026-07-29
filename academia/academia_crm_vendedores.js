@@ -385,10 +385,10 @@ document.getElementById('start-demo-btn').addEventListener('click', () => {
     // Auto-detección del entorno
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         // ENTORNO DE PRUEBAS (Local) - Apuntamos al puerto de SimuTukur (3001)
-        urlDestino = `http://localhost:3001/abrir/instrucciones-demo?v=${token}`;
+        urlDestino = `http://localhost:3001/abrir/simu_instrucciones_demo?v=${token}`;
     } else {
         // ENTORNO DE PRODUCCIÓN (Nube)
-        urlDestino = `https://simutukur.tukurforge.com/abrir/instrucciones-demo?v=${token}`;
+        urlDestino = `https://simutukur.tukurforge.com/abrir/simu_instrucciones_demo?v=${token}`;
     }
     
     window.open(urlDestino, '_blank');

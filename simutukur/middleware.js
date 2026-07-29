@@ -1,7 +1,14 @@
 const SECRET_KEY = "SimuTukur_Tech_SecretKey_1";
 
 // 1. TU DICCIONARIO DE ACTIVOS ENMASCARADOS
-const diccionarioRecursos = {};
+const diccionarioRecursos = {
+    '/seguridad/SSG001': '/simu_style_global.css',
+    '/seguridad/SSC002': '/simu_supabase_client.js',
+    '/seguridad/SID003': '/simu_instrucciones_demo.js',
+    '/seguridad/SED004': '/simu_examen_demo.js',
+    '/seguridad/SDD005': '/simu_dash_demo.js'
+
+};
 
 export const config = {
   matcher: '/:path*',

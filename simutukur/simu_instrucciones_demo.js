@@ -219,7 +219,7 @@ function arrancarDemo() {
 // Función global para saltar o cuando termine el video
 window.saltarVideo = function() {
     // Redirección obligatoria por el túnel seguro de SimuTukur
-    window.location.href = `/abrir/examen-demo.html?v=${localStorage.getItem('demo_token_hex')}`;
+    window.location.href = `/abrir/simu_examen_demo.html?v=${localStorage.getItem('demo_token_hex')}`;
 }
 
 document.addEventListener("DOMContentLoaded", () => {

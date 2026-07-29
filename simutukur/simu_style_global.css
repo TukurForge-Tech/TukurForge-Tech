@@ -200,3 +200,14 @@ a[href="registro.html"].group {
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
 }
+
+/* =========================================
+   ESTILOS ESPECÍFICOS DEL MOTOR DE EXAMEN
+========================================= */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #06b6d4; }
+.latex-container { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
+.latex-container mjx-container { outline: none; }
+.mjx-chtml { margin: 0 !important; }

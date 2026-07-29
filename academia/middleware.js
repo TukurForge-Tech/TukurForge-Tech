@@ -3,7 +3,7 @@ const SECRET_KEY = "TukurForge_Tech_Core_SecretKey_1";
 // 1. TU DICIOMARIO DE ACTIVOS ENMASCARADOS (Aquí vive tu nomenclatura ACM001)
 const diccionarioRecursos = {
     '/seguridad/ASG001': '/academia_style_global.css',
-    '/seguridad/ASC002': '/academia_supabase-client.js',
+    '/seguridad/ASC002': '/academia_supabase_client.js',
     '/seguridad/ACM003': '/academia_centro_mando.js',
     '/seguridad/AOT004': '/academia_onboarding_trabajadores',
     '/seguridad/AOT005': '/academia_onboarding_trabajadores.js',

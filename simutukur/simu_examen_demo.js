@@ -442,7 +442,7 @@ function finalizarDemo() {
     // 👇 NUEVO: SALTO AL DASHBOARD POR EL TÚNEL ENCRIPTADO Y CON TOKEN 👇
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get('v');
-    window.location.href = `/abrir/dash-demo.html?v=${urlToken}`; 
+    window.location.href = `/abrir/simu_dash-demo.html?v=${urlToken}`; 
 }
 
 window.onload = init;
