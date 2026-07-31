@@ -6,7 +6,9 @@ const diccionarioRecursos = {
     '/seguridad/SSC002': '/simu_supabase_client.js',
     '/seguridad/SID003': '/simu_instrucciones_demo.js',
     '/seguridad/SED004': '/simu_examen_demo.js',
-    '/seguridad/SDD005': '/simu_dash_demo.js'
+    '/seguridad/SDD005': '/simu_dash_demo.js',
+    '/seguridad/SR006': '/simu_registro.js',
+    '/seguridad/SI007': '/index.js'
 
 };
 
@@ -45,9 +47,14 @@ export default function middleware(request) {
       return new Response(null, { headers: { 'x-middleware-next': '1' } });
   }
 
-  // 4. AUTOMATIZACIÓN DE APERTURA (Prefijo /abrir/)
+// 4. AUTOMATIZACIÓN DE APERTURA (Prefijo /abrir/)
   if (path.startsWith('/abrir/')) {
-      const archivoReal = path.replace('/abrir/', '') + '.html';
+      let archivoReal = path.replace('/abrir/', '');
+      
+      // 👇 ESCUDO ANTI-DUPLICADOS 👇
+      if (!archivoReal.endsWith('.html')) {
+          archivoReal += '.html';
+      }
       
       let encryptedString = "";
       for (let i = 0; i < archivoReal.length; i++) {

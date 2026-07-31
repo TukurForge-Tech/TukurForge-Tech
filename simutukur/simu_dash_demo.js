@@ -138,8 +138,8 @@ async function pedirExplicacionIADemo(preguntaCodificada, respuestaCodificada) {
                     <i class="fa-solid fa-battery-empty text-5xl text-red-500 mb-4 animate-pulse"></i>
                     <h4 class="text-white font-black italic uppercase tracking-tighter mb-2 text-xl">Energía IA Agotada</h4>
                     <p class="text-gray-400 text-sm mb-6 leading-relaxed">Te has quedado sin tokens demostrativos. Para seguir aprendiendo de tus errores y tener acceso a simulacros completos, necesitas una cuenta activa.</p>
-                    <a href="/abrir/simu_registro.html" class="inline-block w-full bg-cyan-600 hover:bg-cyan-500 text-white font-black py-4 rounded-xl uppercase tracking-widest text-sm shadow-lg transition-transform hover:-translate-y-1">
-                        Inscribirme Ahora
+                    <a href="/abrir/simu_registro.html" class="relative w-full bg-[#050a14] border border-cyan-500 text-white font-black py-3 md:py-4 rounded-xl uppercase tracking-widest text-[10px] md:text-xs flex justify-center items-center gap-2 hover:bg-slate-900 transition-colors">
+                        Inscribirme Ahora <i class="fa-solid fa-arrow-right ml-1 text-cyan-400"></i>
                     </a>
                 </div>
             </div>

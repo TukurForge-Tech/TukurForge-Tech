@@ -35,7 +35,12 @@ export default function middleware(request) {
 
   // 4. AUTOMATIZACIÓN DE APERTURA (Prefijo /abrir/)
   if (path.startsWith('/abrir/')) {
-      const archivoReal = path.replace('/abrir/', '') + '.html';
+      let archivoReal = path.replace('/abrir/', '');
+      
+      // 👇 ESCUDO ANTI-DUPLICADOS 👇
+      if (!archivoReal.endsWith('.html')) {
+          archivoReal += '.html';
+      }
       
       let encryptedString = "";
       for (let i = 0; i < archivoReal.length; i++) {
@@ -43,7 +48,6 @@ export default function middleware(request) {
       }
       const base64Url = btoa(encryptedString).replace(/=/g, "");
       
-      //return Response.redirect(new URL(`/auth-${base64Url}`, request.url), 307);
       return Response.redirect(new URL(`/auth-${base64Url}${url.search}`, request.url), 307);
   }
 
