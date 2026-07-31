@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     startDemoBtn.addEventListener('click', () => {
         const token = examDropdown.value;
         if (!token) return alert('Selecciona un examen para comenzar el Demo');
-        // Redirección al HTML de Demo
-        window.location.href = `instrucciones-demo.html?v=${token}`;
+       
+        window.location.href = `/abrir/simu_instrucciones_demo.html?v=${token}`;
     });
 });
